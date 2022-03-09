@@ -2,7 +2,7 @@
 SyncFilesProject
 ----------------
 Ground Rules:
-This is a simple project that will sync a file structure located in two locations on a computer.
+This is a simple project that will sync a file structure located in two locations on a computer (mac).
 The two locations will be defined in a text file (sync_directories_file.txt) that will be in the library's __init__.py
 directory.
 The file sync will occur (a.k.a. the executable will run) when the library is imported.
@@ -17,19 +17,21 @@ The __init__.py file of the library will have a call to run the executable.
 The executable will be located in the same library directory as the __init__.py file.
 Requirements:
 Req #1: The program shall determine the working directory.
-# TODO Req #2: The program shall find sync_directories_file.txt (text file containing the library directories).
-# TODO Req #3: The program shall open and read sync_directories_file.txt.
+Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
+Req #3: The program shall open and read sync_directories_file.txt.
 # TODO Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
 # TODO Req #5: The program shall determine the Most_Recently_Updated_Directory and the To_Sync_Directory.
 # TODO Req #6: The program shall copy all files in the Most_Recently_Updated_Directory to the To_Sync_Directory.
 # TODO Req #7: The program shall notify the user if either directory cannot be found.
 # TODO Req #8: The program shall be implemented as a state machine.
-# TODO Req #9: The program shall be version controlled in a github repository.
+Req #9: The program shall be version controlled in a github repository.
+# TODO Req #10: File structures shall be stored in a class "file_structure".
 """
 from sync_files_functions import *
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print(get_working_directory())
+    working_directory = get_working_directory()
+    print(working_directory)
 
