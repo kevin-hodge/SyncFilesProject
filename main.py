@@ -23,7 +23,7 @@ Req #3: The program shall open and read sync_directories_file.txt.
 # TODO Req #5: The program shall determine the Most_Recently_Updated_Directory and the To_Sync_Directory.
 # TODO Req #6: The program shall copy all files in the Most_Recently_Updated_Directory to the To_Sync_Directory.
 # TODO Req #7: The program shall notify the user if either directory cannot be found.
-# TODO Req #8: The program shall be implemented as a state machine.
+# TODO Req #8: The program shall be implemented as a finite state machine.
 Req #9: The program shall be version controlled in a github repository.
 # TODO Req #10: File structures shall be stored in a class "file_structure".
 """
@@ -32,6 +32,4 @@ from sync_files_functions import *
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    working_directory = get_working_directory()
-    print(working_directory)
-
+    print(get_sync_directories())
