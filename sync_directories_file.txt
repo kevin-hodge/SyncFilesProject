@@ -1,2 +1,2 @@
-/Users/kevinhodge/opt/anaconda3/envs/spyder-env/lib/python3.9/site-packages/kevins_cauldron_of_everything/sync_directories_file.txt
-/Users/kevinhodge/Google Drive/Python/kevins_cauldron_of_everything/sync_directories_file.txt
+/Users/kevinhodge/opt/anaconda3/envs/spyder-env/lib/python3.9/site-packages/kevins_cauldron_of_everything
+/Users/kevinhodge/Google Drive/Python/kevins_cauldron_of_everything

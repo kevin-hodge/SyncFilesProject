@@ -19,17 +19,25 @@ Requirements:
 Req #1: The program shall determine the working directory.
 Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
 Req #3: The program shall open and read sync_directories_file.txt.
-# TODO Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
-# TODO Req #5: The program shall determine the Most_Recently_Updated_Directory and the To_Sync_Directory.
-# TODO Req #6: The program shall copy all files in the Most_Recently_Updated_Directory to the To_Sync_Directory.
+Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
+Req #5: The program shall determine the Most_Recently_Updated_Directory and the To_Sync_Directory.
+Req #6: The program shall copy all files in the Most_Recently_Updated_Directory to the To_Sync_Directory.
 # TODO Req #7: The program shall notify the user if either directory cannot be found.
-# TODO Req #8: The program shall be implemented as a finite state machine.
+Req #8: The program shall be implemented as a finite state machine.
 Req #9: The program shall be version controlled in a github repository.
-# TODO Req #10: File structures shall be stored in a class "file_structure".
+Req #10: File structures shall be stored in a class "FileStructure".
 """
-from sync_files_functions import *
+#from sync_files_functions import *
+from sync_fsm import *
 
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print(get_sync_directories())
+    # Initialize StateMachine
+    Sync_FSM = StateMachine()
+    Sync_FSM.new_state("initial", initial_state_function, initial_state=1)
+    Sync_FSM.new_state("listen", listen_state_function)
+    Sync_FSM.new_state("sync", sync_state_function)
+    Sync_FSM.new_state("error", error_state_function)
+    Sync_FSM.new_state("final", final_state_function, final_state=1)
+
+    Sync_FSM.run()
+
