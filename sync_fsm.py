@@ -1,110 +1,209 @@
 # Define Sync FSM State Behavior
-import time
-from sync_files_functions import *
-"""
-State Variables
-state_info: list
-    0: class Exception, catches any exceptions
-    1: string, gives exception identifier to help track down bugs
-    2: boolean, exit_command
-    3: list, stores class FileStructure 
-
-next_state: string
-    gives next state
-"""
+from filestructure_functions import *
+from sync_gui import *
 
 
-def initial_state_function(state_info=[]):
+class StateMachine:
+    """
+    Adapted from: https://python-course.eu/applications-python/finite-state-machine.php
+    Req #8: The program shall be implemented as a finite state machine.
+
+    """
+
+    def __init__(self):
+        self.state_functions = {}  # Functions used in each state of the state machine
+        self.initial_state = None
+        self.final_states = []
+
+    def new_state(self, state_name, state_function, final_state=0, initial_state=0):
+        state_name = state_name.lower()
+        self.state_functions[state_name] = state_function
+        if final_state != 0:
+            self.final_states.append(state_name)
+        if initial_state != 0:
+            self.initial_state = state_name
+
+    def run(self, state_info):
+        if not self.initial_state:
+            raise InitializationError("Must set initial_state")
+        if not self.final_states:
+            raise InitializationError("Must set at least one final_states")
+        state_function = self.state_functions[self.initial_state]
+        while True:
+            (next_state, state_info) = state_function(state_info)
+            if next_state.lower() in self.final_states:
+                state_function = self.state_functions[next_state]
+                state_function(state_info)
+                break
+            else:
+                state_function = self.state_functions[next_state]
+
+
+class StateInfo:
+    """
+    Carries program information from state to state.
+    StateInfo Variables
+        curr_state: string
+            stores name of current state, initialize to initial state
+
+        directories: list(FileStructure)
+            stores the file
+
+        err: class Exception
+            catches any exceptions, passes message to handler in error state
+
+        err_id: string
+            gives exception identifier to help track down bugs
+
+        exit_request: boolean
+            unused
+
+        prev_state: string
+            stores name of previous state
+
+        sync_gui: SyncGUI
+            handles the graphical user interface of the program
+
+        sync_required: boolean
+            True if directories need to be sync'd
+
+        to_update: list
+            same structure as directories, but has 1 if file/folder needs to be updated and 0 otherwise
+
+        verbose: boolean
+            indicates if messages will be printed for debugging
+    """
+
+    def __init__(self, verbose=0):
+        self.curr_state = "initial"
+        self.directories = []
+        self.err = []
+        self.err_id = []
+        self.exit_request = False
+        self.prev_state = ""
+        self.sync_gui = SyncGUI()
+        self.sync_required = False
+        self.to_update = []
+        self.verbose = verbose
+
+    def get_return_values(self, next_state):
+        self.prev_state = self.curr_state
+        if self.exit_request:
+            self.curr_state = "final"
+        else:
+            self.curr_state = next_state
+        return next_state, self
+
+    def error_handle(self, err, err_id, ):
+        self.err = err
+        self.err_id = err_id
+        return self.get_return_values("error")
+
+    def check_exit_prompt(self):
+        return self.sync_gui.exit_prompt()
+
+
+def initial_state_function(state_info):
     """
     Initializes state_info and retrieves directories to synchronize.
     """
     print("Initializing...")
 
-    # Set-Up Error Handling
-    state_info.append(Exception())  # stores exception raised
-    state_info.append("")  # stores exception identifier (for debugging)
-    state_info.append(False)  # exit request value, initialize to False
-
     # Retrieve directories to sync and initialize FileStructures
     try:
+        # TODO Test what happens if "sync_directories_file.txt" is blank
         sync_directories = get_sync_directories()
     except Exception as err:
-        state_info[0] = err
-        state_info[1] = "get_sync_directories"
-        next_state = "error"
-        return next_state, state_info
-    directories = []
+        return state_info.error_handle(err, "get_sync_directories")
     for dirs in sync_directories:
-        directories.append(FileStructure(dirs))
-        #print(directories[-1].directory_path)
+        state_info.directories.append(FileStructure(dirs))
+        if state_info.verbose:
+            print("Directories to sync:")
+            print(state_info.directories[-1].directory_path)
 
-    # Add FileStructures to state_info
-    state_info.append(directories)
-
-    next_state = "listen"
-    return next_state, state_info
+    next_state = "check"
+    return state_info.get_return_values(next_state)
 
 
-def listen_state_function(state_info=[]):
+def check_state_function(state_info):
     """
     Retrieves FileStructure information from directories and determines if sync is necessary.
     """
-    print("Listening...")
-    assert len(state_info) == 4
+    if state_info.verbose:
+        print("Checking...")
+    assert len(state_info.directories) > 0
 
-    # Wait
-    time.sleep(10)
     try:
-        for directory in state_info[3]:
+        for directory in state_info.directories:
             directory.get_file_structure()
-            print("Directory:")
-            directory.print_file_structure(offset=3)
+            #directory.check_file_structure()
+            if state_info.verbose:
+                print("Directory " + str(state_info.directories.index(directory) + 1) + ":")
+                directory.print_file_structure()
     except Exception as err:
-        state_info[0] = err
-        state_info[1] = "get_file_structure"
-        next_state = "error"
-        return next_state, state_info
+        return state_info.error_handle(err, "get_file_structure")
 
     # Determine next state (maybe check every hour? possible to check if file has been edited?)
-    next_state = "listen"
-    state_info[2] = True
-    sync_required = True
-    if state_info[2]:
+
+    state_info.check_exit_prompt()
+    state_info.exit_request = True
+    state_info.sync_required = True
+    next_state = "wait"  # effectively the else condition of the if statement
+    if state_info.exit_request:
         next_state = "final"
-    elif sync_required:
+    elif state_info.sync_required:
         next_state = "sync"
-    else:
-        next_state = "listen"
-    return next_state, state_info
+    return state_info.get_return_values(next_state)
 
 
-def sync_state_function(state_info=[]):
+def wait_state_function(state_info):
+    """
+    Waits before checking directories again
+    """
+    if state_info.verbose:
+        print("Waiting...")
+
+    # Wait before checking directory again
+    time.sleep(10)
+
+    next_state = "check"
+    if state_info.exit_request:
+        next_state = "final"
+    return state_info.get_return_values(next_state)
+
+
+def sync_state_function(state_info):
     """
     Synchronizes file directories.
     """
-    assert len(state_info) == 4
     print("Syncing...")
-    # TODO Do Something
-    next_state = "final"
-    return next_state, state_info
+    assert state_info.sync_required
+    # TODO Sync Files according to state_info.to_update
+
+    # Probably do some kind of check here
+    next_state = "check"
+    # next_state = "final"
+    return state_info.get_return_values(next_state)
 
 
-def error_state_function(state_info=[]):
+def error_state_function(state_info):
     """
+    Req #7: The program shall notify the user if either directory cannot be found.
+    TODO Needs to notify user through the GUI
     Handles errors that cause transitions from other states.
     """
-    if state_info[1] == "get_sync_directories":
+    next_state = "final"  # default behavior when error is received is to exit
+    if state_info.err_id == "get_sync_directories":
         print("Couldn't read sync_directories_file.txt")
-        print(state_info[0])  # Prints error message
-    elif state_info[1] == "get_file_structure":
-        print("Couldn't get file structure")
-        print(state_info[0])  # Prints error message
+        print(state_info.err)  # Prints error message
+    elif state_info.err_id == "get_file_structure":
+        print("Couldn't get 1 or more directory file structures")
+        print(state_info.err)  # Prints error message
     else:
         print("Unknown error occurred")
-    next_state = "final"
-    return next_state, state_info
+    return state_info.get_return_values(next_state)
 
 
-def final_state_function(state_info=[]):
-    # TODO Finish Up
+def final_state_function(state_info):
+    # Finish Up
     print("Exiting...")

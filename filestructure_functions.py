@@ -1,11 +1,31 @@
 """
-Sync Files Project: Functions
+FileStruture Functions
 -----------------------------
 Contains the functions for the Sync Files Project.
 """
 
 import os
-import sys
+import time
+import functools
+
+
+def sleep_decorator(func):
+    """
+    Decorator function that currently does nothing.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Do Something
+        return func(*args, **kwargs)
+        # Do Something
+
+    return wrapper
+
+
+@sleep_decorator
+def fsm_sleep(seconds):
+    time.sleep(seconds)
 
 
 def get_sync_directories():
@@ -20,7 +40,7 @@ def get_sync_directories():
     file_directories: list(string)
         list of file directories found in "sync_directories_file.txt"
 
-    Idea: Currently this only works on MacOS, can I somehow figure out the os and implement both ways?
+    Caveat: Only tested on macOS, hopefully should work on Windows, but not confirmed yet
     """
     # Find and read sync_directories_file
     folder_path = os.getcwd()  # get working directory
@@ -41,18 +61,22 @@ def recursive_get_directory(directory):
     :param directory: string
         path to the directory
     :return file_structure: list
-        list of strings and other lists, lists contain string with name of directory and another list with entries in
-        that directory
+        list of one string and one list that contains entries in the directory, directories in the directory are
+        represented as lists that also contain a string with the name of directory and another list with entries in that
+        directory, pattern continues until no directories are found
+        ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", ["sub_sub_dir_name", [...]]], "file3.txt"]]
     """
-    file_structure = []
+    assert type(directory) == str
+
+    # file_structure = [directory.split("/")[-1], []]  # This only works on macOS
+    file_structure = [os.path.split(directory)[1], []]  # This should work on most OSes
     for entry in os.listdir(directory):
-        entry_path = os.path.join(directory,entry)
+        entry_path = os.path.join(directory, entry)
         if os.path.isfile(entry_path):
-            file_structure.append(entry)
+            file_structure[1].append(entry)
         elif os.path.isdir(entry_path):
-            sub_dir = [entry, []]
-            sub_dir[1] = recursive_get_directory(entry_path)
-            file_structure.append(sub_dir)
+            sub_dir = recursive_get_directory(entry_path)
+            file_structure[1].append(sub_dir)
         else:
             return
     return file_structure
@@ -60,17 +84,16 @@ def recursive_get_directory(directory):
 
 def recursive_print_directory(file_structure, offset=0):
     """
-
+    Prints out directory and files and directories if file_structure matches format given in recursive_get_directory
     :param file_structure:
     :param offset:
     :return file_structure:
     """
     for entry in file_structure:
         if type(entry) == str:
-            print(offset*" " + entry)
+            print(offset * " " + entry)
         else:
-            print(offset*" " + entry[0])
-            print_file_structure(entry[1], offset+3)
+            recursive_print_directory(entry, offset + 3)
 
 
 class FileStructure:
@@ -78,8 +101,8 @@ class FileStructure:
     Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
     Req #10: File structures shall be stored in a class "FileStructure".
     class that contains the file structure of a directory.
-
-    :input:
+    FileStructure Variables
+        directory_path
 
     """
 
@@ -93,8 +116,8 @@ class FileStructure:
         Reads all files and folders below the directory
         :return:
         self.files: list
-            self.files contains paths to all files (strings) and all folders (list, with two elements, ) in the directory.
-            folders contained in files, contain names of all files and folders in those folders,
+            self.files contains paths to all files (strings) and all folders (list, with two elements, ) in the
+            directory. folders contained in files, contain names of all files and folders in those folders,
             pattern continues until a directory with no folders is found.
         """
         self.files = recursive_get_directory(self.directory_path)
@@ -111,39 +134,3 @@ class FileStructure:
         :return:
         """
         pass
-
-
-class StateMachine:
-    """
-    Adapted from: https://python-course.eu/applications-python/finite-state-machine.php
-    Req #8: The program shall be implemented as a finite state machine.
-
-    """
-
-    def __init__(self):
-        self.state_functions = {}  # Functions used in each state of the state machine
-        self.initial_state = None
-        self.final_states = []
-
-    def new_state(self, state_name, state_function, final_state=0, initial_state=0):
-        state_name = state_name.lower()
-        self.state_functions[state_name] = state_function
-        if final_state != 0:
-            self.final_states.append(state_name)
-        if initial_state != 0:
-            self.initial_state = state_name
-
-    def run(self, state_info=[]):
-        if not self.initial_state:
-            raise InitializationError("Must set initial_state")
-        if not self.final_states:
-            raise InitializationError("Must set at least one final_states")
-        state_function = self.state_functions[self.initial_state]
-        while True:
-            (next_state, state_info) = state_function(state_info)
-            if next_state.lower() in self.final_states:
-                state_function = self.state_functions[next_state]
-                state_function(state_info)
-                break
-            else:
-                state_function = self.state_functions[next_state]
