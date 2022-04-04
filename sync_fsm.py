@@ -100,7 +100,10 @@ class StateInfo:
         return self.get_return_values("error")
 
     def check_exit_prompt(self):
-        return self.sync_gui.exit_prompt()
+        response = self.sync_gui.exit_prompt()
+        if response == "Exit":
+            self.exit_request = "Exit"
+        return response
 
 
 def initial_state_function(state_info):
@@ -146,7 +149,7 @@ def check_state_function(state_info):
     # Determine next state (maybe check every hour? possible to check if file has been edited?)
 
     state_info.check_exit_prompt()
-    state_info.exit_request = True
+    # state_info.exit_request = True
     state_info.sync_required = True
     next_state = "wait"  # effectively the else condition of the if statement
     if state_info.exit_request:
@@ -181,7 +184,7 @@ def sync_state_function(state_info):
     # TODO Sync Files according to state_info.to_update
 
     # Probably do some kind of check here
-    next_state = "check"
+    next_state = "wait"
     # next_state = "final"
     return state_info.get_return_values(next_state)
 
