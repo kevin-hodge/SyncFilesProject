@@ -5,21 +5,44 @@ Sync GUI
 import wx
 
 
-class ExitPromptFrame(wx.Frame):
+# noinspection PyAttributeOutsideInit
+class YesNoPromptApp(wx.App):
     """
 
     """
-    def __init__(self, parent, title):
+
+    def __init__(self, message, button_text):
+        self.message = message
+        self.button_text = button_text
+        self.response = "Exit"  # Default to exit if window closes without response
+        super().__init__()
+
+    def OnInit(self):
+        self.frame = YesNoPromptFrame(parent=None, title="Sync Files Project", message=self.message,
+                                      button_text=self.button_text)
+        self.frame.Bind(wx.EVT_BUTTON, self.set_response)
+        self.frame.Show()
+        return True
+
+    def set_response(self, event):
+        self.response = event.GetEventObject().GetLabel()
+        self.frame.Close()
+
+
+class YesNoPromptFrame(wx.Frame):
+    """
+
+    """
+    def __init__(self, parent, title, message, button_text):
         """
         Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__().
         """
         super().__init__(parent, title=title, size=(250, 100))
-        button_text = ["Continue", "Exit"]
-        self.message_panel = ExitPromptPanel(parent=self, message="Check Again?", button_text=button_text)
+        self.message_panel = YesNoPromptPanel(parent=self, message=message, button_text=button_text)
         self.Center()
 
 
-class ExitPromptPanel(wx.Panel):
+class YesNoPromptPanel(wx.Panel):
     """
 
     """
@@ -49,26 +72,54 @@ class ExitPromptPanel(wx.Panel):
 
 
 # noinspection PyAttributeOutsideInit
-class ExitPromptApp(wx.App):
+class EntryPromptApp(wx.App):
     """
 
     """
     def __init__(self, message):
         self.message = message
-        self.response = "Exit"  # Default to exit if window closes without response
+        self.response = ""
         super().__init__()
 
     def OnInit(self):
-        self.frame = ExitPromptFrame(parent=None, title="Sync Files Project")
-        self.frame.Bind(wx.EVT_BUTTON, self.set_response)
-        self.frame.Show()
+        self.frame = EntryPromptFrame(parent=None, title="Sync Files Project", message=self.message)
         return True
 
-    def set_response(self, event):
-        clicked_button = event.GetEventObject().GetLabel()
-        if clicked_button == "Continue":
-            self.response = "Continue"
-        self.frame.Close()
+    def get_response(self):
+        return self.frame.get_response()
+
+
+class EntryPromptFrame(wx.Frame):
+    """
+
+    """
+
+    def __init__(self, parent, title, message):
+        """
+        Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__().
+        """
+        super().__init__(parent, title=title, size=(250, 100))
+        self.message_panel = EntryPromptPanel(parent=self, message=message)
+        self.Close()
+
+    def get_response(self):
+        return self.message_panel.get_response()
+
+
+class EntryPromptPanel(wx.Panel):
+    """
+
+    """
+    def __init__(self, parent, message):
+        super().__init__(parent)
+
+        self.dialog = wx.TextEntryDialog(self, message, "Directory: ", "", style=wx.OK)
+        self.dialog.ShowModal()
+        self.entry = self.dialog.GetValue()
+        self.dialog.Destroy()
+
+    def get_response(self):
+        return self.entry
 
 
 class SyncGUI:
@@ -83,7 +134,18 @@ class SyncGUI:
         """
         Open a window to ask the user a question and get a response, then close the window.
         """
-        app = ExitPromptApp(message="Check Again?")
+        button_text = ["Continue", "Exit"]
+        app = YesNoPromptApp(message="Check Again?", button_text=button_text)
         app.MainLoop()
         return app.response
+
+    def directory_prompt(self, invalid_dir):
+        """
+        Asks user to enter a valid directory
+        :return:
+        """
+        message = "Invalid Directory: " + str(invalid_dir) + "\n" + "Please enter directory to sync below."
+        app = EntryPromptApp(message=message)
+        app.MainLoop()
+        return app.get_response()
 

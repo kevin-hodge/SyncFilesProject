@@ -8,6 +8,7 @@ import os
 import time
 import functools
 import json
+from pathlib import Path
 
 
 def sleep_decorator(func):
@@ -29,10 +30,13 @@ def fsm_sleep(seconds):
     time.sleep(seconds)
 
 
-def get_sync_directories():
+def get_sync_directories(verbose=False):
     """
     # Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
     # Req #3: The program shall open and read sync_directories_file.txt.
+    - TODO Req #15: The program shall store and get sync directories from a config file.
+    - TODO Req #16: The program shall ask user for directories if config file does not contain sync directories.
+    - TODO Req #17: The program shall update config file with directory provided by user (if it exists).
     Finds sync_directories_file.txt file in working directory, reads entries, and returns tuple with string values
 
     ASSUMES: sync_directories_file structure is directory paths separated by newline characters
@@ -44,16 +48,46 @@ def get_sync_directories():
     Caveat: Only tested on macOS, hopefully should work on Windows, but not confirmed yet
     """
     # Find and read sync_directories_file
-    folder_path = os.getcwd()  # get working directory
-    file_name = "sync_directories_file.txt"  # should store this value somewhere else eventually, what if this changes?
+    folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get directory of sync_directories_file
+    # file_name = "sync_directories_file.txt"  # should store this value somewhere else eventually, what if this changes?
+    file_name = "sync_directories_file.json"
     file_path = os.path.join(folder_path, file_name)
 
     # Read file (with ensures file is closed even if an exception occurs)
-    with open(file_path) as file_to_read:
-        buffer = file_to_read.read()
+    buffer = []
+    if os.path.exists(file_path):
+        with open(file_path) as file_to_read:
+            buffer = json.load(file_to_read)
+            # buffer = file_to_read.read()
+            file_to_read.close()
+    else:
+        with open(file_path, "w") as file_to_write:
+            json.dump("empty", file_to_write)
+            file_to_write.close()
+        raise ValueError("Couldn't find sync directories config file")
 
     # Parse directory paths and return list of directories
     return buffer.split("\n")
+
+
+def set_sync_directories(directories, verbose=False):
+    """
+    Takes list of directories and stores it in the sync directories config file
+
+    directories: list(string)
+        list of strings containing the names of the directories
+    verbose: boolean
+
+    """
+    # Find and read sync_directories_file
+    folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get directory of sync_directories_file
+    file_name = "sync_directories_file.txt"  # should store this value somewhere else eventually, what if this changes?
+    # file_name = "sync_directories_file.json"
+    file_path = os.path.join(folder_path, file_name)
+
+    with open(file_path, 'w') as file_to_write:
+        json.dump(directories, file_to_write)
+        file_to_write.close()
 
 
 def recursive_get_directory(directory):
@@ -148,7 +182,6 @@ class FileStructure:
             all files and folders in those folders, pattern continues until a directory with no folders is found.
         """
         self.files, self.last_updates = recursive_get_directory(self.directory_path)
-        print(self.last_updates)
         return self.files
 
     def print_file_structure(self, offset=0):
@@ -169,7 +202,7 @@ class FileStructure:
 
     def check_file_structure(self):
         """
-        TODO Req #14: The program check if the most recently updated time matches last sync time (if it exists).
+        TODO Req #14: The program shall check if the most recently updated time matches last sync time (if it exists).
         TODO Req #12: The program shall determine the files and folders that have been most recently updated.
 
         :return:
@@ -179,6 +212,7 @@ class FileStructure:
         last_update_file = "last_update_file.json"
         if os.path.exists(last_update_file):
             first_sync = False
+        else:
             if self.verbose:
                 print("First Sync")
 

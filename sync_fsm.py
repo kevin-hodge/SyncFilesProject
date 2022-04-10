@@ -24,11 +24,13 @@ class StateMachine:
             self.initial_state = state_name
 
     def run(self, state_info):
-        if not self.initial_state:
-            raise InitializationError("Must set initial_state")
+        try:
+            state_function = self.state_functions[self.initial_state]
+        except:
+            raise ValueError("Must set initial_state")
         if not self.final_states:
-            raise InitializationError("Must set at least one final_states")
-        state_function = self.state_functions[self.initial_state]
+            raise ValueError("Must set at least one final_states")
+
         while True:
             (next_state, state_info) = state_function(state_info)
             if next_state.lower() in self.final_states:
@@ -105,6 +107,12 @@ class StateInfo:
             self.exit_request = "Exit"
         return response
 
+    def get_directory_prompt(self, invalid_dir):
+        return self.sync_gui.directory_prompt(invalid_dir)
+
+    def set_sync_directories(self, directories):
+        set_sync_directories(directories, verbose=self.verbose)
+
 
 def initial_state_function(state_info):
     """
@@ -115,7 +123,7 @@ def initial_state_function(state_info):
     # Retrieve directories to sync and initialize FileStructures
     try:
         # TODO Test what happens if "sync_directories_file.txt" is blank
-        sync_directories = get_sync_directories()
+        sync_directories = get_sync_directories(verbose=state_info.verbose)
     except Exception as err:
         return state_info.error_handle(err, "get_sync_directories")
     for dirs in sync_directories:
@@ -197,13 +205,31 @@ def error_state_function(state_info):
     """
     next_state = "final"  # default behavior when error is received is to exit
     if state_info.err_id == "get_sync_directories":
-        print("Couldn't read sync_directories_file.txt")
-        print(state_info.err)  # Prints error message
+        if state_info.verbose:
+            print("Couldn't read sync directories config file")
+            print("Error Message: " + str(state_info.err))  # Prints error message
     elif state_info.err_id == "get_file_structure":
-        print("Couldn't get 1 or more directory file structures")
-        print(state_info.err)  # Prints error message
+        invalid_directory = False
+        directories = []
+        for directory in state_info.directories:
+            if not os.path.exists(directory.directory_path):
+                invalid_directory = True
+                directories.append(state_info.get_directory_prompt(directory.directory_path))
+                if state_info.verbose:
+                    print("Response: " + str(directories[-1]))
+        if invalid_directory:
+            state_info.set_sync_directories(directories)
+            next_state = "final"
+            return state_info.get_return_values(next_state)
+        if state_info.verbose:
+            print("Couldn't get 1 or more directory file structures")
+            print("Error Message: " + str(state_info.err))  # Prints error message
+
     else:
-        print("Unknown error occurred")
+        if state_info.verbose:
+            print("Unknown error occurred")
+            print("Previous State: " + state_info.prev_state)
+            print("Error Message: " + str(state_info.err))
     return state_info.get_return_values(next_state)
 
 
