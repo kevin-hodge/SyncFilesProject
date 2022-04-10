@@ -13,7 +13,7 @@ class ExitPromptFrame(wx.Frame):
         """
         Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__().
         """
-        super().__init__(parent, title=title, size=(300, 200))
+        super().__init__(parent, title=title, size=(250, 100))
         button_text = ["Continue", "Exit"]
         self.message_panel = ExitPromptPanel(parent=self, message="Check Again?", button_text=button_text)
         self.Center()
@@ -33,7 +33,6 @@ class ExitPromptPanel(wx.Panel):
         hbox_message = wx.BoxSizer(wx.HORIZONTAL)
         vbox_message.Add(self.label, 0, wx.ALIGN_CENTER)
         hbox_message.Add(vbox_message, -1, wx.ALIGN_CENTER)
-        # self.SetSizer(hbox)
         gridsizer = wx.GridSizer(2, 1, 5, 5)
         gridsizer.Add(hbox_message, -1, wx.EXPAND)
 
@@ -41,8 +40,9 @@ class ExitPromptPanel(wx.Panel):
         vbox_buttons = wx.BoxSizer(wx.VERTICAL)
         hbox_buttons = wx.BoxSizer(wx.HORIZONTAL)
         for button_label in button_text:
-            self.buttons.append(wx.Button(self, -1, label=button_label, style=wx.BOTTOM))
-            vbox_buttons.Add(self.buttons[-1], 0, wx.ALIGN_RIGHT)
+            self.buttons.append(wx.Button(self, -1, label=button_label))
+            hbox_buttons.Add(self.buttons[-1], 0, wx.ALIGN_BOTTOM | wx.TOP | wx.BOTTOM | wx.RIGHT | wx.LEFT, 2)
+        vbox_buttons.Add(hbox_buttons, -1, wx.ALIGN_RIGHT | wx.TOP | wx.BOTTOM | wx.RIGHT | wx.LEFT, 5)
         gridsizer.Add(vbox_buttons, 0, wx.EXPAND)
 
         self.SetSizer(gridsizer)
@@ -55,7 +55,7 @@ class ExitPromptApp(wx.App):
     """
     def __init__(self, message):
         self.message = message
-        self.response = ""
+        self.response = "Exit"  # Default to exit if window closes without response
         super().__init__()
 
     def OnInit(self):
@@ -66,10 +66,8 @@ class ExitPromptApp(wx.App):
 
     def set_response(self, event):
         clicked_button = event.GetEventObject().GetLabel()
-        response = "Exit"
         if clicked_button == "Continue":
-            response = "Continue"
-        self.response = response
+            self.response = "Continue"
         self.frame.Close()
 
 

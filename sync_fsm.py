@@ -119,7 +119,7 @@ def initial_state_function(state_info):
     except Exception as err:
         return state_info.error_handle(err, "get_sync_directories")
     for dirs in sync_directories:
-        state_info.directories.append(FileStructure(dirs))
+        state_info.directories.append(FileStructure(dirs, verbose=state_info.verbose))
         if state_info.verbose:
             print("Directories to sync:")
             print(state_info.directories[-1].directory_path)
@@ -139,17 +139,17 @@ def check_state_function(state_info):
     try:
         for directory in state_info.directories:
             directory.get_file_structure()
-            #directory.check_file_structure()
+            directory.check_file_structure()
             if state_info.verbose:
                 print("Directory " + str(state_info.directories.index(directory) + 1) + ":")
                 directory.print_file_structure()
+                print("Last Updates:")
+                directory.print_last_updates()
     except Exception as err:
         return state_info.error_handle(err, "get_file_structure")
 
-    # Determine next state (maybe check every hour? possible to check if file has been edited?)
-
+    # Determine next state
     state_info.check_exit_prompt()
-    # state_info.exit_request = True
     state_info.sync_required = True
     next_state = "wait"  # effectively the else condition of the if statement
     if state_info.exit_request:

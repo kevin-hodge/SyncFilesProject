@@ -2,8 +2,9 @@
 SyncFilesProject
 ----------------
 Ground Rules:
-This is a simple project that will sync a file structure located in two locations on a computer (mac).
+This is a simple project that will sync a file structure located in two locations on a computer (mac or windows).
 The two locations will be defined in a text file (sync_directories_file.txt) in the program's directory.
+    - Might change to JSON config file and add prompt to enter file location if files cannot be found.
 The file sync will occur when a difference is found between the file_structures.
     - Should program just start when the computer starts and wait for a time of day to run?
     - Can continuously running program check for edits to one or both file_structures?
@@ -21,11 +22,12 @@ Requirements (LR: 15):
 Req #1: The program shall determine the working directory.
 TODO Req #15: The program shall store and get sync directories from a config file.
 TODO Req #16: The program shall ask user for directories if config file does not contain sync directories.
+TODO Req #17: The program shall update directory with config file provided by user (if it exists).
 Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
 Req #3: The program shall open and read sync_directories_file.txt.
 Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
-TODO Req #14: The program check if the most recently updated time matches last sync time (if it exists).
-TODO Req #12: The program shall determine the files and folders that have been most recently updated.
+Req #14: The program check if the most recently updated time matches last sync time (if it exists).
+Req #12: The program shall determine the files and folders that have been most recently updated.
 TODO Req #13: The program shall copy the most recently updated files and folders to the other directory.
 Req #5: Deleted
 Req #6: Deleted
