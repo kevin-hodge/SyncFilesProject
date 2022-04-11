@@ -8,7 +8,6 @@ import os
 import time
 import functools
 import json
-from pathlib import Path
 
 
 def sleep_decorator(func):
@@ -30,16 +29,20 @@ def fsm_sleep(seconds):
     time.sleep(seconds)
 
 
-def get_sync_directories(verbose=False):
+def get_sync_directories(gui, verbose=False):
     """
-    # Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
-    # Req #3: The program shall open and read sync_directories_file.txt.
-    - TODO Req #15: The program shall store and get sync directories from a config file.
-    - TODO Req #16: The program shall ask user for directories if config file does not contain sync directories.
-    - TODO Req #17: The program shall update config file with directory provided by user (if it exists).
+    - Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
+    - Req #3: The program shall open and read sync_directories_file.txt.
+    - Req #15: The program shall store and get sync directories from a config file.
+    - Req #16: The program shall ask user for directories if config file does not contain sync directories.
+    - Req #17: The program shall update config file with directory provided by user (if it exists).
     Finds sync_directories_file.txt file in working directory, reads entries, and returns tuple with string values
 
-    ASSUMES: sync_directories_file structure is directory paths separated by newline characters
+    Function checks for the following and asks user to provide valid, unique directories if any are true:
+    - Config File Doesn't exist
+    - Sync Directory(s) don't exist
+    - Not enough sync directories
+    - Sync Directories are not unique
 
     :return:
     file_directories: list(string)
@@ -49,25 +52,47 @@ def get_sync_directories(verbose=False):
     """
     # Find and read sync_directories_file
     folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get directory of sync_directories_file
-    # file_name = "sync_directories_file.txt"  # should store this value somewhere else eventually, what if this changes?
     file_name = "sync_directories_file.json"
     file_path = os.path.join(folder_path, file_name)
 
     # Read file (with ensures file is closed even if an exception occurs)
+    min_directories = 2  # Minimum of 2 directories, otherwise no sync can occur
     buffer = []
+    write_config = False
     if os.path.exists(file_path):
-        with open(file_path) as file_to_read:
+        with open(file_path, "r") as file_to_read:
             buffer = json.load(file_to_read)
             # buffer = file_to_read.read()
             file_to_read.close()
-    else:
+
+    if not type(buffer) == list:
+        buffer = []
+
+    for i in range(len(buffer)):
+        if not os.path.exists(buffer[i]):
+            buffer.pop(i)
+
+    for dir_num in range(min_directories):
+        while True:
+            new_dir = gui.directory_prompt(buffer)
+            unique = True
+            for i in range(len(buffer)):
+                if new_dir == buffer[i]:
+                    unique = False
+            if os.path.exists(new_dir) and unique:
+                buffer.append(new_dir)
+                print("Directory added to sync directories config file: " + str(buffer[-1]))
+                break
+        write_config = True
+
+    if write_config:
         with open(file_path, "w") as file_to_write:
-            json.dump("empty", file_to_write)
+            json.dump(buffer, file_to_write)
             file_to_write.close()
-        raise ValueError("Couldn't find sync directories config file")
+        # raise ValueError("Couldn't find sync directories config file")
 
     # Parse directory paths and return list of directories
-    return buffer.split("\n")
+    return buffer
 
 
 def set_sync_directories(directories, verbose=False):

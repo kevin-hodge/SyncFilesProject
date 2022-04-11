@@ -37,7 +37,7 @@ class YesNoPromptFrame(wx.Frame):
         """
         Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__().
         """
-        super().__init__(parent, title=title, size=(250, 100))
+        super().__init__(parent, title=title, size=(300, 200))
         self.message_panel = YesNoPromptPanel(parent=self, message=message, button_text=button_text)
         self.Center()
 
@@ -114,6 +114,7 @@ class EntryPromptPanel(wx.Panel):
         super().__init__(parent)
 
         self.dialog = wx.TextEntryDialog(self, message, "Directory: ", "", style=wx.OK)
+        self.dialog.Center()
         self.dialog.ShowModal()
         self.entry = self.dialog.GetValue()
         self.dialog.Destroy()
@@ -139,12 +140,14 @@ class SyncGUI:
         app.MainLoop()
         return app.response
 
-    def directory_prompt(self, invalid_dir):
+    def directory_prompt(self, valid_dir=[], min_dir=2):
         """
         Asks user to enter a valid directory
-        :return:
+        invalid_dir: string
+            string containing
         """
-        message = "Invalid Directory: " + str(invalid_dir) + "\n" + "Please enter directory to sync below."
+        message = "Only " + str(len(valid_dir)) + " valid, unique directories. Must have " + str(min_dir) + ".\n"
+        message = message + "Please enter directory to sync below."
         app = EntryPromptApp(message=message)
         app.MainLoop()
         return app.get_response()

@@ -123,7 +123,7 @@ def initial_state_function(state_info):
     # Retrieve directories to sync and initialize FileStructures
     try:
         # TODO Test what happens if "sync_directories_file.txt" is blank
-        sync_directories = get_sync_directories(verbose=state_info.verbose)
+        sync_directories = get_sync_directories(state_info.sync_gui, verbose=state_info.verbose)
     except Exception as err:
         return state_info.error_handle(err, "get_sync_directories")
     for dirs in sync_directories:
@@ -209,22 +209,13 @@ def error_state_function(state_info):
             print("Couldn't read sync directories config file")
             print("Error Message: " + str(state_info.err))  # Prints error message
     elif state_info.err_id == "get_file_structure":
-        invalid_directory = False
-        directories = []
         for directory in state_info.directories:
             if not os.path.exists(directory.directory_path):
-                invalid_directory = True
-                directories.append(state_info.get_directory_prompt(directory.directory_path))
-                if state_info.verbose:
-                    print("Response: " + str(directories[-1]))
-        if invalid_directory:
-            state_info.set_sync_directories(directories)
-            next_state = "final"
-            return state_info.get_return_values(next_state)
+                next_state = "initial"
+                return state_info.get_return_values(next_state)
         if state_info.verbose:
             print("Couldn't get 1 or more directory file structures")
             print("Error Message: " + str(state_info.err))  # Prints error message
-
     else:
         if state_info.verbose:
             print("Unknown error occurred")
