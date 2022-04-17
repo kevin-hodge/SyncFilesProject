@@ -1,7 +1,7 @@
 """
-FileStruture Functions
+FileStructure Functions
 -----------------------------
-Contains the functions for the Sync Files Project.
+Contains functions used by the FileStructure class.
 """
 
 import os
@@ -31,27 +31,27 @@ def fsm_sleep(seconds):
 
 def get_sync_directories(gui, verbose=False):
     """
-    - Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
+    - Req #2: The program shall find sync_directories_file.json (json file containing the sync directories).
     - Req #3: The program shall open and read sync_directories_file.txt.
     - Req #15: The program shall store and get sync directories from a config file.
     - Req #16: The program shall ask user for directories if config file does not contain sync directories.
     - Req #17: The program shall update config file with directory provided by user (if it exists).
-    Finds sync_directories_file.txt file in working directory, reads entries, and returns tuple with string values
-
+    Finds sync_directories_file.json file in parent directory of working directory, reads entries, and returns list
+    with strings containing valid, unique directories.
     Function checks for the following and asks user to provide valid, unique directories if any are true:
     - Config File Doesn't exist
     - Sync Directory(s) don't exist
-    - Not enough sync directories
+    - Not enough sync directories (at least 2)
     - Sync Directories are not unique
 
     :return:
     file_directories: list(string)
-        list of file directories found in "sync_directories_file.txt"
+        list of file directories found in "sync_directories_file.json"
 
-    Caveat: Only tested on macOS, hopefully should work on Windows, but not confirmed yet
+    Caveat: Tested only on M1 Mac and Windows 10
     """
     # Find and read sync_directories_file
-    folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get directory of sync_directories_file
+    folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
     file_name = "sync_directories_file.json"
     file_path = os.path.join(folder_path, file_name)
 
@@ -62,7 +62,6 @@ def get_sync_directories(gui, verbose=False):
     if os.path.exists(file_path):
         with open(file_path, "r") as file_to_read:
             buffer = json.load(file_to_read)
-            # buffer = file_to_read.read()
             file_to_read.close()
 
     if not type(buffer) == list:
@@ -72,7 +71,7 @@ def get_sync_directories(gui, verbose=False):
         if not os.path.exists(buffer[i]):
             buffer.pop(i)
 
-    for dir_num in range(min_directories):
+    for dir_num in range(min_directories-len(buffer)):
         while True:
             new_dir = gui.directory_prompt(buffer)
             unique = True
@@ -93,26 +92,6 @@ def get_sync_directories(gui, verbose=False):
 
     # Parse directory paths and return list of directories
     return buffer
-
-
-def set_sync_directories(directories, verbose=False):
-    """
-    Takes list of directories and stores it in the sync directories config file
-
-    directories: list(string)
-        list of strings containing the names of the directories
-    verbose: boolean
-
-    """
-    # Find and read sync_directories_file
-    folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get directory of sync_directories_file
-    file_name = "sync_directories_file.txt"  # should store this value somewhere else eventually, what if this changes?
-    # file_name = "sync_directories_file.json"
-    file_path = os.path.join(folder_path, file_name)
-
-    with open(file_path, 'w') as file_to_write:
-        json.dump(directories, file_to_write)
-        file_to_write.close()
 
 
 def recursive_get_directory(directory):
@@ -145,32 +124,45 @@ def recursive_get_directory(directory):
     return file_structure, last_updates
 
 
-def recursive_print_directory(file_structure, offset=0):
+def recursive_print_list(files_list, offset=0):
     """
-    Prints out directory and files and directories if file_structure matches format given in recursive_get_directory
-    :param file_structure:
-    :param offset:
-    :return file_structure:
+    Prints out list that matches format of file_structure.files
+
+    inputs
+        files_list: list
+            list that matches the format of files
+
+        offset: int
+            variable used to track the depth of the directory and directory vs. file list
     """
-    for entry in file_structure:
-        if type(entry) == str:
-            print(offset * " " + entry)
+    for entry in files_list:
+        if type(entry) == list:
+            if offset % 2 == 1:  # Only works because offset is odd
+                print(offset * " " + str(entry[0]))
+                recursive_print_list(entry[1], offset + 3)
+            else:
+                recursive_print_list(entry, offset + 3)
         else:
-            recursive_print_directory(entry, offset + 3)
-
-
-def recursive_print_updates(last_updates, offset=0):
-    """
-    Prints out directory and files and directories if file_structure matches format given in recursive_get_directory
-    :param last_updates:
-    :param offset:
-    :return file_structure:
-    """
-    for entry in last_updates:
-        if type(entry) == float:
             print(offset * " " + str(entry))
-        else:
-            recursive_print_updates(entry, offset + 3)
+
+
+#
+# def recursive_print_update(last_updates, offset=0):
+#     """
+#     Prints out directory and files and directories if file_structure matches format given in recursive_get_directory
+#     :param last_updates:
+#     :param offset:
+#     :return file_structure:
+#     """
+#     for entry in last_updates:
+#         if type(entry) == float:
+#             print(offset * " " + str(entry))
+#         else:
+#             if offset % 2 == 1:
+#                 print(offset * " " + str(entry[0]))
+#                 recursive_print_update(entry[1], offset + 3)
+#             else:
+#                 recursive_print_update(entry, offset + 3)
 
 
 class FileStructure:
@@ -184,16 +176,17 @@ class FileStructure:
         files: list
             data structure that contains the structure of the FileStructure, structure described in
             recursive_get_directory
-        to_update: list
+        last_update: list
             same structure as files, contains entries to update
-
+        updated: list
+            same structure as files, contains "True" if file or folder has been updated, false otherwise
     """
 
     def __init__(self, directory_path, verbose=False):
         self.directory_path = directory_path
         self.files = list()
-        self.last_updates = list()
-        self.to_update = list()
+        self.last_update = list()
+        self.updated = list()
         self.verbose = verbose
         pass
 
@@ -206,7 +199,7 @@ class FileStructure:
             and list containing all entries in directory) in the directory. folders contained in files, contain names of
             all files and folders in those folders, pattern continues until a directory with no folders is found.
         """
-        self.files, self.last_updates = recursive_get_directory(self.directory_path)
+        self.files, self.last_update = recursive_get_directory(self.directory_path)
         return self.files
 
     def print_file_structure(self, offset=0):
@@ -215,44 +208,47 @@ class FileStructure:
         :param offset:
         :return:
         """
-        recursive_print_directory(self.files, offset)
+        # print(self.files)
+        recursive_print_list(self.files, offset)
 
-    def print_last_updates(self, offset=0):
+    def print_last_update(self, offset=0):
         """
 
         :param offset:
         :return:
         """
-        recursive_print_updates(self.last_updates, offset)
+        # print(self.last_update)
+        recursive_print_list(self.last_update, offset)
 
     def check_file_structure(self):
         """
-        TODO Req #14: The program shall check if the most recently updated time matches last sync time (if it exists).
+        TODO Req #14: The program shall check if last_update is greater than last_sync_time (if it exists).
         TODO Req #12: The program shall determine the files and folders that have been most recently updated.
 
         :return:
         """
-        # Check if last_updates_file exists, if not indicate first_sync
-        first_sync = True
-        last_update_file = "last_update_file.json"
-        if os.path.exists(last_update_file):
-            first_sync = False
+        # Check if last_updates_file exists
+        # Parse last_updated_file and retrieve last_sync_time for each entry in files
+        folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
+        last_sync_file = "last_sync_file.json"
+        last_sync_path = os.path.join(folder_path, last_sync_file)
+        last_sync_files = []
+        last_sync_time = 0
+        if os.path.exists(last_sync_path):
+            last_sync_data = []
+            with open(last_sync_path, "r") as json_file:
+                last_sync_data = json.load(json_file)
+                if self.verbose:
+                    print("Read last_sync_file.json")
+                json_file.close()
+            last_sync_files = last_sync_data[0]
+            last_sync_time = last_sync_data[1]
         else:
             if self.verbose:
                 print("First Sync")
 
-        # TODO: Parse last_updated_file and retrieve last updated time for each entry in files (last_sync)
-        last_sync_file_data = []
-        if not first_sync:
-            with open(last_update_file, "r") as json_file_data:
-                last_sync_file_data = json.load(json_file_data)
-                if self.verbose:
-                    print("Read last_sync_file.json")
+        # TODO: Compare last_sync_time to self.last_update and store differences in self.updated
 
-        # TODO: Check actual last update times for each entry in files (last_update)
-
-
-        # TODO: Compare last_sync to last_update and store differences in self.to_update
 
 
     def update_file_structure(self):
@@ -263,3 +259,4 @@ class FileStructure:
         :return:
         """
         pass
+

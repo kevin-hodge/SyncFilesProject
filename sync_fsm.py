@@ -110,9 +110,6 @@ class StateInfo:
     def get_directory_prompt(self, invalid_dir):
         return self.sync_gui.directory_prompt(invalid_dir)
 
-    def set_sync_directories(self, directories):
-        set_sync_directories(directories, verbose=self.verbose)
-
 
 def initial_state_function(state_info):
     """
@@ -122,7 +119,6 @@ def initial_state_function(state_info):
 
     # Retrieve directories to sync and initialize FileStructures
     try:
-        # TODO Test what happens if "sync_directories_file.txt" is blank
         sync_directories = get_sync_directories(state_info.sync_gui, verbose=state_info.verbose)
     except Exception as err:
         return state_info.error_handle(err, "get_sync_directories")
@@ -152,7 +148,7 @@ def check_state_function(state_info):
                 print("Directory " + str(state_info.directories.index(directory) + 1) + ":")
                 directory.print_file_structure()
                 print("Last Updates:")
-                directory.print_last_updates()
+                directory.print_last_update()
     except Exception as err:
         return state_info.error_handle(err, "get_file_structure")
 

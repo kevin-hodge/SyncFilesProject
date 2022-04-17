@@ -20,9 +20,9 @@ Difficult Cases:
 
 Requirements (LR: 17):
     - Req #1: The program shall determine the working directory.
-    - TODO Req #15: The program shall store and get sync directories from a config file.
-    - TODO Req #16: The program shall ask user for directories if config file does not contain sync directories.
-    - TODO Req #17: The program shall update config file with directory provided by user (if it exists).
+    - Req #15: The program shall store and get sync directories from a config file.
+    - Req #16: The program shall ask user for directories if config file does not contain sync directories.
+    - Req #17: The program shall update config file with directory provided by user (if it exists).
     - Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
     - Req #3: The program shall open and read sync_directories_file.txt.
     - Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
@@ -32,7 +32,7 @@ Requirements (LR: 17):
     - Req #5: Deleted
     - Req #6: Deleted
     - TODO Req #11: After sync, the program shall store the synchronized file_structure in a config file.
-    - TODO Req #7: The program shall notify the user if either directory cannot be found.
+    - Req #7: The program shall notify the user if either directory cannot be found.
     - Req #8: The program shall be implemented as a finite state machine.
     - Req #9: The program shall be version controlled in a github repository.
     - Req #10: File structures shall be stored in a class "FileStructure".
