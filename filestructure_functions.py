@@ -126,22 +126,23 @@ def recursive_get_directory(directory):
 
 def recursive_print_list(files_list, offset=0):
     """
-    Prints out list that matches format of file_structure.files
+    Prints out list that matches format of FileStructure.files
 
     inputs
         files_list: list
-            list that matches the format of files
+            list that matches the format of FileStructure.files
 
         offset: int
             variable used to track the depth of the directory and directory vs. file list
     """
+    indent = 3  # indent made for each directory level
     for entry in files_list:
         if type(entry) == list:
             if offset % 2 == 1:  # Only works because offset is odd
-                print(offset * " " + str(entry[0]))
-                recursive_print_list(entry[1], offset + 3)
+                print(indent*offset * " " + str(entry[0]))
+                recursive_print_list(entry[1], offset + 1)
             else:
-                recursive_print_list(entry, offset + 3)
+                recursive_print_list(entry, offset + 1)
         else:
             print(offset * " " + str(entry))
 
@@ -177,9 +178,11 @@ class FileStructure:
             data structure that contains the structure of the FileStructure, structure described in
             recursive_get_directory
         last_update: list
-            same structure as files, contains entries to update
+            same structure as files, contains last modification times of each file in self.files
         updated: list
-            same structure as files, contains "True" if file or folder has been updated, false otherwise
+            same structure as files, each entry corresponds to an entry in self.files
+            contains True if file or folder has last_update time greater than last_sync_time or False otherwise (assumes
+            no change to the file or folder)
     """
 
     def __init__(self, directory_path, verbose=False):
@@ -204,28 +207,24 @@ class FileStructure:
 
     def print_file_structure(self, offset=0):
         """
-
-        :param offset:
-        :return:
+        Prints self.files
         """
         # print(self.files)
         recursive_print_list(self.files, offset)
 
     def print_last_update(self, offset=0):
         """
-
-        :param offset:
-        :return:
+        Prints self.last_update
         """
         # print(self.last_update)
         recursive_print_list(self.last_update, offset)
 
     def check_file_structure(self):
         """
+        TODO Req #18: The program shall load last_sync_files and last_sync_time from config file.
         TODO Req #14: The program shall check if last_update is greater than last_sync_time (if it exists).
-        TODO Req #12: The program shall determine the files and folders that have been most recently updated.
-
-        :return:
+        TODO Req #12: The program shall determine the files and folders that have been updated.
+        Checks for updates within the self.files since the last sync.
         """
         # Check if last_updates_file exists
         # Parse last_updated_file and retrieve last_sync_time for each entry in files
@@ -247,14 +246,39 @@ class FileStructure:
             if self.verbose:
                 print("First Sync")
 
-        # TODO: Compare last_sync_time to self.last_update and store differences in self.updated
+        # TODO: If entry exists in self.files but not in last_sync_files, set entry in self.updated to True (updated)
+        # TODO: If exists in both last_sync_files and self.files and the entry is a file, compare last_sync_time to
+        #  self.last_update, if greater, set entry in self.updated to True (updated)
+        # TODO: All other entries in self.updated should be False (no change, default)
+        self.updated = []  # empty updated of any previous information
+        return self.fill_updated(last_sync_files, last_sync_time)
 
+    def fill_updated(self, file_list, last_sync_time, depth=0, change_found=False):
+        """
+        TODO: Need to track the index of the entry to figure out corresponding entries in other lists
+        inputs
+            file_list:
 
+            last_sync_time: float
+                time in seconds of last update
+            depth: int
+                tracks if the entry is a file or folder and depth of entry
+            change_found: boolean
+                initialize output value and allows value to be passed through recursive calls
+
+        returns
+            change_found: boolean
+                indicates that at least one file or folder has been updated
+        """
+        # for entry in file_list:
+        #     if depth % 2 == 1:
+        #
+        #     else:
+
+        return change_found
 
     def update_file_structure(self):
         """
-        # TODO Req #5: The program shall determine the Most_Recently_Updated_Directory and the To_Sync_Directory.
-        # TODO Req #6: The program shall copy all files in the Most_Recently_Updated_Directory to the To_Sync_Directory.
 
         :return:
         """

@@ -18,7 +18,7 @@ Difficult Cases:
         - Yes
 
 
-Requirements (LR: 17):
+Requirements (LR: 18):
     - Req #1: The program shall determine the working directory.
     - Req #15: The program shall store and get sync directories from a config file.
     - Req #16: The program shall ask user for directories if config file does not contain sync directories.
@@ -26,12 +26,14 @@ Requirements (LR: 17):
     - Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
     - Req #3: The program shall open and read sync_directories_file.txt.
     - Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
-    - Req #14: The program shall check if the most recently updated time matches last sync time (if it exists).
-    - Req #12: The program shall determine the files and folders that have been most recently updated.
-    - TODO Req #13: The program shall copy the most recently updated files and folders to the other directory.
+    - Req #18: The program shall load last_sync_files and last_sync_time from config file.
+    - Req #14: The program shall check if last_update is greater than last_sync_time (if it exists).
+    - Req #12: The program shall determine the files and folders that have been updated.
+    - TODO Req #13: The program shall copy updated files and folders to the other directory.
     - Req #5: Deleted
     - Req #6: Deleted
-    - TODO Req #11: After sync, the program shall store the synchronized file_structure in a config file.
+    - TODO Req #11: After sync, the program shall store the synchronized FileStructure.files and last sync time in a
+        config file.
     - Req #7: The program shall notify the user if either directory cannot be found.
     - Req #8: The program shall be implemented as a finite state machine.
     - Req #9: The program shall be version controlled in a github repository.
