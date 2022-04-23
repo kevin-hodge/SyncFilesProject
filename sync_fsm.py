@@ -4,10 +4,17 @@ from sync_gui import *
 
 
 class StateMachine:
-    """
-    Adapted from: https://python-course.eu/applications-python/finite-state-machine.php
-    Req #8: The program shall be implemented as a finite state machine.
+    """Implementation of a finite state machine.
 
+    Adapted from: https://python-course.eu/applications-python/finite-state-machine.php
+
+    Note:
+        Req #8: The program shall be implemented as a finite state machine.
+
+    Attributes:
+        state_functions (dict): Dictionary of functions representing the states of the state machine.
+        initial_state (str): Lowercase name of the initial state.
+        final_states (list): Contains the names of all final states.
     """
 
     def __init__(self):
@@ -26,7 +33,7 @@ class StateMachine:
     def run(self, state_info):
         try:
             state_function = self.state_functions[self.initial_state]
-        except:
+        except Exception:
             raise ValueError("Must set initial_state")
         if not self.final_states:
             raise ValueError("Must set at least one final_states")
@@ -96,7 +103,7 @@ class StateInfo:
             self.curr_state = next_state
         return next_state, self
 
-    def error_handle(self, err, err_id, ):
+    def error_handle(self, err, err_id):
         self.err = err
         self.err_id = err_id
         return self.get_return_values("error")
@@ -145,7 +152,7 @@ def check_state_function(state_info):
             directory.get_file_structure()
             directory.check_file_structure()
             if state_info.verbose:
-                print("Directory " + str(state_info.directories.index(directory) + 1) + ":")
+                print(f"Directory {str(state_info.directories.index(directory) + 1)}:")
                 directory.print_file_structure()
                 print("Last Updates:")
                 directory.print_last_update()
@@ -203,7 +210,7 @@ def error_state_function(state_info):
     if state_info.err_id == "get_sync_directories":
         if state_info.verbose:
             print("Couldn't read sync directories config file")
-            print("Error Message: " + str(state_info.err))  # Prints error message
+            print(f"Error Message: {str(state_info.err)}")  # Prints error message
     elif state_info.err_id == "get_file_structure":
         for directory in state_info.directories:
             if not os.path.exists(directory.directory_path):
@@ -211,12 +218,12 @@ def error_state_function(state_info):
                 return state_info.get_return_values(next_state)
         if state_info.verbose:
             print("Couldn't get 1 or more directory file structures")
-            print("Error Message: " + str(state_info.err))  # Prints error message
+            print(f"Error Message: {str(state_info.err)}")  # Prints error message
     else:
         if state_info.verbose:
             print("Unknown error occurred")
-            print("Previous State: " + state_info.prev_state)
-            print("Error Message: " + str(state_info.err))
+            print(f"Previous State: {state_info.prev_state}")
+            print(f"Error Message: {str(state_info.err)}")
     return state_info.get_return_values(next_state)
 
 

@@ -140,14 +140,16 @@ class SyncGUI:
         app.MainLoop()
         return app.response
 
-    def directory_prompt(self, valid_dir=[], min_dir=2):
+    def directory_prompt(self, valid_dir=None, min_dir=2):
         """
         Asks user to enter a valid directory
         invalid_dir: string
             string containing
         """
-        message = "Only " + str(len(valid_dir)) + " valid, unique directories. Must have " + str(min_dir) + ".\n"
-        message = message + "Please enter directory to sync below."
+        if valid_dir is None:
+            valid_dir = []
+        message = f"""Only {str(len(valid_dir))} valid, unique directories. Must have {str(min_dir)}.
+        Please enter directory to sync below."""
         app = EntryPromptApp(message=message)
         app.MainLoop()
         return app.get_response()

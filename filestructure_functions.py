@@ -80,7 +80,7 @@ def get_sync_directories(gui, verbose=False):
                     unique = False
             if os.path.exists(new_dir) and unique:
                 buffer.append(new_dir)
-                print("Directory added to sync directories config file: " + str(buffer[-1]))
+                print(f"Directory added to sync directories config file: {str(buffer[-1])}")
                 break
         write_config = True
 
@@ -88,7 +88,6 @@ def get_sync_directories(gui, verbose=False):
         with open(file_path, "w") as file_to_write:
             json.dump(buffer, file_to_write)
             file_to_write.close()
-        # raise ValueError("Couldn't find sync directories config file")
 
     # Parse directory paths and return list of directories
     return buffer
@@ -103,11 +102,11 @@ def recursive_get_directory(directory):
         list of one string and one list that contains entries in the directory, directories in the directory are
         represented as lists that also contain a string with the name of directory and another list with entries in that
         directory, pattern continues until no directories are found
-        ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", ["sub_sub_dir_name", [...]]], "file3.txt"]]
+        ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", "file3.txt"]], "file4.txt"]]
+        ex. {"dir_name": ["file1.txt", {"sub_dir_name": ["file2.txt", "file3.txt"]}, "file4.txt"]}
     """
     assert type(directory) == str
 
-    # file_structure = [directory.split("/")[-1], []]  # This only works on macOS
     file_structure = [os.path.split(directory)[1], []]  # This should work on most OSes
     last_updates = [os.stat(directory).st_mtime, []]
     for entry in os.listdir(directory):
@@ -135,35 +134,16 @@ def recursive_print_list(files_list, offset=0):
         offset: int
             variable used to track the depth of the directory and directory vs. file list
     """
-    indent = 3  # indent made for each directory level
+    indent = 3 * offset * ' '  # indent made for each directory level
     for entry in files_list:
-        if type(entry) == list:
-            if offset % 2 == 1:  # Only works because offset is odd
-                print(indent*offset * " " + str(entry[0]))
+        if isinstance(entry, list):
+            if offset % 2 == 1:  # directory list
+                print(f"{indent}{entry[0]}")
                 recursive_print_list(entry[1], offset + 1)
-            else:
+            else:  # file list
                 recursive_print_list(entry, offset + 1)
         else:
-            print(offset * " " + str(entry))
-
-
-#
-# def recursive_print_update(last_updates, offset=0):
-#     """
-#     Prints out directory and files and directories if file_structure matches format given in recursive_get_directory
-#     :param last_updates:
-#     :param offset:
-#     :return file_structure:
-#     """
-#     for entry in last_updates:
-#         if type(entry) == float:
-#             print(offset * " " + str(entry))
-#         else:
-#             if offset % 2 == 1:
-#                 print(offset * " " + str(entry[0]))
-#                 recursive_print_update(entry[1], offset + 3)
-#             else:
-#                 recursive_print_update(entry, offset + 3)
+            print(f"{indent}{entry}")
 
 
 class FileStructure:
@@ -171,7 +151,8 @@ class FileStructure:
     Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
     Req #10: File structures shall be stored in a class "FileStructure".
     class that contains the file structure of a directory.
-    FileStructure Variables
+
+    :variables:
         directory_path: string
             string contains the path to the directory that contains the FileStructure
         files: list
@@ -198,7 +179,7 @@ class FileStructure:
         Reads all files and folders below the directory
         :return:
         self.files: list
-            self.files contains paths to all files (strings) and all folders (list, with two elements, name of folder '
+            self.files contains paths to all files (strings) and all folders (list, with two elements, name of folder
             and list containing all entries in directory) in the directory. folders contained in files, contain names of
             all files and folders in those folders, pattern continues until a directory with no folders is found.
         """
@@ -215,6 +196,8 @@ class FileStructure:
     def print_last_update(self, offset=0):
         """
         Prints self.last_update
+        :param:
+
         """
         # print(self.last_update)
         recursive_print_list(self.last_update, offset)
@@ -253,9 +236,10 @@ class FileStructure:
         self.updated = []  # empty updated of any previous information
         return self.fill_updated(last_sync_files, last_sync_time)
 
-    def fill_updated(self, file_list, last_sync_time, depth=0, change_found=False):
+    def fill_updated(self, file_list, last_sync_time, depth=0, index=None, change_found=False):
         """
         TODO: Need to track the index of the entry to figure out corresponding entries in other lists
+        Fills self.updated
         inputs
             file_list:
 
@@ -270,17 +254,18 @@ class FileStructure:
             change_found: boolean
                 indicates that at least one file or folder has been updated
         """
+        # if index is None:
+        #     index = [0]
         # for entry in file_list:
-        #     if depth % 2 == 1:
+        #     if depth % 2 == 1: # entry is a file
         #
-        #     else:
-
-        return change_found
+        #     else: # entry is a directory
+        #
+        # return change_found
 
     def update_file_structure(self):
         """
 
-        :return:
         """
         pass
 
