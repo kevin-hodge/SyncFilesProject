@@ -40,7 +40,7 @@ def fsm_sleep(seconds):
     time.sleep(seconds)
 
 
-def get_sync_directories(gui=None, verbose=False):
+def get_sync_directories(gui, verbose=False):
     """Gets directories to be synchronized from config file and/or from user.
 
     Requirements:
@@ -68,7 +68,7 @@ def get_sync_directories(gui=None, verbose=False):
         verbose (bool): Indicates if messages will be printed for debugging.
 
     Returns:
-        buffer (list): File directories found in "sync_directories_file.json".
+        buffer (list): Existing, unique directories found in "sync_directories_file.json".
 
     """
     # Find and read sync_directories_file

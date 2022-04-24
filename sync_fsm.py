@@ -12,7 +12,7 @@ class StateMachine:
 
     Adapted from: https://python-course.eu/applications-python/finite-state-machine.php
 
-    Note:
+    Requirements:
         - Req #8: The program shall be implemented as a finite state machine.
 
     Attributes:
