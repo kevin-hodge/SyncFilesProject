@@ -1,4 +1,8 @@
-# Define Sync FSM State Behavior
+"""Defines StateMachine and Sync Finite State Machine State Behavior.
+
+
+Author: Kevin Hodge
+"""
 from filestructure_functions import *
 from sync_gui import *
 
@@ -15,6 +19,7 @@ class StateMachine:
         state_functions (dict): Dictionary of functions representing the states of the state machine.
         initial_state (str): Lowercase name of the initial state.
         final_states (list): Contains the names of all final states.
+
     """
 
     def __init__(self):
@@ -23,6 +28,15 @@ class StateMachine:
         self.final_states = []
 
     def new_state(self, state_name, state_function, final_state=0, initial_state=0):
+        """Adds new state to state_functions.
+
+        Args:
+            state_name (str): Name of the state being added to state_functions.
+            state_function (function): Function being added to state_functions.
+            final_state (int): Indicates new state is a final state if set to anything other than 0.
+            initial_state (int): Indicates new state is the initial state if set to anything other than 0.
+
+        """
         state_name = state_name.lower()
         self.state_functions[state_name] = state_function
         if final_state != 0:
@@ -31,6 +45,12 @@ class StateMachine:
             self.initial_state = state_name
 
     def run(self, state_info):
+        """Runs the StateMachine if one initial state and at least one final state have been specified.
+
+        Args:
+            state_info (class): Contains information about the state machine carried from state to state.
+
+        """
         try:
             state_function = self.state_functions[self.initial_state]
         except Exception:
@@ -49,38 +69,20 @@ class StateMachine:
 
 
 class StateInfo:
-    """
-    Carries program information from state to state.
-    StateInfo Variables
-        curr_state: string
-            stores name of current state, initialize to initial state
+    """Carries program information from state to state.
 
-        directories: list(FileStructure)
-            stores the file
+    Attributes:
+        curr_state (str): Stores name of current state, initialize to initial state.
+        directories (list): Stores FileStructures for each sync directory.
+        err (Exception): Catches any exceptions, passes message to handler in error state.
+        err_id (str): Gives exception identifier to help track down bugs.
+        exit_request (bool): Indicates exit has been requested.
+        prev_state (str): Stores name of previous state.
+        sync_gui (SyncGUI): Reference to graphical user interface of the program.
+        sync_required (bool): Indicates that directories need to be synchronized.
+        to_update (list): Same structure as directories, but has 1 if file/folder needs to be updated and 0 otherwise.
+        verbose (bool): Indicates if messages will be printed for debugging.
 
-        err: class Exception
-            catches any exceptions, passes message to handler in error state
-
-        err_id: string
-            gives exception identifier to help track down bugs
-
-        exit_request: boolean
-            unused
-
-        prev_state: string
-            stores name of previous state
-
-        sync_gui: SyncGUI
-            handles the graphical user interface of the program
-
-        sync_required: boolean
-            True if directories need to be sync'd
-
-        to_update: list
-            same structure as directories, but has 1 if file/folder needs to be updated and 0 otherwise
-
-        verbose: boolean
-            indicates if messages will be printed for debugging
     """
 
     def __init__(self, verbose=0):
@@ -96,14 +98,39 @@ class StateInfo:
         self.verbose = verbose
 
     def get_return_values(self, next_state):
+        """Handles checks and updates prior to each state transition.
+
+        Args:
+            next_state (str): Name of the requested next state.
+
+        Returns:
+            self.curr_state (str): Name of the actual next state.
+            self: Carries program information from state to state.
+
+        """
+        assert isinstance(next_state, str)
+
         self.prev_state = self.curr_state
         if self.exit_request:
             self.curr_state = "final"
         else:
             self.curr_state = next_state
-        return next_state, self
+        return self.curr_state, self
 
     def error_handle(self, err, err_id):
+        """Handles errors caught from try/except block.
+
+        Args:
+            err (Exception): Exception being handled.
+            err_id (str): Identifier used to track down errors.
+
+        Returns:
+            Return values from get_return_values().
+
+        """
+        assert isinstance(err, Exception)
+        assert isinstance(err_id, str)
+
         self.err = err
         self.err_id = err_id
         return self.get_return_values("error")
@@ -119,8 +146,15 @@ class StateInfo:
 
 
 def initial_state_function(state_info):
-    """
-    Initializes state_info and retrieves directories to synchronize.
+    """Retrieves directories to synchronize and initializes FileStructures.
+
+    Args:
+        state_info (StateInfo): Carries program information from state to state.
+
+    Returns:
+        state_info.curr_state (str): Name of the actual next state.
+        state_info: Carries program information from state to state.
+
     """
     print("Initializing...")
 
@@ -140,13 +174,22 @@ def initial_state_function(state_info):
 
 
 def check_state_function(state_info):
+    """Retrieves FileStructure information from directories and determines if sync is necessary.
+
+    Args:
+        state_info (StateInfo): Carries program information from state to state.
+
+    Returns:
+        state_info.curr_state (str): Name of the actual next state.
+        state_info: Carries program information from state to state.
+
     """
-    Retrieves FileStructure information from directories and determines if sync is necessary.
-    """
-    if state_info.verbose:
-        print("Checking...")
     assert len(state_info.directories) > 0
 
+    if state_info.verbose:
+        print("Checking...")
+
+    #
     try:
         for directory in state_info.directories:
             directory.get_file_structure()
@@ -161,18 +204,23 @@ def check_state_function(state_info):
 
     # Determine next state
     state_info.check_exit_prompt()
-    state_info.sync_required = True
+    state_info.sync_required = True  # TODO: Make this dependent on checking if the FileStructures need to be updated.
     next_state = "wait"  # effectively the else condition of the if statement
-    if state_info.exit_request:
-        next_state = "final"
-    elif state_info.sync_required:
+    if state_info.sync_required:
         next_state = "sync"
     return state_info.get_return_values(next_state)
 
 
 def wait_state_function(state_info):
-    """
-    Waits before checking directories again
+    """Waits before checking directories again.
+
+    Args:
+        state_info (StateInfo): Carries program information from state to state.
+
+    Returns:
+        state_info.curr_state (str): Name of the actual next state.
+        state_info: Carries program information from state to state.
+
     """
     if state_info.verbose:
         print("Waiting...")
@@ -181,14 +229,19 @@ def wait_state_function(state_info):
     time.sleep(10)
 
     next_state = "check"
-    if state_info.exit_request:
-        next_state = "final"
     return state_info.get_return_values(next_state)
 
 
 def sync_state_function(state_info):
-    """
-    Synchronizes file directories.
+    """Synchronizes directories.
+
+    Args:
+        state_info (StateInfo): Carries program information from state to state.
+
+    Returns:
+        state_info.curr_state (str): Name of the actual next state.
+        state_info: Carries program information from state to state.
+
     """
     print("Syncing...")
     assert state_info.sync_required
@@ -196,15 +249,22 @@ def sync_state_function(state_info):
 
     # Probably do some kind of check here
     next_state = "wait"
-    # next_state = "final"
     return state_info.get_return_values(next_state)
 
 
 def error_state_function(state_info):
-    """
-    Req #7: The program shall notify the user if either directory cannot be found.
-    TODO Needs to notify user through the GUI
-    Handles errors that cause transitions from other states.
+    """Handles errors that cause transitions from other states.
+    Requirements:
+        Req #7: The program shall notify the user if either directory cannot be found.
+        TODO Needs to notify user through the GUI
+
+    Args:
+        state_info (StateInfo): Carries program information from state to state.
+
+    Returns:
+        state_info.curr_state (str): Name of the actual next state.
+        state_info: Carries program information from state to state.
+
     """
     next_state = "final"  # default behavior when error is received is to exit
     if state_info.err_id == "get_sync_directories":
@@ -228,5 +288,14 @@ def error_state_function(state_info):
 
 
 def final_state_function(state_info):
-    # Finish Up
+    """Performs final tasks prior to exiting.
+
+    Args:
+        state_info (StateInfo): Carries program information from state to state.
+
+    Returns:
+        state_info.curr_state (str): Name of the actual next state.
+        state_info: Carries program information from state to state.
+
+    """
     print("Exiting...")

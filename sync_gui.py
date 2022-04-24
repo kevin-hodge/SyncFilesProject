@@ -1,5 +1,7 @@
-"""
-Sync GUI
+"""Handles the Graphical User Interface for the program.
+
+
+Author: Kevin Hodge
 """
 
 import wx
@@ -10,7 +12,6 @@ class YesNoPromptApp(wx.App):
     """
 
     """
-
     def __init__(self, message, button_text):
         self.message = message
         self.button_text = button_text

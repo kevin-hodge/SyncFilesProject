@@ -1,6 +1,4 @@
-"""
-SyncFilesProject
-----------------
+"""Sync Files Project
 Ground Rules:
 This is a simple project that will sync a file structure located in two locations on a computer (mac or windows).
 The two locations will be defined in a text file (sync_directories_file.txt) in the program's directory.
@@ -23,8 +21,8 @@ Requirements (LR: 18):
     - Req #15: The program shall store and get sync directories from a config file.
     - Req #16: The program shall ask user for directories if config file does not contain sync directories.
     - Req #17: The program shall update config file with directory provided by user (if it exists).
-    - Req #2: The program shall find sync_directories_file.txt (text file containing the sync directories).
-    - Req #3: The program shall open and read sync_directories_file.txt.
+    - Req #2: The program shall find sync_directories_file.json (json file containing the sync directories).
+    - Req #3: The program shall open and read sync_directories_file.json.
     - Req #4: The program shall retrieve the names and file structure of all files and folders in both directories.
     - Req #18: The program shall load last_sync_files and last_sync_time from config file.
     - Req #14: The program shall check if last_update is greater than last_sync_time (if it exists).
@@ -38,6 +36,8 @@ Requirements (LR: 18):
     - Req #8: The program shall be implemented as a finite state machine.
     - Req #9: The program shall be version controlled in a github repository.
     - Req #10: File structures shall be stored in a class "FileStructure".
+
+Author: Kevin Hodge
 """
 from sync_fsm import *
 
