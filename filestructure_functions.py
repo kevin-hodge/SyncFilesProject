@@ -40,7 +40,7 @@ def fsm_sleep(seconds):
     time.sleep(seconds)
 
 
-def get_sync_directories(gui, verbose=False):
+def get_sync_directories(gui=None, verbose=False):
     """Gets directories to be synchronized from config file and/or from user.
 
     Requirements:
@@ -58,13 +58,14 @@ def get_sync_directories(gui, verbose=False):
         - Sync Directory(s) don't exist
         - Not enough sync directories (at least 2)
         - Sync Directories are not unique
+        - Sync Directories are not string instances
 
     Note:
         Tested only on M1 Mac and Windows 10.
 
     Args:
         gui (SyncGUI): Graphical User Interface for the program.
-        verbose (bool):
+        verbose (bool): Indicates if messages will be printed for debugging.
 
     Returns:
         buffer (list): File directories found in "sync_directories_file.json".
@@ -90,7 +91,7 @@ def get_sync_directories(gui, verbose=False):
 
     # Removes invalid directories from buffer
     for entry in buffer:
-        if not os.path.exists(entry):
+        if not os.path.exists(entry) or not isinstance(entry, str):
             buffer.remove(entry)
 
     # Asks user to input enough valid, unique directories to meet the min_directories number
@@ -98,12 +99,12 @@ def get_sync_directories(gui, verbose=False):
         while True:
             new_dir = gui.directory_prompt(buffer)
             unique = True
-            for i in range(len(buffer)):
-                if new_dir == buffer[i]:
-                    unique = False
+            if new_dir in buffer:
+                unique = False
             if os.path.exists(new_dir) and unique:
                 buffer.append(new_dir)
-                print(f"Directory added to sync directories config file: {str(buffer[-1])}")
+                if verbose:
+                    print(f"Directory added to sync directories config file: {str(buffer[-1])}")
                 break
         write_config = True
 
@@ -131,7 +132,7 @@ def recursive_get_directory(directory):
         ex. {"dir_name": ["file1.txt", {"sub_dir_name": ["file2.txt", "file3.txt"]}, "file4.txt"]}
 
     """
-    assert type(directory) == str
+    assert isinstance(directory, str)
 
     file_structure = [os.path.split(directory)[1], []]  # This should work on most OSes
     last_updates = [os.stat(directory).st_mtime, []]
@@ -243,7 +244,7 @@ class FileStructure:
 
         """
         # Check if last_updates_file exists
-        # Parse last_updated_file and retrieve last_sync_time for each entry in files
+        # Retrieve last_sync_files and last_sync_time for each entry in files
         folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
         last_sync_file = "last_sync_file.json"
         last_sync_path = os.path.join(folder_path, last_sync_file)
@@ -269,7 +270,7 @@ class FileStructure:
         """Fills self.updated.
 
         TODOs:
-            TODO: Need to track the index of the entry to figure out corresponding entries in other lists
+            TODO: Need to track the index of the entry to figure out corresponding entries in other lists.
 
         Arguments:
             last_sync_files (list): Files list from last sync config file.
@@ -291,8 +292,5 @@ class FileStructure:
         # return change_found
 
     def update_file_structure(self):
-        """
-
-        """
         pass
 

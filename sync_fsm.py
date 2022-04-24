@@ -13,7 +13,7 @@ class StateMachine:
     Adapted from: https://python-course.eu/applications-python/finite-state-machine.php
 
     Note:
-        Req #8: The program shall be implemented as a finite state machine.
+        - Req #8: The program shall be implemented as a finite state machine.
 
     Attributes:
         state_functions (dict): Dictionary of functions representing the states of the state machine.

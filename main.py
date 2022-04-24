@@ -1,20 +1,21 @@
-"""Sync Files Project
-Ground Rules:
-This is a simple project that will sync a file structure located in two locations on a computer (mac or windows).
-The two locations will be defined in a text file (sync_directories_file.txt) in the program's directory.
-    - Might change to JSON config file and add prompt to enter file location if files cannot be found.
-The file sync will occur when a difference is found between the file_structures.
-    - Should program just start when the computer starts and wait for a time of day to run?
-    - Can continuously running program check for edits to one or both file_structures?
-    - Possible to check which files have been most recently edited? Yes
-        - If so, could just sync the files that have been edited and leave the rest (if last dates of edit/sync match).
-Difficult Cases:
-    - How to determine if a folder or file name has been changed vs. a folder has been deleted and a new folder added?
-        - Does it actually matter? Just delete the old file or folder and create a new folder or file copied from the
-        most recently updated directory
-    - How to handle if a file is deleted in one location, should program delete it in the other location?
-        - Yes
+"""Sync Files Project Main
 
+Ground Rules:
+    1. This project will sync a file structure located in two locations on a computer (mac or windows).
+    2. The two locations will be defined in a text file (sync_directories_file.txt) in the program's directory.
+        - Might change to JSON config file and add prompt to enter file location if files cannot be found.
+    3. The file sync will occur when a difference is found between the file_structures.
+        - The program should wait 10 seconds between either checking or syncing.
+        - The program should check for additions, removals, or updates to each file structure.
+        - The program should check for differences between the file structures.
+        - The program should copy all updated files from each directory to the other(s).
+
+Difficult Cases:
+    1. How to determine if a folder or file name has been changed vs. a folder has been deleted and a new folder added?
+        - Just delete the old file or folder and create a new folder or file copied from the
+            most recently updated directory
+    2. How to handle if a file is deleted in one location, should program delete it in the other location?
+        - Yes
 
 Requirements (LR: 18):
     - Req #1: The program shall determine the working directory.
