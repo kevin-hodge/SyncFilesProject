@@ -6,8 +6,8 @@ Author: Kevin Hodge
 import os.path
 import json
 import unittest
-from filestructure_functions import get_sync_directories
-import sync_gui
+from file_ops.filestructure_functions import get_sync_directories
+import gui.sync_gui as sync_gui
 from pynput.keyboard import Key, Controller
 import threading
 import time
@@ -65,6 +65,7 @@ class GetSyncDirectoriesTestCase(unittest.TestCase):
 
         # print("Waiting for keyboard_thread to finish.")
         keyboard_thread.join(timeout=5)
+        # test_thread.join(timeout=5)
 
         # Check that file contains correct information
         buffer = get_json_contents(sync_dir_path)
