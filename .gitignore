@@ -2,9 +2,6 @@
 /shelf/
 /workspace.xml
 
-# PyCharm
-.idea/
-
 # VS Code
 .vscode/
 
