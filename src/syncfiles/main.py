@@ -40,7 +40,7 @@ Requirements (LR: 18):
 
 Author: Kevin Hodge
 """
-from state_machine.sync_fsm import *
+from syncfiles.state_machine.sync_fsm import *
 
 if __name__ == '__main__':
     # Only For Debugging

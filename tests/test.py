@@ -6,8 +6,8 @@ Author: Kevin Hodge
 import os.path
 import json
 import unittest
-from file_ops.filestructure_functions import get_sync_directories
-import gui.sync_gui as sync_gui
+from syncfiles.file_ops.filestructure_functions import get_sync_directories
+import syncfiles.gui.sync_gui as sync_gui
 from pynput.keyboard import Key, Controller
 import threading
 import time

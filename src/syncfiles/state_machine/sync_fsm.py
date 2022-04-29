@@ -3,8 +3,8 @@
 
 Author: Kevin Hodge
 """
-from file_ops.filestructure_functions import *
-from gui.sync_gui import *
+from syncfiles.file_ops.filestructure_functions import *
+from syncfiles.gui.sync_gui import *
 
 
 class StateMachine:
