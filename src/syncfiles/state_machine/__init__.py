@@ -1,1 +1,1 @@
-"""Initialization file for state_machine folder."""
+"""Initialization file for state_machine directory."""

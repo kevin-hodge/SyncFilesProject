@@ -4,7 +4,7 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Set, Dict, Tuple, Optional, Callable, Iterator, Union, cast
+from typing import Any, List, Tuple, Optional, Callable, cast
 import os
 import time
 import functools
@@ -15,7 +15,7 @@ from syncfiles.gui.sync_gui import SyncGUI
 
 def sleep_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
     """Sleep decorator function that currently does nothing.
-    
+
     Args:
         func (function): Function to be decorated.
 
@@ -128,7 +128,7 @@ def recursive_get_directory(directory: str) -> Tuple[List[Any], List[Any]]:
 
     Returns:
         file_structure (list): list of one string and one list that contains entries in the directory, directories in
-            the directory are represented as lists that also contain a string with the name of directory and another 
+            the directory are represented as lists that also contain a string with the name of directory and another
             list with entries in that directory, pattern continues until no sub-directories are found.
 
         ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", "file3.txt"]], "file4.txt"]]
@@ -195,7 +195,7 @@ class FileStructure:
 
     def __init__(self, directory_path: str, verbose: bool = False) -> None:
         assert len(directory_path) > 0
-        
+
         self.directory_path: str = directory_path
         self.files: List[Any] = list()
         self.last_update: List[Any] = list()
@@ -273,8 +273,8 @@ class FileStructure:
         self.updated = []  # empty updated of any previous information
         return self.fill_updated(last_sync_files, last_sync_time)
 
-    def fill_updated(self, last_sync_files: List[Any], last_sync_time: float, depth: int = 0, 
-                     index: Optional[List[Any]]=None, change_found: bool = False) -> bool:
+    def fill_updated(self, last_sync_files: List[Any], last_sync_time: float, depth: int = 0,
+                     index: Optional[List[Any]] = None, change_found: bool = False) -> bool:
         """Fills self.updated.
 
         TODOs:
@@ -301,4 +301,3 @@ class FileStructure:
 
     def update_file_structure(self) -> None:
         pass
-

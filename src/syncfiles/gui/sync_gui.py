@@ -4,16 +4,16 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Set, Dict, Tuple, Optional, Callable, Iterator, Union, cast
+from typing import Any, List, Optional
 import wx
 
 
 class YesNoPromptPanel(wx.Panel):
     """Inherits from wx.Panel, displays message and buttons
-    
+
     Attributes:
         label (wx.StaticText): Message displayed to user.
-        buttons (list[wx.Button]): Buttons for user to click. 
+        buttons (list[wx.Button]): Buttons for user to click.
 
     """
     def __init__(self, parent: Any, message: str, button_text: List[str]) -> None:
@@ -23,7 +23,7 @@ class YesNoPromptPanel(wx.Panel):
             parent (Any): Identifies what the panel is contained within.
             message (str): Message displayed to user.
             button_text (list[str]): Contains messages displayed on each button.
-        
+
         """
         super().__init__(parent)
 
@@ -51,7 +51,7 @@ class YesNoPromptPanel(wx.Panel):
 
 class YesNoPromptFrame(wx.Frame):
     """Inherits from wx.Frame, frame draws window and contains panel.
-    
+
     Attributes:
         message_panel (YesNoPromptPanel): Panel on which the message and buttons are displayed.
 
@@ -66,12 +66,12 @@ class YesNoPromptFrame(wx.Frame):
 # noinspection PyAttributeOutsideInit
 class YesNoPromptApp(wx.App):
     """Inherits from wx.App, prompts user for yes/no response.
-    
+
     Attributes:
         message (str): Question posed to user.
         button_text (list[str]): Button responses available to user.
         response (str): Records response. Defaults to "Exit".
-    
+
     """
     def __init__(self, message: str, button_text: List[str]) -> None:
         self.message: str = message
@@ -80,8 +80,8 @@ class YesNoPromptApp(wx.App):
         super().__init__()
 
     def OnInit(self) -> bool:
-        self.frame: YesNoPromptFrame = YesNoPromptFrame(parent=None, title="Sync Files Project", message=self.message,
-                                      button_text=self.button_text)
+        self.frame: YesNoPromptFrame = YesNoPromptFrame(parent=None, title="Sync Files Project",
+                                                        message=self.message, button_text=self.button_text)
         self.frame.Bind(wx.EVT_BUTTON, self.set_response)
         self.frame.Show()
         return True
@@ -93,10 +93,10 @@ class YesNoPromptApp(wx.App):
 
 class EntryPromptPanel(wx.Panel):
     """Inherits from wx.Panel, displays dialog for user to enter reponse.
-    
+
     Attributes:
-        dialog (wx.TextEntryDialog): 
-        entry (str): 
+        dialog (wx.TextEntryDialog):
+        entry (str):
 
     """
     def __init__(self, parent: Any, message: str) -> None:
@@ -113,7 +113,7 @@ class EntryPromptPanel(wx.Panel):
 
 class EntryPromptFrame(wx.Frame):
     """Inherits from wx.Frame, draws window and contains panel for EntryPromptApp
-    
+
     Attributes:
         message_panel (EntryPromptPanel): Panel containing dialog for user entry.
 
@@ -121,12 +121,12 @@ class EntryPromptFrame(wx.Frame):
 
     def __init__(self, parent: Any, title: str, message: str) -> None:
         """Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__().
-        
+
         Args:
             parent (Any): Identifies what the panel is contained within.
             title (str): Title of the frame.
             message (str): Message displayed to the user.
-        
+
         """
         super().__init__(parent, title=title, size=(250, 100))
         self.message_panel: EntryPromptPanel = EntryPromptPanel(parent=self, message=message)
@@ -139,7 +139,7 @@ class EntryPromptFrame(wx.Frame):
 # noinspection PyAttributeOutsideInit
 class EntryPromptApp(wx.App):
     """Inherits from wx.App, prompts user for text response.
-    
+
     Attributes:
         message (str): Message displayed to user.
         response (str): Response from user.
@@ -150,7 +150,7 @@ class EntryPromptApp(wx.App):
 
         Args:
             message (str): Message displayed to user.
-        
+
         """
         self.message: str = message
         self.response: str = ""
@@ -166,12 +166,11 @@ class EntryPromptApp(wx.App):
 
 class SyncGUI:
     """Class that handles all GUI interactions.
-    
+
     Attributes:
         None
-    
-    """
 
+    """
     def __init__(self) -> None:
         pass
 
@@ -183,7 +182,7 @@ class SyncGUI:
 
     def directory_prompt(self, valid_dir: Optional[List[str]] = None, min_dir: int = 2) -> str:
         """Asks user to enter a valid directory
-        
+
         Args:
             invalid_dir (list): list initialized to [] on each function call.
             min_dir (int): number of directories required.
@@ -195,4 +194,3 @@ class SyncGUI:
         app: EntryPromptApp = EntryPromptApp(message=message)
         app.MainLoop()
         return app.get_response()
-

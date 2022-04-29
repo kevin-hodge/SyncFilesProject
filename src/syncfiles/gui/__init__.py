@@ -1,1 +1,1 @@
-"""Initialization file for the gui folder."""
+"""Initialization file for the gui directory."""

@@ -3,10 +3,9 @@
 
 Author: Kevin Hodge
 """
-from typing import Any, List, Set, Dict, Tuple, Optional, Callable, Iterator, Union, cast, Type
-from typing_extensions import Self
-from syncfiles.file_ops.filestructure_functions import *
-from syncfiles.gui.sync_gui import *
+from typing import Any, List, Dict, Tuple, Optional, Callable, cast
+from syncfiles.file_ops.filestructure_functions import get_sync_directories, FileStructure
+from syncfiles.gui.sync_gui import SyncGUI
 import time
 import os
 
@@ -108,7 +107,7 @@ class StateMachine:
         self.initial_state: Optional[str] = None
         self.final_states: List[str] = list()
 
-    def new_state(self, state_name: str, state_function: Callable[[StateInfo], Tuple[str, StateInfo]], 
+    def new_state(self, state_name: str, state_function: Callable[[StateInfo], Tuple[str, StateInfo]],
                   final_state: bool = False, initial_state: bool = False) -> None:
         """Adds new state to state_functions.
 
@@ -252,10 +251,10 @@ def sync_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
 
     """
     assert state_info.sync_required
-    
+
     if state_info.verbose:
         print("Syncing...")
-    
+
     # TODO Sync Files according to state_info.to_update
     # Probably do some kind of check here
     next_state: str = "wait"
@@ -310,5 +309,5 @@ def final_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """
     if state_info.verbose:
         print("Exiting...")
-    
+
     return state_info.get_return_values(state_info.prev_state)

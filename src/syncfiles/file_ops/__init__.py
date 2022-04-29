@@ -1,1 +1,1 @@
-"""Initialization file for the file_ops folder."""
+"""Initialization file for the file_ops directory."""
