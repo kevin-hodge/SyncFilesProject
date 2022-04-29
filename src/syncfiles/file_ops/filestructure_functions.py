@@ -4,15 +4,18 @@
 Author: Kevin Hodge
 """
 
+from typing import Any, List, Set, Dict, Tuple, Optional, Callable, Iterator, Union, cast
 import os
 import time
 import functools
 import json
 
+from syncfiles.gui.sync_gui import SyncGUI
 
-def sleep_decorator(func):
+
+def sleep_decorator(func: Callable) -> Callable:
     """Sleep decorator function that currently does nothing.
-
+    
     Args:
         func (function): Function to be decorated.
 
@@ -30,7 +33,7 @@ def sleep_decorator(func):
 
 
 @sleep_decorator
-def fsm_sleep(seconds):
+def fsm_sleep(seconds: float) -> None:
     """Decorates sleep function from time module.
 
     Args:
@@ -40,7 +43,7 @@ def fsm_sleep(seconds):
     time.sleep(seconds)
 
 
-def get_sync_directories(gui, verbose=False):
+def get_sync_directories(gui: SyncGUI, verbose: bool = False) -> List[str]:
     """Gets directories to be synchronized from config file and/or from user.
 
     Requirements:
@@ -65,21 +68,21 @@ def get_sync_directories(gui, verbose=False):
 
     Args:
         gui (SyncGUI): Graphical User Interface for the program.
-        verbose (bool): Indicates if messages will be printed for debugging.
+        verbose (bool, optional): Indicates if messages will be printed for debugging.
 
     Returns:
-        buffer (list): Existing, unique directories found in "sync_directories_file.json".
+        buffer (list[str]): Existing, unique directories found in "sync_directories_file.json".
 
     """
     # Find and read sync_directories_file
-    folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
-    file_name = "sync_directories_file.json"
-    file_path = os.path.join(folder_path, file_name)
+    folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
+    file_name: str = "sync_directories_file.json"
+    file_path: str = os.path.join(folder_path, file_name)
 
     # Read file (with ensures file is closed even if an exception occurs)
-    min_directories = 2  # Minimum of 2 directories, otherwise no sync can occur
-    buffer = []
-    write_config = False
+    min_directories: int = 2  # Minimum of 2 directories, otherwise no sync can occur
+    buffer: List[str] = list()
+    write_config: bool = False
     if os.path.exists(file_path):
         with open(file_path, "r") as file_to_read:
             buffer = json.load(file_to_read)
@@ -97,8 +100,8 @@ def get_sync_directories(gui, verbose=False):
     # Asks user to input enough valid, unique directories to meet the min_directories number
     for dir_num in range(min_directories-len(buffer)):
         while True:
-            new_dir = gui.directory_prompt(buffer)
-            unique = True
+            new_dir: str = gui.directory_prompt(buffer)
+            unique: bool = True
             if new_dir in buffer:
                 unique = False
             if os.path.exists(new_dir) and unique:
@@ -117,7 +120,7 @@ def get_sync_directories(gui, verbose=False):
     return buffer
 
 
-def recursive_get_directory(directory):
+def recursive_get_directory(directory: str) -> List[Any]:
     """Recursive function that gives the structure of all files and folder contained within a directory.
 
     Args:
@@ -125,8 +128,8 @@ def recursive_get_directory(directory):
 
     Returns:
         file_structure (list): list of one string and one list that contains entries in the directory, directories in
-        the directory are represented as lists that also contain a string with the name of directory and another list
-        with entries in that directory, pattern continues until no sub-directories are found.
+            the directory are represented as lists that also contain a string with the name of directory and another 
+            list with entries in that directory, pattern continues until no sub-directories are found.
 
         ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", "file3.txt"]], "file4.txt"]]
         ex. {"dir_name": ["file1.txt", {"sub_dir_name": ["file2.txt", "file3.txt"]}, "file4.txt"]}
@@ -134,14 +137,16 @@ def recursive_get_directory(directory):
     """
     assert isinstance(directory, str)
 
-    file_structure = [os.path.split(directory)[1], []]  # This should work on most OSes
-    last_updates = [os.stat(directory).st_mtime, []]
+    file_structure: List[Any] = [os.path.split(directory)[1], list()]  # This should work on most OSes
+    last_updates: List[Any] = [os.stat(directory).st_mtime, list()]
     for entry in os.listdir(directory):
-        entry_path = os.path.join(directory, entry)
+        entry_path: str = os.path.join(directory, entry)
         if os.path.isfile(entry_path):
             file_structure[1].append(entry)
             last_updates[1].append(os.stat(entry_path).st_mtime)
         elif os.path.isdir(entry_path):
+            sub_dir: List[Any]
+            sub_updates: List[Any]
             sub_dir, sub_updates = recursive_get_directory(entry_path)
             file_structure[1].append(sub_dir)
             last_updates[1].append(sub_updates)
@@ -150,7 +155,7 @@ def recursive_get_directory(directory):
     return file_structure, last_updates
 
 
-def recursive_print_list(files_list, offset=0):
+def recursive_print_list(files_list: list, offset: int = 0) -> None:
     """Prints out list that matches format of FileStructure.files.
 
     Args:
@@ -158,7 +163,7 @@ def recursive_print_list(files_list, offset=0):
         offset (int): Tracks the depth of the directory and directory vs. file list.
 
     """
-    indent = 3 * offset * ' '  # indent made for each directory level
+    indent: int = 3 * offset * ' '  # indent made for each directory level
     for entry in files_list:
         if isinstance(entry, list):
             if offset % 2 == 1:  # directory list
@@ -188,14 +193,16 @@ class FileStructure:
 
     """
 
-    def __init__(self, directory_path, verbose=False):
-        self.directory_path = directory_path
-        self.files = list()
-        self.last_update = list()
-        self.updated = list()
-        self.verbose = verbose
+    def __init__(self, directory_path: str, verbose: bool = False) -> None:
+        assert len(directory_path) > 0
+        
+        self.directory_path: str = directory_path
+        self.files: List[Any] = list()
+        self.last_update: List[Any] = list()
+        self.updated: List[Any] = list()
+        self.verbose: bool = verbose
 
-    def get_file_structure(self):
+    def get_file_structure(self) -> List[Any]:
         """Reads all files and folders below the directory.
 
         Calls recursive_get_directory.
@@ -210,7 +217,7 @@ class FileStructure:
         self.files, self.last_update = recursive_get_directory(self.directory_path)
         return self.files
 
-    def print_file_structure(self, offset=0):
+    def print_file_structure(self, offset: int = 0) -> None:
         """Prints self.files.
 
         Calls recursive_print_list with self.files as an argument.
@@ -219,7 +226,7 @@ class FileStructure:
         # print(self.files)
         recursive_print_list(self.files, offset)
 
-    def print_last_update(self, offset=0):
+    def print_last_update(self, offset: int = 0) -> None:
         """Prints self.last_update
 
         Calls recursive_print_list with self.last_update as an argument.
@@ -228,7 +235,7 @@ class FileStructure:
         # print(self.last_update)
         recursive_print_list(self.last_update, offset)
 
-    def check_file_structure(self):
+    def check_file_structure(self) -> bool:
         """Checks for updates within the self.files since the last sync.
 
         Requirements:
@@ -266,7 +273,8 @@ class FileStructure:
         self.updated = []  # empty updated of any previous information
         return self.fill_updated(last_sync_files, last_sync_time)
 
-    def fill_updated(self, last_sync_files, last_sync_time, depth=0, index=None, change_found=False):
+    def fill_updated(self, last_sync_files: list, last_sync_time: float, depth: int = 0, index=None, 
+                     change_found: bool = False) -> bool:
         """Fills self.updated.
 
         TODOs:
@@ -291,6 +299,6 @@ class FileStructure:
         #
         # return change_found
 
-    def update_file_structure(self):
+    def update_file_structure(self) -> None:
         pass
 

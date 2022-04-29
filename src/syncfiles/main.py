@@ -44,11 +44,11 @@ from syncfiles.state_machine.sync_fsm import *
 
 if __name__ == '__main__':
     # Only For Debugging
-    verbose = 1
+    verbose: bool = True
 
     # Initialize StateMachine
-    Sync_FSM = StateMachine()
-    Sync_StateInfo = StateInfo(verbose)
+    Sync_FSM: StateMachine = StateMachine()
+    Sync_StateInfo: StateInfo = StateInfo(verbose)
     Sync_FSM.new_state("initial", initial_state_function, initial_state=1)
     Sync_FSM.new_state("check", check_state_function)
     Sync_FSM.new_state("wait", wait_state_function)
