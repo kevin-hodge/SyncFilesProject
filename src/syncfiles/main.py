@@ -40,7 +40,7 @@ Requirements (LR: 18):
 
 Author: Kevin Hodge
 """
-from syncfiles.state_machine.sync_fsm import *
+from syncfiles.state_machine.sync_fsm import StateMachine, StateInfo, initial_state_function, check_state_function, wait_state_function, sync_state_function, error_state_function, final_state_function
 
 if __name__ == '__main__':
     # Only For Debugging
@@ -49,12 +49,12 @@ if __name__ == '__main__':
     # Initialize StateMachine
     Sync_FSM: StateMachine = StateMachine()
     Sync_StateInfo: StateInfo = StateInfo(verbose)
-    Sync_FSM.new_state("initial", initial_state_function, initial_state=1)
+    Sync_FSM.new_state("initial", initial_state_function, initial_state=True)
     Sync_FSM.new_state("check", check_state_function)
     Sync_FSM.new_state("wait", wait_state_function)
     Sync_FSM.new_state("sync", sync_state_function)
     Sync_FSM.new_state("error", error_state_function)
-    Sync_FSM.new_state("final", final_state_function, final_state=1)
+    Sync_FSM.new_state("final", final_state_function, final_state=True)
 
     # Start StateMachine
     Sync_FSM.run(Sync_StateInfo)

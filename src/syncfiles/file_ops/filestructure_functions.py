@@ -13,7 +13,7 @@ import json
 from syncfiles.gui.sync_gui import SyncGUI
 
 
-def sleep_decorator(func: Callable) -> Callable:
+def sleep_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
     """Sleep decorator function that currently does nothing.
     
     Args:
@@ -29,7 +29,7 @@ def sleep_decorator(func: Callable) -> Callable:
         return func(*args, **kwargs)
         # Do Something
 
-    return wrapper
+    return cast(Callable[..., Any], wrapper)
 
 
 @sleep_decorator
@@ -120,7 +120,7 @@ def get_sync_directories(gui: SyncGUI, verbose: bool = False) -> List[str]:
     return buffer
 
 
-def recursive_get_directory(directory: str) -> List[Any]:
+def recursive_get_directory(directory: str) -> Tuple[List[Any], List[Any]]:
     """Recursive function that gives the structure of all files and folder contained within a directory.
 
     Args:
@@ -151,11 +151,11 @@ def recursive_get_directory(directory: str) -> List[Any]:
             file_structure[1].append(sub_dir)
             last_updates[1].append(sub_updates)
         else:
-            return
+            raise ValueError("Directory entry is not a file or directory")
     return file_structure, last_updates
 
 
-def recursive_print_list(files_list: list, offset: int = 0) -> None:
+def recursive_print_list(files_list: List[Any], offset: int = 0) -> None:
     """Prints out list that matches format of FileStructure.files.
 
     Args:
@@ -163,7 +163,7 @@ def recursive_print_list(files_list: list, offset: int = 0) -> None:
         offset (int): Tracks the depth of the directory and directory vs. file list.
 
     """
-    indent: int = 3 * offset * ' '  # indent made for each directory level
+    indent: str = 3 * offset * ' '  # indent made for each directory level
     for entry in files_list:
         if isinstance(entry, list):
             if offset % 2 == 1:  # directory list
@@ -273,8 +273,8 @@ class FileStructure:
         self.updated = []  # empty updated of any previous information
         return self.fill_updated(last_sync_files, last_sync_time)
 
-    def fill_updated(self, last_sync_files: list, last_sync_time: float, depth: int = 0, index=None, 
-                     change_found: bool = False) -> bool:
+    def fill_updated(self, last_sync_files: List[Any], last_sync_time: float, depth: int = 0, 
+                     index: Optional[List[Any]]=None, change_found: bool = False) -> bool:
         """Fills self.updated.
 
         TODOs:

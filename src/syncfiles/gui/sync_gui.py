@@ -73,9 +73,9 @@ class YesNoPromptApp(wx.App):
         response (str): Records response. Defaults to "Exit".
     
     """
-    def __init__(self, message: str, button_text: str) -> None:
+    def __init__(self, message: str, button_text: List[str]) -> None:
         self.message: str = message
-        self.button_text: str = button_text
+        self.button_text: List[str] = button_text
         self.response: str = "Exit"  # Default to exit if window closes without response
         super().__init__()
 

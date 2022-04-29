@@ -3,7 +3,8 @@
 
 Author: Kevin Hodge
 """
-from typing import Any, List, Set, Dict, Tuple, Optional, Callable, Iterator, Union, cast
+from typing import Any, List, Set, Dict, Tuple, Optional, Callable, Iterator, Union, cast, Type
+from typing_extensions import Self
 from syncfiles.file_ops.filestructure_functions import *
 from syncfiles.gui.sync_gui import *
 import time
@@ -39,7 +40,7 @@ class StateInfo:
         self.to_update: List[Any] = list()
         self.verbose: bool = verbose
 
-    def get_return_values(self, next_state) -> str:
+    def get_return_values(self, next_state) -> Tuple[str, Any]:
         """Handles checks and updates prior to each state transition.
 
         Args:
@@ -59,7 +60,7 @@ class StateInfo:
             self.curr_state = next_state
         return self.curr_state, self
 
-    def error_handle(self, err: Exception, err_id: str) -> str:
+    def error_handle(self, err: Exception, err_id: str) -> Tuple[str, Any]:
         """Handles errors caught from try/except block.
 
         Args:
@@ -103,19 +104,19 @@ class StateMachine:
     """
 
     def __init__(self):
-        self.state_functions: Dict[str, Callable] = dict()  # Functions used in each state of the state machine
+        self.state_functions: Dict[str, Callable[[StateInfo], Tuple[str, StateInfo]]] = dict()
         self.initial_state: Optional[str] = None
         self.final_states: List[str] = list()
 
-    def new_state(self, state_name: str, state_function: Callable, final_state: int = 0, 
-                  initial_state: int = 0) -> None:
+    def new_state(self, state_name: str, state_function: Callable[[StateInfo], Tuple[str, StateInfo]], 
+                  final_state: bool = False, initial_state: bool = False) -> None:
         """Adds new state to state_functions.
 
         Args:
             state_name (str): Name of the state being added to state_functions.
             state_function (function): Function being added to state_functions.
-            final_state (int): Indicates new state is a final state if set to anything other than 0.
-            initial_state (int): Indicates new state is the initial state if set to anything other than 0.
+            final_state (int): Indicates new state is a final state if set to True.
+            initial_state (int): Indicates new state is the initial state if set to True.
 
         """
         state_name = state_name.lower()
@@ -133,7 +134,8 @@ class StateMachine:
 
         """
         try:
-            state_function: Callable = self.state_functions[self.initial_state]
+            state_function: Callable[[StateInfo], Tuple[str, StateInfo]] = self.state_functions[
+                cast(str, self.initial_state)]
         except Exception:
             raise ValueError("Must set initial_state")
         if not self.final_states:
@@ -150,7 +152,7 @@ class StateMachine:
                 state_function = self.state_functions[next_state]
 
 
-def initial_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
+def initial_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Retrieves directories to synchronize and initializes FileStructures.
 
     Args:
@@ -179,7 +181,7 @@ def initial_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]
     return state_info.get_return_values(next_state)
 
 
-def check_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
+def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Retrieves FileStructure information from directories and determines if sync is necessary.
 
     Args:
@@ -217,7 +219,7 @@ def check_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
     return state_info.get_return_values(next_state)
 
 
-def wait_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
+def wait_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Waits before checking directories again.
 
     Args:
@@ -238,7 +240,7 @@ def wait_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
     return state_info.get_return_values(next_state)
 
 
-def sync_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
+def sync_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Synchronizes directories.
 
     Args:
@@ -260,7 +262,7 @@ def sync_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
     return state_info.get_return_values(next_state)
 
 
-def error_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
+def error_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Handles errors that cause transitions from other states.
     Requirements:
         Req #7: The program shall notify the user if either directory cannot be found.
@@ -295,7 +297,7 @@ def error_state_function(state_info: StateInfo) -> Tuple[Union[str, StateInfo]]:
     return state_info.get_return_values(next_state)
 
 
-def final_state_function(state_info: StateInfo) -> None:
+def final_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Performs final tasks prior to exiting.
 
     Args:
@@ -308,3 +310,5 @@ def final_state_function(state_info: StateInfo) -> None:
     """
     if state_info.verbose:
         print("Exiting...")
+    
+    return state_info.get_return_values(state_info.prev_state)
