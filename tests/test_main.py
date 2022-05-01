@@ -7,8 +7,8 @@ from typing import List, Tuple
 import os.path
 import json
 import unittest
-from syncfiles.file_ops.filestructure_functions import get_sync_directories
 import syncfiles.gui.sync_gui as sync_gui
+from syncfiles.file_ops.filestructure_functions import get_sync_directories
 from pynput.keyboard import Controller, Key
 import threading
 import time
@@ -62,8 +62,9 @@ class GetSyncDirectoriesTestCase(unittest.TestCase):
         keyboard_thread: threading.Thread = threading.Thread(target=type_response, args=(user_entry,))
         keyboard_thread.start()
 
+        # wxWidgets doesn't like being run outside the main thread.
         gui: sync_gui.SyncGUI = sync_gui.SyncGUI()
-        get_sync_directories(gui)  # wxWidgets doesn't like being run outside the main thread.
+        get_sync_directories(gui)
 
         # print("Waiting for keyboard_thread to finish.")
         keyboard_thread.join(timeout=5)

@@ -1,1 +1,1 @@
-"""Initialization file for tests directory."""
+"""Initialization file for the tests directory."""
