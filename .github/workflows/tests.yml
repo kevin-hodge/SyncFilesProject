@@ -1,4 +1,4 @@
-on:
+runs on:
   - push
   - pull_request
 
