@@ -9,7 +9,6 @@ import os
 import time
 import functools
 import json
-
 from syncfiles.gui.sync_gui import SyncGUI
 
 
@@ -75,7 +74,7 @@ def get_sync_directories(gui: SyncGUI, verbose: bool = False) -> List[str]:
 
     """
     # Find and read sync_directories_file
-    folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
+    folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
     file_name: str = "sync_directories_file.json"
     file_path: str = os.path.join(folder_path, file_name)
 

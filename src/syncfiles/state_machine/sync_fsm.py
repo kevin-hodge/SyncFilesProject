@@ -22,7 +22,8 @@ class StateInfo:
         prev_state (str): Stores name of previous state.
         sync_gui (SyncGUI): Reference to graphical user interface of the program.
         sync_required (bool): Indicates that directories need to be synchronized.
-        to_update (list[Any]): Same structure as directories, but has 1 if file/folder needs to be updated and 0 otherwise.
+        to_update (list[Any]): Same structure as directories, but has 1 if file/folder needs to be updated
+        and 0 otherwise.
         verbose (bool, optional): Indicates if messages will be printed for debugging.
 
     """
