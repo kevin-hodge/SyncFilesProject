@@ -39,3 +39,5 @@ Requirements (LR: 18):
     - Req #10: File structures shall be stored in a class "FileStructure".
 
 Author: Kevin Hodge
+
+![Tests](https://github.com/kevin-hodge/SyncFilesProject/actions/workflows/tests.yml/badge.svg)
