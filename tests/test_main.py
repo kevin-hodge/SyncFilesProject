@@ -3,15 +3,15 @@
 
 Author: Kevin Hodge
 """
-from typing import List, Tuple
+from typing import List
 import os.path
 import json
 import unittest
-from syncfiles.sync_gui import SyncGUI
+# from syncfiles.sync_gui import SyncGUI
 from syncfiles.filestructure_functions import get_sync_directories
 # from pynput.keyboard import Controller, Key
-import threading
-import time
+# import threading
+# import time
 
 
 def get_json_contents(file_path: str) -> List[str]:

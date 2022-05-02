@@ -9,7 +9,6 @@ import os
 import time
 import functools
 import json
-from syncfiles.sync_gui import SyncGUI
 
 
 def sleep_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -76,9 +75,7 @@ def get_sync_directories(min_dir: int = 2) -> List[str]:
     file_path: str = os.path.join(folder_path, file_name)
 
     # Read file (with ensures file is closed even if an exception occurs)
-    min_directories: int = 2  # Minimum of 2 directories, otherwise no sync can occur
     buffer: List[str] = list()
-    write_config: bool = False
     if os.path.exists(file_path):
         with open(file_path, "r") as file_to_read:
             buffer = json.load(file_to_read)
@@ -98,10 +95,10 @@ def get_sync_directories(min_dir: int = 2) -> List[str]:
 
 def set_sync_directory(new_dir: str, existing_dirs: List[str], min_dir: int = 2) -> List[str]:
     """Checks directory provided by user and if valid and unique, adds to sync_directories.
-    
+
     Requirements:
         - Req #17: The program shall update config file with directory provided by user (if it exists).
-        
+
     Checks for:
         - Sync Directories are unique
         - Sync Directories exist
@@ -128,7 +125,7 @@ def set_sync_directory(new_dir: str, existing_dirs: List[str], min_dir: int = 2)
         with open(file_path, "w") as file_to_write:
             json.dump(existing_dirs, file_to_write)
             file_to_write.close()
-            
+
     return existing_dirs
 
 
