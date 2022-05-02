@@ -40,7 +40,7 @@ Requirements (LR: 18):
 
 Author: Kevin Hodge
 """
-from syncfiles.state_machine.sync_fsm import (StateMachine, StateInfo, initial_state_function, check_state_function,
+from syncfiles.sync_fsm import (StateMachine, StateInfo, initial_state_function, check_state_function,
                                               wait_state_function, sync_state_function, error_state_function,
                                               final_state_function)
 

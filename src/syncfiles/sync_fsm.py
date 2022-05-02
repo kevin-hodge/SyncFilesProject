@@ -4,8 +4,8 @@
 Author: Kevin Hodge
 """
 from typing import Any, List, Dict, Tuple, Optional, Callable, cast
-from syncfiles.file_ops.filestructure_functions import get_sync_directories, FileStructure
-from syncfiles.gui.sync_gui import SyncGUI
+from syncfiles.filestructure_functions import get_sync_directories, set_sync_directory, FileStructure
+from syncfiles.sync_gui import SyncGUI
 import time
 import os
 
@@ -167,8 +167,13 @@ def initial_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
         print("Initializing...")
 
     # Retrieve directories to sync and initialize FileStructures
+    min_directories: int = 2
     try:
-        sync_directories: List[str] = get_sync_directories(state_info.sync_gui, verbose=state_info.verbose)
+        sync_directories: List[str] = get_sync_directories(min_directories)
+        while len(sync_directories) < min_directories:
+            new_dir: str = state_info.sync_gui.directory_prompt(sync_directories, min_directories)
+            sync_directories = set_sync_directory(new_dir, sync_directories)
+            # sync_directories = get_sync_directories(min_directories)
     except Exception as err:
         return state_info.error_handle(err, "get_sync_directories")
     for dirs in sync_directories:

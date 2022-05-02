@@ -9,7 +9,7 @@ import os
 import time
 import functools
 import json
-from syncfiles.gui.sync_gui import SyncGUI
+from syncfiles.sync_gui import SyncGUI
 
 
 def sleep_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -42,7 +42,7 @@ def fsm_sleep(seconds: float) -> None:
     time.sleep(seconds)
 
 
-def get_sync_directories(gui: SyncGUI, verbose: bool = False) -> List[str]:
+def get_sync_directories(min_dir: int = 2) -> List[str]:
     """Gets directories to be synchronized from config file and/or from user.
 
     Requirements:
@@ -50,16 +50,13 @@ def get_sync_directories(gui: SyncGUI, verbose: bool = False) -> List[str]:
         - Req #3: The program shall open and read sync_directories_file.json.
         - Req #15: The program shall store and get sync directories from a config file.
         - Req #16: The program shall ask user for directories if config file does not contain sync directories.
-        - Req #17: The program shall update config file with directory provided by user (if it exists).
 
     Finds sync_directories_file.json file in parent directory of working directory, reads entries, and returns list
     with strings containing valid, unique directories.
 
-    Function checks for the following and asks user to provide valid, unique directories if any are true:
+    Function checks for the following and removes directory if any are true:
         - Config File Doesn't exist
         - Sync Directory(s) don't exist
-        - Not enough sync directories (at least 2)
-        - Sync Directories are not unique
         - Sync Directories are not string instances
 
     Note:
@@ -96,27 +93,43 @@ def get_sync_directories(gui: SyncGUI, verbose: bool = False) -> List[str]:
         if not os.path.exists(entry) or not isinstance(entry, str):
             buffer.remove(entry)
 
-    # Asks user to input enough valid, unique directories to meet the min_directories number
-    for dir_num in range(min_directories-len(buffer)):
-        while True:
-            new_dir: str = gui.directory_prompt(buffer)
-            unique: bool = True
-            if new_dir in buffer:
-                unique = False
-            if os.path.exists(new_dir) and unique:
-                buffer.append(new_dir)
-                if verbose:
-                    print(f"Directory added to sync directories config file: {str(buffer[-1])}")
-                break
-        write_config = True
+    return buffer
+
+
+def set_sync_directory(new_dir: str, existing_dirs: List[str], min_dir: int = 2) -> List[str]:
+    """Checks directory provided by user and if valid and unique, adds to sync_directories.
+    
+    Requirements:
+        - Req #17: The program shall update config file with directory provided by user (if it exists).
+        
+    Checks for:
+        - Sync Directories are unique
+        - Sync Directories exist
+
+    Args:
+        new_dir (str): _description_
+        existing_dirs (List[str]): _description_
+
+    Returns:
+        int: _description_
+    """
+    unique: bool = True
+    if new_dir in existing_dirs:
+        unique = False
+    if os.path.exists(new_dir) and unique:
+        existing_dirs.append(new_dir)
+
+    # Find and read sync_directories_file
+    folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    file_path: str = os.path.join(folder_path, "sync_directories_file.json")
 
     # Creates and writes or overwrites JSON config file if User inputs new directories to sync
-    if write_config:
+    if len(existing_dirs) >= min_dir:
         with open(file_path, "w") as file_to_write:
-            json.dump(buffer, file_to_write)
+            json.dump(existing_dirs, file_to_write)
             file_to_write.close()
-
-    return buffer
+            
+    return existing_dirs
 
 
 def recursive_get_directory(directory: str) -> Tuple[List[Any], List[Any]]:
