@@ -70,9 +70,7 @@ def get_sync_directories(min_dir: int = 2) -> List[str]:
 
     """
     # Find and read sync_directories_file
-    folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-    file_name: str = "sync_directories_file.json"
-    file_path: str = os.path.join(folder_path, file_name)
+    file_path: str = os.path.join(os.getcwd(), "sync_directories_file.json")
 
     # Read file (with ensures file is closed even if an exception occurs)
     buffer: List[str] = list()
@@ -117,8 +115,7 @@ def set_sync_directory(new_dir: str, existing_dirs: List[str], min_dir: int = 2)
         existing_dirs.append(new_dir)
 
     # Find and read sync_directories_file
-    folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-    file_path: str = os.path.join(folder_path, "sync_directories_file.json")
+    file_path: str = os.path.join(os.getcwd(), "sync_directories_file.json")
 
     # Creates and writes or overwrites JSON config file if User inputs new directories to sync
     if len(existing_dirs) >= min_dir:

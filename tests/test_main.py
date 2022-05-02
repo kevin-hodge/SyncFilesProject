@@ -39,15 +39,25 @@ class GetSyncDirectoriesTestCase(unittest.TestCase):
     def test_no_config_file(self):
         """Tests if no config file exists."""
         # Move config file contents and delete config file
-        config_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-        sync_dir_file: str = "sync_directories_file.json"
-        sync_dir_path: str = os.path.join(config_path, sync_dir_file)
-        tempfile: str = os.path.join(config_path, "temp_sync_directories_file.json")
+        sync_dir_path: str = os.path.join(os.getcwd(), "sync_directories_file.json")
+        tempfile: str = os.path.join(os.getcwd(), "temp_sync_directories_file.json")
         if os.path.exists(sync_dir_path):
             with open(tempfile, "w") as json_file:
                 json.dump(get_json_contents(sync_dir_path), json_file)
             os.remove(sync_dir_path)
 
+        # Run function and check result
+        buffer: List[str] = get_sync_directories()
+        self.assertEqual(buffer, [])
+
+        # Clean up after test
+        if os.path.exists(tempfile):
+            with open(sync_dir_path, "w") as json_file:
+                json.dump(get_json_contents(tempfile), json_file)
+                os.remove(tempfile)
+
+    def test_valid_directories(self):
+        pass
         # Create test directories
         # test_path1: str = os.path.join(config_path, "test_dir1")
         # test_path2: str = os.path.join(config_path, "test_dir2")
@@ -63,27 +73,13 @@ class GetSyncDirectoriesTestCase(unittest.TestCase):
         # keyboard_thread: threading.Thread = threading.Thread(target=type_response, args=(user_entry,))
         # keyboard_thread.start()
 
-        # wxWidgets doesn't like being run outside the main thread.
-        # gui: SyncGUI = SyncGUI()
-        buffer: List[str] = get_sync_directories()
-
-        # print("Waiting for keyboard_thread to finish.")
-        # keyboard_thread.join(timeout=5)
-        # test_thread.join(timeout=5)
-
-        # Check that file contains correct information
         # buffer: List[str] = get_json_contents(sync_dir_path)
-        self.assertEqual(buffer, [])
 
         # Clean up after test
         # if os.path.exists(test_path1):
         #     os.rmdir(test_path1)  # only works if folder is empty
         # if os.path.exists(test_path2):
         #     os.rmdir(test_path2)  # only works if folder is empty
-        with open(sync_dir_path, "w") as json_file:
-            if os.path.exists(tempfile):
-                json.dump(get_json_contents(tempfile), json_file)
-                os.remove(tempfile)
 
 
 if __name__ == "__main__":
