@@ -12,6 +12,10 @@
 .ipynb_checkpoints/
 .pytest_cache/
 
+# Private config
+sync_directories_file.json
+last_sync_file.json
+
 # Byte-compiled / optimized / DLL files
 **/__pycache__/
 *.py[cod]
