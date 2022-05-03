@@ -81,7 +81,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         # Clean up after test
         if self.test_path1.exists():
             shutil.rmtree(self.test_path1)
-        if self.test_path1.exists():
+        if self.test_path2.exists():
             shutil.rmtree(self.test_path2)
         if self.tempfile.exists():
             with self.sync_dir_file.open("w") as json_file:
