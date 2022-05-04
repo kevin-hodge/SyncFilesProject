@@ -4,7 +4,7 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Optional
+from typing import Any, List
 import wx
 
 
@@ -180,16 +180,14 @@ class SyncGUI:
         app.MainLoop()
         return app.response
 
-    def directory_prompt(self, valid_dir: Optional[List[str]] = None, min_dir: int = 2) -> str:
+    def directory_prompt(self, num_valid_dir: int, min_dir: int = 2) -> str:
         """Asks user to enter a valid directory
 
         Args:
             invalid_dir (list): list initialized to [] on each function call.
             min_dir (int): number of directories required.
         """
-        if valid_dir is None:
-            valid_dir = []
-        message: str = f"""Only {str(len(valid_dir))} valid, unique directories. Must have {str(min_dir)}.
+        message: str = f"""Only {num_valid_dir} valid, unique directories. Must have {str(min_dir)}.
         Please enter directory to sync below."""
         app: EntryPromptApp = EntryPromptApp(message=message)
         app.MainLoop()

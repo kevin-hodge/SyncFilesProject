@@ -1,10 +1,13 @@
 """Defines StateMachine and Sync Finite State Machine State Behavior.
 
+Requirements:
+    - Req #16: The program shall ask user for directories if config file does not contain sync directories.
 
 Author: Kevin Hodge
 """
 from typing import Any, List, Dict, Tuple, Optional, Callable, cast
-from syncfiles.filestructure_functions import get_sync_directories, set_sync_directory, FileStructure
+from syncfiles.file_structure import FileStructure
+from syncfiles.config_manager import ConfigManager
 from syncfiles.sync_gui import SyncGUI
 import time
 import os
@@ -31,6 +34,7 @@ class StateInfo:
     def __init__(self, verbose: bool = False) -> None:
         self.curr_state: str = "initial"
         self.directories: List[FileStructure] = list()
+        self.manager: ConfigManager = ConfigManager()
         self.err: Exception = Exception()
         self.err_id: str = str()
         self.exit_request: bool = False
@@ -84,8 +88,8 @@ class StateInfo:
             self.exit_request = True
         return response
 
-    def get_directory_prompt(self, valid_dir: Optional[List[str]] = None):
-        return self.sync_gui.directory_prompt(valid_dir)
+    def get_directory_prompt(self, num_valid_dir: int) -> str:
+        return self.sync_gui.directory_prompt(num_valid_dir)
 
 
 class StateMachine:
@@ -169,15 +173,16 @@ def initial_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     # Retrieve directories to sync and initialize FileStructures
     min_directories: int = 2
     try:
-        sync_directories: List[str] = get_sync_directories(min_directories)
+        sync_directories: List[str] = state_info.manager.read_sync_directories()
         while len(sync_directories) < min_directories:
-            new_dir: str = state_info.sync_gui.directory_prompt(sync_directories, min_directories)
-            sync_directories = set_sync_directory(new_dir, sync_directories)
-            # sync_directories = get_sync_directories(min_directories)
+            new_dir: str = state_info.sync_gui.directory_prompt(len(sync_directories), min_directories)
+            sync_directories = state_info.manager.check_sync_directory(new_dir, sync_directories)
+        state_info.manager.write_sync_directories(sync_directories)
     except Exception as err:
         return state_info.error_handle(err, "get_sync_directories")
-    for dirs in sync_directories:
-        state_info.directories.append(FileStructure(dirs, verbose=state_info.verbose))
+
+    for dir in sync_directories:
+        state_info.directories.append(FileStructure(dir, verbose=state_info.verbose))
         if state_info.verbose:
             print("Directories to sync:")
             print(state_info.directories[-1].directory_path)
@@ -202,7 +207,7 @@ def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Checking...")
 
-    #
+    # Retrieves and checks FileStructures
     try:
         for directory in state_info.directories:
             directory.get_file_structure()
@@ -281,11 +286,16 @@ def error_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
         state_info: Carries program information from state to state.
 
     """
+    if state_info.verbose:
+        print("Error...")
+
     next_state: str = "final"  # default behavior when error is received is to exit
+
     if state_info.err_id == "get_sync_directories":
         if state_info.verbose:
             print("Couldn't read sync directories config file")
             print(f"Error Message: {str(state_info.err)}")  # Prints error message
+
     elif state_info.err_id == "get_file_structure":
         for directory in state_info.directories:
             if not os.path.exists(directory.directory_path):
@@ -294,11 +304,13 @@ def error_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
         if state_info.verbose:
             print("Couldn't get 1 or more directory file structures")
             print(f"Error Message: {str(state_info.err)}")  # Prints error message
+
     else:
         if state_info.verbose:
             print("Unknown error occurred")
             print(f"Previous State: {state_info.prev_state}")
             print(f"Error Message: {str(state_info.err)}")
+
     return state_info.get_return_values(next_state)
 
 
