@@ -35,14 +35,14 @@ class ConfigManager():
         if self.sync_dir_file.exists():
             with self.sync_dir_file.open() as file_to_read:
                 buffer = json.load(file_to_read)
-                file_to_read.close()
 
         # Ensures buffer is the right datatype
         if not isinstance(buffer, list):
             buffer = []
 
-        # Removes invalid directories
-        for entry in buffer:
+        # Removes invalid directories. Loops through in reverse order to avoid removing elements that change the
+        # indices of all elements after and cause elements to be skipped.
+        for entry in buffer[::-1]:
             if not Path(entry).exists():
                 buffer.remove(entry)
 
@@ -58,9 +58,7 @@ class ConfigManager():
         Returns:
             existing_dirs ()
         """
-        if new_dir in existing_dirs:
-            return existing_dirs
-        if Path(new_dir).exists():
+        if new_dir not in existing_dirs and Path(new_dir).exists():
             existing_dirs.append(new_dir)
 
         return existing_dirs
@@ -86,3 +84,6 @@ class ConfigManager():
                 json.dump(buffer, file_to_write)
             return True
         return False
+
+    def read_last_sync_file(self):
+        pass

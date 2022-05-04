@@ -1,4 +1,4 @@
-"""Contains FileStructure class and functions interacting with files and directories.
+"""Contains the FileStructure class.
 
 
 Author: Kevin Hodge
@@ -155,7 +155,7 @@ class FileStructure:
             last_sync_time = last_sync_data[1]
         else:
             if self.verbose:
-                print("First Sync")
+                print("No last_sync_file found.")
 
         self.updated = []  # empty updated of any previous information
         return self.fill_updated(last_sync_files, last_sync_time)
@@ -177,14 +177,7 @@ class FileStructure:
             change_found (bool): Indicates that at least one file or folder has been updated.
 
         """
-        # if index is None:
-        #     index = [0]
-        # for entry in file_list:
-        #     if depth % 2 == 1: # entry is a file
-        #
-        #     else: # entry is a directory
-        #
-        # return change_found
+        pass
 
     def update_file_structure(self) -> None:
         pass
