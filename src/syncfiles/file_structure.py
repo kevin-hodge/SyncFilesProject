@@ -32,11 +32,11 @@ class FileStructure:
 
         self.directory_path: str = directory_path
         self.files: Dict[str, Any] = dict()
-        self.last_update: Dict[str, Any] = dict()
+        self.last_update: Dict[float, Any] = dict()
         self.updated: Dict[str, Any] = dict()
         self.verbose: bool = verbose
 
-    def get_file_structure(self) -> List[Any]:
+    def get_file_structure(self) -> Dict[str, Any]:
         """Reads all files and folders below the directory.
 
         Calls recursive_get_directory.
@@ -69,7 +69,7 @@ class FileStructure:
         print(os.stat(self.directory_path).st_mtime)
         self.recursive_print_dict(self.last_update, offset)
 
-    def recursive_get_directory(self, directory: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def recursive_get_directory(self, directory: str) -> Tuple[Dict[str, Any], Dict[float, Any]]:
         """Recursive function that gives the structure of all files and folder contained within a directory.
 
         Args:
@@ -84,10 +84,8 @@ class FileStructure:
             ex. {"dir_name": {"file1.txt", {"sub_dir_name": {"file2.txt", "file3.txt"}}, "file4.txt"}}
 
         """
-        assert isinstance(directory, str)
+        assert os.path.exists(directory)
 
-        dir_name: str = os.path.split(directory)[1]
-        dir_time: float = os.stat(directory).st_mtime
         file_structure: Dict[str, Any] = dict()
         last_updates: Dict[float, Any] = dict()
         for entry in os.listdir(directory):
@@ -142,7 +140,7 @@ class FileStructure:
         last_sync_files: Dict[str, Any] = dict()
         last_sync_time: float = 0.0
         if os.path.exists(last_sync_path):
-            last_sync_data: List[Dict[Any], int] = list()
+            last_sync_data: List[Any] = list()
             with open(last_sync_path, "r") as json_file:
                 last_sync_data = json.load(json_file)
                 if self.verbose:
