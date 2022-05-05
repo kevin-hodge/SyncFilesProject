@@ -5,6 +5,7 @@ Author: Kevin Hodge
 """
 
 from typing import Any, List, Tuple, Optional, Dict
+from pathlib import Path
 import os
 import json
 
@@ -18,18 +19,19 @@ class FileStructure:
 
     Attributes:
         directory_path (str): Contains the path to the directory that the FileStructure represents.
-        files (list): Contains the structure of the FileStructure, structure described in recursive_get_directory.
-        last_update (list): Same structure as files, contains last modification times of each file in self.files.
-        updated (list): Same structure as files, each entry corresponds to an entry in self.files. Contains True if file
+        files (dict): Contains names of all files (strings) and all folders (dict with entries corresponding to the
+            files and directories in the directory) in the directory. Folders contained in dicts, contain names of all
+            files and folders in those folders, pattern continues until a directory with no folders is found.
+        ex. {"dir_name": {"file1.txt", {"sub_dir_name": {"file2.txt", "file3.txt"}}, "file4.txt"}}
+        last_update (dict): Same structure as files, contains last modification times of each file in self.files.
+        updated (dict): Same structure as files, each entry corresponds to an entry in self.files. Contains True if file
             or folder has last_update time greater than last_sync_time or False otherwise (assumes no change to the file
             or folder).
         verbose (bool): Indicates if messages will be printed for debugging.
 
     """
-
     def __init__(self, directory_path: str, verbose: bool = False) -> None:
-        assert len(directory_path) > 0
-
+        assert Path(directory_path).exists()
         self.directory_path: str = directory_path
         self.files: Dict[str, Any] = dict()
         self.last_update: Dict[float, Any] = dict()
@@ -42,10 +44,8 @@ class FileStructure:
         Calls recursive_get_directory.
 
         Returns:
-            self.files (list): self.files contains paths to all files (strings) and all folders (list, with two
-                elements, name of folder and list containing all entries in directory) in the directory. folders
-                contained in files, contain names of all files and folders in those folders, pattern continues until a
-                directory with no folders is found.
+            self.files (dict): Structure of this dictionary is described in the arguments documentation of
+                FileStructure.
 
         """
         self.files, self.last_update = self.recursive_get_directory(self.directory_path)
@@ -55,6 +55,9 @@ class FileStructure:
         """Prints self.files.
 
         Calls recursive_print_list with self.files as an argument.
+
+        Args:
+            offset (int): indicates the depth of the directory and the indention used to print the file/folder.
 
         """
         print(os.path.split(self.directory_path)[1])
@@ -76,12 +79,9 @@ class FileStructure:
             directory (str): Path to the directory.
 
         Returns:
-            file_structure (list): list of one string and one list that contains entries in the directory, directories
-            in the directory are represented as lists that also contain a string with the name of directory and another
-            list with entries in that directory, pattern continues until no sub-directories are found.
-
-            ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", "file3.txt"]], "file4.txt"]]
-            ex. {"dir_name": {"file1.txt", {"sub_dir_name": {"file2.txt", "file3.txt"}}, "file4.txt"}}
+            file_structure (Dict[str, Any]): Same structure as FileStructure.files.
+                ex. {"dir_name": {"file1.txt", {"sub_dir_name": {"file2.txt", "file3.txt"}}, "file4.txt"}}
+            last_updates (Dict[float, Any]): Same structure as FleStructure.last_updates.
 
         """
         assert os.path.exists(directory)
@@ -112,13 +112,16 @@ class FileStructure:
 
         """
         indent: str = 3 * offset * ' '  # indent made for each directory level
-        for entry in files_dict:
-            print(f"{indent}{entry}")
+        for entry, value in files_dict.items():
             if isinstance(files_dict[entry], dict):
+                print(f"{indent}{entry}")
                 self.recursive_print_dict(files_dict[entry], offset + 1)
+            else:
+                print(f"{indent}{entry}: {value}")
 
-    def check_file_structure(self) -> bool:
-        """Checks for updates within the self.files since the last sync.
+    def check_file_structure(self, last_sync_files: Dict[str, Any], last_sync_time: float, 
+                            path: Optional[List[str]] = None, change_found: bool = False) -> bool:
+        """Checks for updates within the self.files since the last sync and fills self.updated.
 
         Requirements:
             - TODO Req #18: The program shall load last_sync_files and last_sync_time from config file.
@@ -132,46 +135,18 @@ class FileStructure:
             - TODO: All other entries in self.updated should be False (no change, default)
 
         """
-        # Check if last_updates_file exists
-        # Retrieve last_sync_files and last_sync_time for each entry in files
-        folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-        last_sync_file: str = "last_sync_file.json"
-        last_sync_path: str = os.path.join(folder_path, last_sync_file)
-        last_sync_files: Dict[str, Any] = dict()
-        last_sync_time: float = 0.0
-        if os.path.exists(last_sync_path):
-            last_sync_data: List[Any] = list()
-            with open(last_sync_path, "r") as json_file:
-                last_sync_data = json.load(json_file)
-                if self.verbose:
-                    print("Read last_sync_file.json")
-                json_file.close()
-            last_sync_files = last_sync_data[0]
-            last_sync_time = last_sync_data[1]
-        else:
-            if self.verbose:
-                print("No last_sync_file found.")
+        # Reset updated just in case 
+        if path is None:
+            self.updated = dict()
 
-        self.updated = dict()  # empty updated of any previous information
-        return self.fill_updated(last_sync_files, last_sync_time)
+        # Check values and mark as updated if necessary
 
-    def fill_updated(self, last_sync_files: Dict[str, Any], last_sync_time: float, depth: int = 0,
-                     path: Optional[List[str]] = None, change_found: bool = False) -> bool:
-        """Fills self.updated.
+        return change_found
 
-        TODOs:
-            TODO: Need to track the index of the entry to figure out corresponding entries in other lists.
+    def get_dict_value(self, path: List[str]):
+        pass
 
-        Arguments:
-            last_sync_files (list): Files list from last sync config file.
-            last_sync_time (float): Time in seconds of last update.
-            depth (int): Tracks if the entry is a file or folder and depth of the entry.
-            change_found (bool): Initializes output value and allows value to be passed through recursive calls.
-
-        Returns:
-            change_found (bool): Indicates that at least one file or folder has been updated.
-
-        """
+    def set_dict_value(self, path: List[str], value: Any):
         pass
 
     def update_file_structure(self) -> None:

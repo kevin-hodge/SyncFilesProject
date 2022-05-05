@@ -4,16 +4,23 @@
 Author: Kevin Hodge
 """
 
-from typing import List
+from typing import List, Dict, Any
 from pathlib import Path
 import json
 
 
 class ConfigManager():
-    def __init__(self) -> None:
+    """_summary_
+    
+    Args:
+        config_path (Path): 
+    
+    """
+    def __init__(self, verbose: bool = False) -> None:
         self.config_path: Path = Path.cwd()
         self.sync_dir_file: Path = self.config_path / "sync_directories_file.json"
         self.min_dir: int = 2
+        self.verbose = True
 
     def read_sync_directories(self) -> List[str]:
         """Gets directories to be synchronized from config file and/or from user.
@@ -22,7 +29,7 @@ class ConfigManager():
         containing valid, unique directories.
 
         Returns:
-            buffer (list[str]): Existing, unique directories found in "sync_directories_file.json".
+            directories (list[str]): Existing, unique directories found in "sync_directories_file.json".
 
         Requirements:
             - Req #2: The program shall find sync_directories_file.json (json file containing the sync directories).
@@ -42,21 +49,24 @@ class ConfigManager():
 
         # Removes invalid directories. Loops through in reverse order to avoid removing elements that change the
         # indices of all elements after and cause elements to be skipped.
-        for entry in buffer[::-1]:
-            if not Path(entry).exists():
-                buffer.remove(entry)
+        directories: List[str] = []
+        for _, entry in enumerate(buffer[::-1]):
+            buffer.pop()
+            if Path(entry).exists() and entry not in buffer:
+                directories.append(entry)
 
-        return buffer
+        return directories
 
     def check_sync_directory(self, new_dir: str, existing_dirs: List[str]) -> List[str]:
         """Checks directory provided by user and if valid and unique and adds to buffer if it is.
 
         Args:
-            new_dir (str): _description_
-            existing_dirs (List[str]): _description_
+            new_dir (str): new directory to be added to existing directories.
+            existing_dirs (list[str]): existing directories.
 
         Returns:
-            existing_dirs ()
+            existing_dirs (list[str]): existing directories with new directory added (or not).
+
         """
         if new_dir not in existing_dirs and Path(new_dir).exists():
             existing_dirs.append(new_dir)
@@ -86,4 +96,22 @@ class ConfigManager():
         return False
 
     def read_last_sync_file(self):
-        pass
+        # Check if last_updates_file exists
+        # Retrieve last_sync_files and last_sync_time for each entry in files
+        folder_path: Path = Path("..")
+        last_sync_path: Path = folder_path / "last_sync_file.json"
+        last_sync_files: Dict[str, Any] = dict()
+        last_sync_time: float = 0.0
+        if last_sync_path.exists():
+            last_sync_data: List[Any] = list()
+            with open(last_sync_path, "r") as json_file:
+                last_sync_data = json.load(json_file)
+                if self.verbose:
+                    print("Read last_sync_file.json")
+                json_file.close()
+            assert len(last_sync_data) == 2
+            last_sync_files = last_sync_data[0]
+            last_sync_time = last_sync_data[1]
+        else:
+            if self.verbose:
+                print("No last_sync_file found.")

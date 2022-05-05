@@ -115,7 +115,7 @@ def initial_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
             sync_directories = state_info.manager.check_sync_directory(new_dir, sync_directories)
         state_info.manager.write_sync_directories(sync_directories)
     except Exception as err:
-        return state_info.error_handle(err, "get_sync_directories")
+        return state_info.error_handle(err, "check_sync_directories")
 
     for dir in sync_directories:
         state_info.directories.append(FileStructure(dir, verbose=state_info.verbose))
@@ -151,8 +151,8 @@ def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
             if state_info.verbose:
                 print(f"Directory {str(state_info.directories.index(directory) + 1)}:")
                 directory.print_file_structure()
-                print("Last Updates:")
-                directory.print_last_update()
+                # print("Last Updates:")
+                # directory.print_last_update()
     except Exception as err:
         return state_info.error_handle(err, "get_file_structure")
 
