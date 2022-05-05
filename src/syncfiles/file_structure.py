@@ -51,22 +51,22 @@ class FileStructure:
         self.files, self.last_update = self.recursive_get_directory(self.directory_path)
         return self.files
 
-    def print_file_structure(self, offset: int = 0) -> None:
+    def print_file_structure(self, offset: int = 1) -> None:
         """Prints self.files.
 
         Calls recursive_print_list with self.files as an argument.
 
         """
-        # print(self.files)
+        print(os.path.split(self.directory_path)[1])
         self.recursive_print_dict(self.files, offset)
 
-    def print_last_update(self, offset: int = 0) -> None:
+    def print_last_update(self, offset: int = 1) -> None:
         """Prints self.last_update
 
         Calls recursive_print_list with self.last_update as an argument.
 
         """
-        # print(self.last_update)
+        print(os.stat(self.directory_path).st_mtime)
         self.recursive_print_dict(self.last_update, offset)
 
     def recursive_get_directory(self, directory: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -88,8 +88,8 @@ class FileStructure:
 
         dir_name: str = os.path.split(directory)[1]
         dir_time: float = os.stat(directory).st_mtime
-        file_structure: Dict[str, Any] = {dir_name: dict()}
-        last_updates: Dict[float, Any] = {dir_time: dict()}
+        file_structure: Dict[str, Any] = dict()
+        last_updates: Dict[float, Any] = dict()
         for entry in os.listdir(directory):
             entry_path: str = os.path.join(directory, entry)
             if os.path.isfile(entry_path):
@@ -100,7 +100,7 @@ class FileStructure:
                 sub_updates: Dict[float, Any]
                 sub_dir, sub_updates = self.recursive_get_directory(entry_path)
                 file_structure[entry] = sub_dir
-                last_updates[os.stat(entry).st_mtime] = sub_updates
+                last_updates[os.stat(entry_path).st_mtime] = sub_updates
             else:
                 raise ValueError("Directory entry is not a file or directory")
         return file_structure, last_updates
