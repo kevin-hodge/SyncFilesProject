@@ -69,8 +69,7 @@ class ConfigManagerTestCase(unittest.TestCase):
 
     def test_check_nonexistant_dirs(self) -> None:
         # Deletes invalid directory just in case it exists
-        if self.test_path1.exists():
-            shutil.rmtree(self.test_path1)
+        self.remove_test_dirs()
 
         # Checks if invalid dir is added to result
         manager: ConfigManager = ConfigManager()
@@ -81,10 +80,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         self.create_tempfile()
 
         # Deletes invalid directories just in case they exist
-        if self.test_path1.exists():
-            shutil.rmtree(self.test_path1)
-        if self.test_path2.exists():
-            shutil.rmtree(self.test_path2)
+        self.remove_test_dirs()
 
         # Checks if invalid dir is returned
         with self.sync_dir_file.open("w") as json_file:

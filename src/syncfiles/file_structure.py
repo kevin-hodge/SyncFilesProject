@@ -4,7 +4,7 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Tuple, Optional, Dict
 import os
 import json
 
@@ -31,9 +31,9 @@ class FileStructure:
         assert len(directory_path) > 0
 
         self.directory_path: str = directory_path
-        self.files: List[Any] = list()
-        self.last_update: List[Any] = list()
-        self.updated: List[Any] = list()
+        self.files: Dict[str, Any] = dict()
+        self.last_update: Dict[str, Any] = dict()
+        self.updated: Dict[str, Any] = dict()
         self.verbose: bool = verbose
 
     def get_file_structure(self) -> List[Any]:
@@ -58,7 +58,7 @@ class FileStructure:
 
         """
         # print(self.files)
-        self.recursive_print_list(self.files, offset)
+        self.recursive_print_dict(self.files, offset)
 
     def print_last_update(self, offset: int = 0) -> None:
         """Prints self.last_update
@@ -67,9 +67,9 @@ class FileStructure:
 
         """
         # print(self.last_update)
-        self.recursive_print_list(self.last_update, offset)
+        self.recursive_print_dict(self.last_update, offset)
 
-    def recursive_get_directory(self, directory: str) -> Tuple[List[Any], List[Any]]:
+    def recursive_get_directory(self, directory: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Recursive function that gives the structure of all files and folder contained within a directory.
 
         Args:
@@ -81,46 +81,43 @@ class FileStructure:
             list with entries in that directory, pattern continues until no sub-directories are found.
 
             ex. ["dir_name", ["file1.txt", ["sub_dir_name", ["file2.txt", "file3.txt"]], "file4.txt"]]
-            ex. {"dir_name": ["file1.txt", {"sub_dir_name": ["file2.txt", "file3.txt"]}, "file4.txt"]}
+            ex. {"dir_name": {"file1.txt", {"sub_dir_name": {"file2.txt", "file3.txt"}}, "file4.txt"}}
 
         """
         assert isinstance(directory, str)
 
-        file_structure: List[Any] = [os.path.split(directory)[1], list()]  # This should work on most OSes
-        last_updates: List[Any] = [os.stat(directory).st_mtime, list()]
+        dir_name: str = os.path.split(directory)[1]
+        dir_time: float = os.stat(directory).st_mtime
+        file_structure: Dict[str, Any] = {dir_name: dict()}
+        last_updates: Dict[float, Any] = {dir_time: dict()}
         for entry in os.listdir(directory):
             entry_path: str = os.path.join(directory, entry)
             if os.path.isfile(entry_path):
-                file_structure[1].append(entry)
-                last_updates[1].append(os.stat(entry_path).st_mtime)
+                file_structure[entry] = os.stat(entry_path).st_mtime
+                last_updates[os.stat(entry_path).st_mtime] = None
             elif os.path.isdir(entry_path):
-                sub_dir: List[Any]
-                sub_updates: List[Any]
+                sub_dir: Dict[str, Any]
+                sub_updates: Dict[float, Any]
                 sub_dir, sub_updates = self.recursive_get_directory(entry_path)
-                file_structure[1].append(sub_dir)
-                last_updates[1].append(sub_updates)
+                file_structure[entry] = sub_dir
+                last_updates[os.stat(entry).st_mtime] = sub_updates
             else:
                 raise ValueError("Directory entry is not a file or directory")
         return file_structure, last_updates
 
-    def recursive_print_list(self, files_list: List[Any], offset: int = 0) -> None:
-        """Prints out list that matches format of FileStructure.files.
+    def recursive_print_dict(self, files_dict: Dict[Any, Any], offset: int = 0) -> None:
+        """Prints out dict that matches format of FileStructure.files.
 
         Args:
-            files_list (list): List that matches the format of FileStructure.files.
+            files_dict (dict): List that matches the format of FileStructure.files.
             offset (int): Tracks the depth of the directory and directory vs. file list.
 
         """
         indent: str = 3 * offset * ' '  # indent made for each directory level
-        for entry in files_list:
-            if isinstance(entry, list):
-                if offset % 2 == 1:  # directory list
-                    print(f"{indent}{entry[0]}")
-                    self.recursive_print_list(entry[1], offset + 1)
-                else:  # file list
-                    self.recursive_print_list(entry, offset + 1)
-            else:
-                print(f"{indent}{entry}")
+        for entry in files_dict:
+            print(f"{indent}{entry}")
+            if isinstance(files_dict[entry], dict):
+                self.recursive_print_dict(files_dict[entry], offset + 1)
 
     def check_file_structure(self) -> bool:
         """Checks for updates within the self.files since the last sync.
@@ -139,13 +136,13 @@ class FileStructure:
         """
         # Check if last_updates_file exists
         # Retrieve last_sync_files and last_sync_time for each entry in files
-        folder_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))  # get parent directory of current directory
-        last_sync_file = "last_sync_file.json"
-        last_sync_path = os.path.join(folder_path, last_sync_file)
-        last_sync_files = []
-        last_sync_time = 0
+        folder_path: str = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+        last_sync_file: str = "last_sync_file.json"
+        last_sync_path: str = os.path.join(folder_path, last_sync_file)
+        last_sync_files: Dict[str, Any] = dict()
+        last_sync_time: float = 0.0
         if os.path.exists(last_sync_path):
-            last_sync_data = []
+            last_sync_data: List[Dict[Any], int] = list()
             with open(last_sync_path, "r") as json_file:
                 last_sync_data = json.load(json_file)
                 if self.verbose:
@@ -157,11 +154,11 @@ class FileStructure:
             if self.verbose:
                 print("No last_sync_file found.")
 
-        self.updated = []  # empty updated of any previous information
+        self.updated = dict()  # empty updated of any previous information
         return self.fill_updated(last_sync_files, last_sync_time)
 
-    def fill_updated(self, last_sync_files: List[Any], last_sync_time: float, depth: int = 0,
-                     index: Optional[List[Any]] = None, change_found: bool = False) -> bool:
+    def fill_updated(self, last_sync_files: Dict[str, Any], last_sync_time: float, depth: int = 0,
+                     path: Optional[List[str]] = None, change_found: bool = False) -> bool:
         """Fills self.updated.
 
         TODOs:
