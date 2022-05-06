@@ -4,23 +4,26 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from pathlib import Path
 import json
 
 
 class ConfigManager():
     """_summary_
-    
+
     Args:
-        config_path (Path): 
-    
+        config_path (Path): Path to the configuration directory.
+        sync_dir_file (Path): Path to sync_directories_file.json. File contains the directories that will be sync'd.
+        min_dir (int): Indicates the minimum number of directories required to sync.
+        verbose (bool)
+
     """
     def __init__(self, verbose: bool = False) -> None:
         self.config_path: Path = Path.cwd()
         self.sync_dir_file: Path = self.config_path / "sync_directories_file.json"
         self.min_dir: int = 2
-        self.verbose = True
+        self.verbose: bool = verbose
 
     def read_sync_directories(self) -> List[str]:
         """Gets directories to be synchronized from config file and/or from user.
@@ -95,7 +98,7 @@ class ConfigManager():
             return True
         return False
 
-    def read_last_sync_file(self):
+    def read_last_sync_file(self) -> Tuple[Dict[str, Any], float]:
         # Check if last_updates_file exists
         # Retrieve last_sync_files and last_sync_time for each entry in files
         folder_path: Path = Path("..")
@@ -115,3 +118,5 @@ class ConfigManager():
         else:
             if self.verbose:
                 print("No last_sync_file found.")
+
+        return last_sync_files, last_sync_time

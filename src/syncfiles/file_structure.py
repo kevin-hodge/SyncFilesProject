@@ -6,8 +6,6 @@ Author: Kevin Hodge
 
 from typing import Any, List, Tuple, Optional, Dict
 from pathlib import Path
-import os
-import json
 
 
 class FileStructure:
@@ -60,7 +58,7 @@ class FileStructure:
             offset (int): indicates the depth of the directory and the indention used to print the file/folder.
 
         """
-        print(os.path.split(self.directory_path)[1])
+        print(Path(self.directory_path).name)
         self.recursive_print_dict(self.files, offset)
 
     def print_last_update(self, offset: int = 1) -> None:
@@ -69,7 +67,7 @@ class FileStructure:
         Calls recursive_print_list with self.last_update as an argument.
 
         """
-        print(os.stat(self.directory_path).st_mtime)
+        print(Path(self.directory_path).stat().st_mtime)
         self.recursive_print_dict(self.last_update, offset)
 
     def recursive_get_directory(self, directory: str) -> Tuple[Dict[str, Any], Dict[float, Any]]:
@@ -84,21 +82,20 @@ class FileStructure:
             last_updates (Dict[float, Any]): Same structure as FleStructure.last_updates.
 
         """
-        assert os.path.exists(directory)
+        assert Path(directory).exists()
 
         file_structure: Dict[str, Any] = dict()
         last_updates: Dict[float, Any] = dict()
-        for entry in os.listdir(directory):
-            entry_path: str = os.path.join(directory, entry)
-            if os.path.isfile(entry_path):
-                file_structure[entry] = os.stat(entry_path).st_mtime
-                last_updates[os.stat(entry_path).st_mtime] = None
-            elif os.path.isdir(entry_path):
+        for entry in Path(directory).iterdir():
+            if Path(entry).is_file():
+                file_structure[entry.name] = Path(entry).stat().st_mtime
+                last_updates[Path(entry).stat().st_mtime] = None
+            elif Path(entry).is_dir():
                 sub_dir: Dict[str, Any]
                 sub_updates: Dict[float, Any]
-                sub_dir, sub_updates = self.recursive_get_directory(entry_path)
-                file_structure[entry] = sub_dir
-                last_updates[os.stat(entry_path).st_mtime] = sub_updates
+                sub_dir, sub_updates = self.recursive_get_directory(str(entry))
+                file_structure[entry.name] = sub_dir
+                last_updates[Path(entry).stat().st_mtime] = sub_updates
             else:
                 raise ValueError("Directory entry is not a file or directory")
         return file_structure, last_updates
@@ -119,8 +116,8 @@ class FileStructure:
             else:
                 print(f"{indent}{entry}: {value}")
 
-    def check_file_structure(self, last_sync_files: Dict[str, Any], last_sync_time: float, 
-                            path: Optional[List[str]] = None, change_found: bool = False) -> bool:
+    def check_file_structure(self, last_sync_files: Dict[str, Any], last_sync_time: float,
+                             path: Optional[List[str]] = None, change_found: bool = False) -> bool:
         """Checks for updates within the self.files since the last sync and fills self.updated.
 
         Requirements:
@@ -135,7 +132,7 @@ class FileStructure:
             - TODO: All other entries in self.updated should be False (no change, default)
 
         """
-        # Reset updated just in case 
+        # Reset updated just in case
         if path is None:
             self.updated = dict()
 

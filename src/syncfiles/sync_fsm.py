@@ -10,7 +10,7 @@ from syncfiles.file_structure import FileStructure
 from syncfiles.config_manager import ConfigManager
 from syncfiles.sync_gui import SyncGUI
 import time
-import os
+from pathlib import Path
 
 
 class StateInfo:
@@ -234,7 +234,7 @@ def error_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
 
     elif state_info.err_id == "get_file_structure":
         for directory in state_info.directories:
-            if not os.path.exists(directory.directory_path):
+            if not Path(directory.directory_path).exists():
                 next_state = "initial"
                 return state_info.get_return_values(next_state)
         if state_info.verbose:
