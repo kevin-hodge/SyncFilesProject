@@ -117,7 +117,7 @@ class FileStructure:
                 print(f"{indent}{entry}: {value}")
 
     def check_file_structure(self, last_sync_files: Dict[str, Any], last_sync_time: float,
-                             path: Optional[List[str]] = None, change_found: bool = False) -> bool:
+                             path: Optional[str] = None, change_found: bool = False) -> bool:
         """Checks for updates within the self.files since the last sync and fills self.updated.
 
         Requirements:
@@ -131,19 +131,60 @@ class FileStructure:
                 self.last_update, if greater, set entry in self.updated to True (updated)
             - TODO: All other entries in self.updated should be False (no change, default)
 
+        Args:
+            last_sync_files (dict[str, Any]): Same structure as FileStructure.files. Represents the file structure from
+                the previous sync.
+            last_sync_time (float): REMOVE. Represents time of last sync.
+            path (str, optional): Path to the current directory.
+
         """
         # Reset updated just in case
         if path is None:
             self.updated = dict()
+            path = self.directory_path
 
         # Check values and mark as updated if necessary
+        for key, value in self.files.items():
+            if isinstance(value, dict):
+                # Recursive call
+                new_path: str = str(Path(path) / Path(key).name)
+                change_found = self.check_file_structure(last_sync_files, last_sync_time, new_path)
+            elif isinstance(value, float):
+                # if self.files in last_sync_files:
+                # Check if entry from self.files is in last_sync_files, if not, mark updated
+                if self.get_dict_value(path, self.files) > self.get_dict_value(path, last_sync_files):
+                    # If file, exists in both, and newer than last sync, mark updated
+                    self.updated[key] = True
+                else:
+                    # If file, exists in both, and not newer than last sync, mark not updated
+                    self.updated[key] = False
+            else:
+                raise ValueError("FileStructure.files value is not a float or dictionary.")
 
         return change_found
 
-    def get_dict_value(self, path: List[str]):
+    def fill_updated(self, last_sync_files: Dict[str, Any], last_sync_time: float,
+                     path: Optional[str] = None, change_found: bool = False) -> bool:
         pass
 
-    def set_dict_value(self, path: List[str], value: Any):
+    def split_path(self, path: str):
+        if "\\" in str(path):
+            return str(path).split("\\")
+        elif "/" in str(path):
+            return str(path).split("/")
+
+    def get_dict_value(self, path: str, search_dict: Dict[str, Any]):
+        keys: List[str] = []
+        path_list: List[str] = self.split_path(path)
+        for index, entry in enumerate(path_list):
+            if path_list[:index+1] == self.split_path(self.directory_path):
+                keys = path_list[index+1:]
+        value: Any = search_dict
+        for key in keys:
+            value = value[key]
+        return value
+
+    def set_dict_value(self, path: str, value: Any):
         pass
 
     def update_file_structure(self) -> None:

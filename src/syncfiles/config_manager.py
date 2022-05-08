@@ -22,6 +22,7 @@ class ConfigManager():
     def __init__(self, verbose: bool = False) -> None:
         self.config_path: Path = Path.cwd()
         self.sync_dir_file: Path = self.config_path / "sync_directories_file.json"
+        self.last_sync_file: Path = self.config_path / "last_sync_file.json"
         self.min_dir: int = 2
         self.verbose: bool = verbose
 
@@ -101,17 +102,14 @@ class ConfigManager():
     def read_last_sync_file(self) -> Tuple[Dict[str, Any], float]:
         # Check if last_updates_file exists
         # Retrieve last_sync_files and last_sync_time for each entry in files
-        folder_path: Path = Path("..")
-        last_sync_path: Path = folder_path / "last_sync_file.json"
         last_sync_files: Dict[str, Any] = dict()
         last_sync_time: float = 0.0
-        if last_sync_path.exists():
+        if self.last_sync_file.exists():
             last_sync_data: List[Any] = list()
-            with open(last_sync_path, "r") as json_file:
+            with self.last_sync_file.open() as json_file:
                 last_sync_data = json.load(json_file)
                 if self.verbose:
                     print("Read last_sync_file.json")
-                json_file.close()
             assert len(last_sync_data) == 2
             last_sync_files = last_sync_data[0]
             last_sync_time = last_sync_data[1]

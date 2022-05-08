@@ -3,226 +3,207 @@
 
 Author: Kevin Hodge
 """
-from typing import List, Any, Optional
+from typing import List, Any, Dict, Optional, Tuple
 from pathlib import Path
 import shutil
 import json
 import unittest
+from tests.tfuncs import TFunctions
 from syncfiles.config_manager import ConfigManager
+from syncfiles.file_structure import FileStructure
 
 
 class ConfigManagerTestCase(unittest.TestCase):
     """Test case for ConfigManager"""
     def __init__(self, *args, **kwargs) -> None:
-        self.sync_dir_file: Path = Path.cwd() / Path("sync_directories_file.json")
-        self.tempfile: Path = Path.cwd() / Path("temp_sync_directories_file.json")
-        self.test_path1: Path = Path.cwd() / Path("test_dir1")
-        self.test_path2: Path = Path.cwd() / Path("test_dir2")
+        self.tf: TFunctions = TFunctions()
         super().__init__(*args, **kwargs)
 
-    def get_json_contents(self, file_path: Path) -> List[str]:
-        json_data: List[str]
-        with file_path.open() as json_file:
-            json_data = json.load(json_file)
-        return json_data
-
-    def write_json(self, input: Any, file_path: Path) -> None:
-        with file_path.open("w") as json_file:
-            json.dump(input, json_file)
-
-    def create_tempfile(self) -> None:
-        # Move config file contents and delete config file
-        if self.sync_dir_file.exists():
-            with self.tempfile.open("w") as json_file:
-                json.dump(self.get_json_contents(self.sync_dir_file), json_file)
-            self.sync_dir_file.unlink()
-
-    def remove_tempfile(self) -> None:
-        # Clean up after test
-        if self.tempfile.exists():
-            with self.sync_dir_file.open("w") as json_file:
-                json.dump(self.get_json_contents(self.tempfile), json_file)
-            self.tempfile.unlink()
-
-    def create_test_dirs(self) -> None:
-        # Create test directories
-        if not self.test_path1.exists():
-            self.test_path1.mkdir()
-        if not self.test_path2.exists():
-            self.test_path2.mkdir()
-
-    def remove_test_dirs(self) -> None:
-        # Clean up after test
-        if self.test_path1.exists():
-            shutil.rmtree(self.test_path1)
-        if self.test_path2.exists():
-            shutil.rmtree(self.test_path2)
-
+    @TFunctions.handle_dir_tempfile
     def test_no_config_file(self) -> None:
         """Tests if no config file exists."""
-        self.create_tempfile()
-
         # Run function and check result
         manager: ConfigManager = ConfigManager()
         buffer: List[str] = manager.read_sync_directories()
-
-        self.remove_tempfile()
-
         self.assertCountEqual(buffer, [])
 
     def test_check_nonexistant_dirs(self) -> None:
         # Deletes invalid directory just in case it exists
-        self.remove_test_dirs()
+        self.tf.remove_test_dirs()
 
         # Checks if invalid dir is added to result
         manager: ConfigManager = ConfigManager()
-        result: List[str] = manager.check_sync_directory(str(self.test_path1), [])
+        result: List[str] = manager.check_sync_directory(str(self.tf.test_path1), [])
         self.assertCountEqual(result, [])
 
+    @TFunctions.handle_dir_tempfile
+    @TFunctions.handle_test_dirs
     def test_check_repeated_dirs(self) -> None:
         # Set up config and directories (so directory is not removed because it does not exist)
-        self.create_tempfile()
-        self.create_test_dirs()
-
         # Run Test
-        input: List[str] = [str(self.test_path1)]
+        input: List[str] = [str(self.tf.test_path1)]
         manager: ConfigManager = ConfigManager()
-        result: List[str] = manager.check_sync_directory(str(self.test_path1), input)
-
-        # Tear down config and directories
-        self.remove_tempfile()
-        self.remove_test_dirs()
+        result: List[str] = manager.check_sync_directory(str(self.tf.test_path1), input)
 
         # Check Result
         self.assertCountEqual(result, input)
 
+    @TFunctions.handle_dir_tempfile
+    @TFunctions.handle_test_dirs
     def test_check_valid_dirs(self) -> None:
         # Set up config and directories (so directory is not removed because it does not exist)
-        self.create_tempfile()
-        self.create_test_dirs()
-
         # Run Test
-        input: List[str] = [str(self.test_path1)]
+        input: List[str] = [str(self.tf.test_path1)]
         manager: ConfigManager = ConfigManager()
-        result: List[str] = manager.check_sync_directory(str(self.test_path2), input)
-
-        # Tear down config and directories
-        self.remove_tempfile()
-        self.remove_test_dirs()
+        result: List[str] = manager.check_sync_directory(str(self.tf.test_path2), input)
 
         # Check Result
-        self.assertCountEqual(result, [str(self.test_path1), str(self.test_path2)])
+        self.assertCountEqual(result, [str(self.tf.test_path1), str(self.tf.test_path2)])
 
+    @TFunctions.handle_dir_tempfile
     def test_read_not_list(self) -> None:
-        # Set-up Move config contents
-        self.create_tempfile()
-
         # Write invalid contents
         input: str = "JSON contents are not a list"
-        self.write_json(input, self.sync_dir_file)
+        self.tf.write_json(input, self.tf.sync_dir_file)
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
-
-        # Tear down
-        self.remove_tempfile()
 
         # Check result
         self.assertCountEqual(result, [])
 
+    @TFunctions.handle_dir_tempfile
     def test_read_nonexistant_dirs(self) -> None:
         # Set up
-        self.create_tempfile()
-
-        # Deletes invalid directories just in case they exist
-        self.remove_test_dirs()
+        self.tf.remove_test_dirs()
 
         # Checks if invalid dir is returned
-        with self.sync_dir_file.open("w") as json_file:
-            json.dump([str(self.test_path1), str(self.test_path2)], json_file)
+        with self.tf.sync_dir_file.open("w") as json_file:
+            json.dump([str(self.tf.test_path1), str(self.tf.test_path2)], json_file)
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
-
-        # Tear down
-        self.remove_tempfile()
 
         # Check result
         self.assertCountEqual(result, [])
 
+    @TFunctions.handle_dir_tempfile
+    @TFunctions.handle_test_dirs
     def test_read_repeated_dirs(self) -> None:
-        # Set up
-        self.create_tempfile()
-        self.create_test_dirs()
-
         # Enter and read repeated directories
-        input: List[str] = [str(self.test_path2), str(self.test_path2)]
-        self.write_json(input, self.sync_dir_file)
+        input: List[str] = [str(self.tf.test_path2), str(self.tf.test_path2)]
+        self.tf.write_json(input, self.tf.sync_dir_file)
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
 
-        # Tear down
-        self.remove_tempfile()
-        self.remove_test_dirs()
-
         # Check result
-        self.assertCountEqual(result, [str(self.test_path2)])
+        self.assertCountEqual(result, [str(self.tf.test_path2)])
 
+    @TFunctions.handle_dir_tempfile
+    @TFunctions.handle_test_dirs
     def test_read_valid_dirs(self) -> None:
-        self.create_tempfile()
-        self.create_test_dirs()
-
         # Enter and read correct directories
-        input: List[str] = [str(self.test_path1), str(self.test_path2)]
-        self.write_json(input, self.sync_dir_file)
-        user_entry: List[str] = [str(self.test_path1), str(self.test_path2)]
+        input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
+        self.tf.write_json(input, self.tf.sync_dir_file)
+        user_entry: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
         manager: ConfigManager = ConfigManager()
         buffer: List[str] = manager.read_sync_directories()
-
-        self.remove_test_dirs()
-        self.remove_tempfile()
 
         # Check after clean-up so assertion error doesn't prevent clean-up
         self.assertCountEqual(user_entry, buffer)
 
-    def test_write_valid_config(self) -> None:
+    @TFunctions.handle_dir_tempfile
+    def test_write_valid_dirs(self) -> None:
         # Setup: Move config contents
-        self.create_tempfile()
+        # Write to config and check config contents
+        input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
+        manager: ConfigManager = ConfigManager()
+        assert manager.write_sync_directories(input)
+        result: List[str] = self.tf.get_json_contents(self.tf.sync_dir_file)
+        self.assertCountEqual(input, result)
+
+    @TFunctions.handle_dir_tempfile
+    def test_write_too_few_dirs(self) -> None:
+        # Setup: Move config contents
+        self.tf.create_dir_tempfile()
 
         # Write to config and check config contents
-        input: List[str] = [str(self.test_path1), str(self.test_path2)]
+        input: List[str] = [str(self.tf.test_path2)]
         manager: ConfigManager = ConfigManager()
+        assert not manager.write_sync_directories(input)
+        assert not self.tf.sync_dir_file.exists()
+
+    @TFunctions.handle_dir_tempfile
+    def test_write_not_list(self) -> None:
+        # Write to config and check config contents
+        input: Tuple[str, str] = (str(self.tf.test_path1), str(self.tf.test_path2))
+        manager: ConfigManager = ConfigManager()
+        with self.assertRaises(AssertionError):
+            manager.write_sync_directories(input)  # type: ignore[arg-type]
+
+    @TFunctions.handle_last_tempfile
+    def test_no_last_sync(self) -> None:
+        # Initialize
+        last_sync_files: Dict[str, Any]
+        last_sync_time: float
+        manager: ConfigManager = ConfigManager()
+
+        # Run test
+        last_sync_files, last_sync_time = manager.read_last_sync_file()
+        self.assertCountEqual(last_sync_files, dict())
+        self.assertEqual(last_sync_time, 0.0)
+
+    @TFunctions.handle_last_tempfile
+    def test_valid_last_sync(self) -> None:
+        # Setup: remove last_sync_file, create file_dict and file_time
+        file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path2))
+        file_time: float = 0.0
+
+        # Load data to last_sync_file and initialize
+        self.tf.write_json([file_dict, file_time], self.tf.last_sync_file)
+        last_sync_files: Dict[str, Any]
+        last_sync_time: float
+        manager: ConfigManager = ConfigManager()
+
+        # Run test
+        last_sync_files, last_sync_time = manager.read_last_sync_file()
+        self.assertCountEqual(last_sync_files, file_dict)
+        self.assertEqual(last_sync_time, file_time)
+
+        # Teardown
+        self.tf.remove_test_dirs()
+
+
+class FileStructureTestCase(unittest.TestCase):
+    """Test case for FileStructure"""
+    def __init__(self, *args, **kwargs) -> None:
+        self.tf: TFunctions = TFunctions()
+        super().__init__(*args, **kwargs)
+
+    def test_init_nonexistant_dir(self) -> None:
+        # Delete directory just in case it exists
+        if self.tf.test_path1.exists():
+            shutil.rmtree(self.tf.test_path1)
+        with self.assertRaises(AssertionError):
+            FileStructure(str(self.tf.test_path1))  # type: ignore[arg-type]
+
+    def test_get_rand_fstruct(self) -> None:
+        if Path(self.tf.test_path1).exists():
+            shutil.rmtree(self.tf.test_path1)
+
         error: Optional[Exception] = None
         try:
-            assert manager.write_sync_directories(input)
-            result: List[str] = self.get_json_contents(self.sync_dir_file)
-            self.assertCountEqual(input, result)
+            # Build, get, and print directory
+            file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path1))
+            fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+            fstruct.get_file_structure()
+            # fstruct.print_file_structure()
         except Exception as oops:
             error = oops
         finally:
-            # Teardown: replace config contents
-            self.remove_tempfile()
-
+            shutil.rmtree(self.tf.test_path1)
         if error is not None:
             raise error
 
-    def test_write_too_few_config(self) -> None:
-        # Setup: Move config contents
-        self.create_tempfile()
-
-        # Write to config and check config contents
-        input: List[str] = [str(self.test_path2)]
-        manager: ConfigManager = ConfigManager()
-        error: Optional[Exception] = None
-        try:
-            assert not manager.write_sync_directories(input)
-            assert not self.sync_dir_file.exists()
-        except Exception as oops:
-            error = oops
-        finally:
-            # Teardown: replace config contents
-            self.remove_tempfile()
-
-        if error is not None:
-            raise error
+        self.assertCountEqual(file_dict, fstruct.files)
 
 
 if __name__ == "__main__":
