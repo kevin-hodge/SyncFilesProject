@@ -159,8 +159,54 @@ class TFunctions:
                 raise error
         return wrapper
 
-    def make_rand_mods(self, path: Path, file_dict: Dict[str, Any]) -> Dict[str, Any]:
-        pass
+    def make_rand_mods(self, path: str, file_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Makes random modifications to a file structure dictionary.
 
-    def write_fstruct(self, path: Path, file_dict: Dict[str, Any]) -> bool:
-        pass
+        10% chance of changing directory name.
+        5% change of changing file name.
+        5% chance of modifying file.
+
+        Args:
+            path (Path): _description_
+            file_dict (Dict[str, Any]): _description_
+
+        Returns:
+            Dict[str, Any]: _description_
+        """
+        # Iterate through file structure dictionary
+        new_file_dict: Dict[str, Any] = dict()
+        change_count: int = 0
+        for key, value in file_dict.items():
+            if isinstance(value, dict):
+                dir_name: str = str(Path(path) / key)
+                assert Path(dir_name).exists()
+                new_file_dict[key] = self.make_rand_mods(dir_name, value)
+                if random.random() > 0.9:
+                    # Change directory name
+                    new_name: str = f"Edited_dir_{change_count}"
+                    change_count += 1
+                    new_file_dict[new_name] = value
+                    dest: str = str(Path(path) / new_name)
+                    assert shutil.move(dir_name, dest) == dest
+            elif isinstance(value, float):
+                file_name: str = str(Path(path) / key)
+                assert Path(file_name).exists()
+                if random.random() > 0.1:
+                    if random.random() > 0.5:
+                        # Change file name
+                        new_name = f"Edited_file_{change_count}.txt"
+                        new_file_dict[new_name] = value
+                        dest = str(Path(path) / new_name)
+                        assert shutil.move(file_name, dest) == dest
+                    else:
+                        # Update last modified date
+                        file = Path(path) / key
+                        assert file.exists()
+                        file.touch(exist_ok=True)
+                        new_file_dict[key] = value
+                    change_count += 1
+                else:
+                    new_file_dict[key] = value
+            else:
+                raise TypeError("Directory entry is not a file or directory")
+        return new_file_dict

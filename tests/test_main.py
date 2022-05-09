@@ -205,6 +205,9 @@ class FileStructureTestCase(unittest.TestCase):
 
         self.assertCountEqual(file_dict, fstruct.files)
 
+    def test_get_updated(self) -> None:
+        pass
+
 
 if __name__ == "__main__":
     unittest.main()
