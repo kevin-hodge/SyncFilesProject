@@ -4,7 +4,6 @@
 Author: Kevin Hodge
 """
 from typing import List, Any, Dict, Optional, Tuple
-from pathlib import Path
 import shutil
 import json
 import unittest
@@ -188,7 +187,7 @@ class FileStructureTestCase(unittest.TestCase):
     def test_get_rand_fstruct(self) -> None:
         if self.tf.test_path1.exists():
             shutil.rmtree(self.tf.test_path1)
-        
+
         error: Optional[Exception] = None
         try:
             # Build, get, and print directory
@@ -209,17 +208,28 @@ class FileStructureTestCase(unittest.TestCase):
         if self.tf.test_path1.exists():
             shutil.rmtree(self.tf.test_path1)
 
-        # Set up
-        self.tf.create_rand_fstruct(str(self.tf.test_path1))
-        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
-        fstruct.get_file_structure()
-        self.tf.write_json(fstruct.files, self.tf.last_sync_file)
-        file_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
+        error: Optional[Exception] = None
+        try:
+            # Set up
+            self.tf.create_rand_fstruct(str(self.tf.test_path1))
+            fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+            fstruct.get_file_structure()
+            self.tf.write_json(fstruct.files, self.tf.last_sync_file)
+            self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
 
-        # Run check
-        # updated: Dict[str, Any] = fstruct.check_file_structure()
+            # Run check
+            # updated: Dict[str, Any] = fstruct.check_file_structure()
 
-        # Check results
+            # Check results
+
+        except Exception as oops:
+            error = oops
+        finally:
+            if self.tf.test_path1.exists():
+                shutil.rmtree(self.tf.test_path1)
+
+        if error is not None:
+            raise error
 
     def test_get_dict_value(self):
         pass
