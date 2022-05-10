@@ -186,16 +186,17 @@ class FileStructureTestCase(unittest.TestCase):
             FileStructure(str(self.tf.test_path1))  # type: ignore[arg-type]
 
     def test_get_rand_fstruct(self) -> None:
-        if Path(self.tf.test_path1).exists():
+        if self.tf.test_path1.exists():
             shutil.rmtree(self.tf.test_path1)
-
+        
         error: Optional[Exception] = None
         try:
             # Build, get, and print directory
             file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path1))
             fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
             fstruct.get_file_structure()
-            # fstruct.print_file_structure()
+            fstruct.print_file_structure()
+            self.assertCountEqual(file_dict, fstruct.files)
         except Exception as oops:
             error = oops
         finally:
@@ -203,9 +204,24 @@ class FileStructureTestCase(unittest.TestCase):
         if error is not None:
             raise error
 
-        self.assertCountEqual(file_dict, fstruct.files)
-
+    @TFunctions.handle_last_tempfile
     def test_get_updated(self) -> None:
+        if self.tf.test_path1.exists():
+            shutil.rmtree(self.tf.test_path1)
+
+        # Set up
+        self.tf.create_rand_fstruct(str(self.tf.test_path1))
+        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+        fstruct.get_file_structure()
+        self.tf.write_json(fstruct.files, self.tf.last_sync_file)
+        file_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
+
+        # Run check
+        # updated: Dict[str, Any] = fstruct.check_file_structure()
+
+        # Check results
+
+    def test_get_dict_value(self):
         pass
 
 

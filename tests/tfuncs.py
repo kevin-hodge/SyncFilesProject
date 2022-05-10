@@ -194,16 +194,16 @@ class TFunctions:
                 if random.random() > 0.1:
                     if random.random() > 0.5:
                         # Change file name
-                        new_name = f"Edited_file_{change_count}.txt"
-                        new_file_dict[new_name] = value
-                        dest = str(Path(path) / new_name)
+                        new_name: str = f"Edited_file_{change_count}.txt"
+                        dest: str = str(Path(path) / new_name)
                         assert shutil.move(file_name, dest) == dest
+                        Path(dest).touch(exist_ok=True)
+                        new_file_dict[new_name] = Path(dest).stat().st_mtime
                     else:
                         # Update last modified date
-                        file = Path(path) / key
-                        assert file.exists()
-                        file.touch(exist_ok=True)
-                        new_file_dict[key] = value
+                        assert Path(file_name).exists()
+                        Path(file_name).touch(exist_ok=True)
+                        new_file_dict[key] = Path(file_name).stat().st_mtime
                     change_count += 1
                 else:
                     new_file_dict[key] = value
