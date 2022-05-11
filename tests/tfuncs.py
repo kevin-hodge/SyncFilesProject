@@ -10,6 +10,8 @@ import json
 import shutil
 import random
 import functools
+import unittest
+from syncfiles.file_structure import FileStructure
 
 
 class TFunctions:
@@ -210,3 +212,14 @@ class TFunctions:
             else:
                 raise TypeError("Directory entry is not a file or directory")
         return new_file_dict
+
+    def recursive_check_entry(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
+                              path: Optional[str] = None) -> None:
+        if path is None:
+            path = fstruct.directory_path
+        for key, value in file_dict.items():
+            new_path = str(Path(path) / key)
+            if isinstance(value, dict):
+                self.recursive_check_entry(case, fstruct, value, new_path)
+            check_val: Any = fstruct.get_dict_value(new_path, fstruct.files)
+            case.assertEqual(check_val, value)

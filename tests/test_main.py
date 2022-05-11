@@ -194,7 +194,7 @@ class FileStructureTestCase(unittest.TestCase):
             file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path1))
             fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
             fstruct.get_file_structure()
-            fstruct.print_file_structure()
+            # fstruct.print_file_structure()
             self.assertCountEqual(file_dict, fstruct.files)
         except Exception as oops:
             error = oops
@@ -231,8 +231,25 @@ class FileStructureTestCase(unittest.TestCase):
         if error is not None:
             raise error
 
-    def test_get_dict_value(self):
-        pass
+    def test_get_dict_value(self) -> None:
+        if self.tf.test_path1.exists():
+            shutil.rmtree(self.tf.test_path1)
+
+        error: Optional[Exception] = None
+        try:
+            self.tf.create_rand_fstruct(str(self.tf.test_path1))
+            fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+            fstruct.get_file_structure()
+            fstruct.print_file_structure()
+            self.tf.recursive_check_entry(self, fstruct, fstruct.files)
+        except Exception as oops:
+            error = oops
+        finally:
+            if self.tf.test_path1.exists():
+                shutil.rmtree(self.tf.test_path1)
+
+        if error is not None:
+            raise error
 
 
 if __name__ == "__main__":
