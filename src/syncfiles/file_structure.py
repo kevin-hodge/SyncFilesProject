@@ -8,6 +8,18 @@ from typing import Any, List, Tuple, Optional, Dict
 from pathlib import Path
 
 
+class dir_entry(dict):
+    def __init__(self, *args, **kwargs):
+        self.mtime: float = float()
+        self.updated: bool = False
+        super().__init__(*args, **kwargs)
+
+
+class file_entry(float):
+    def __init__(self, *args, **kwargs):
+        self.updated: bool = False
+
+
 class FileStructure:
     """Contains information about a sync directory.
 
@@ -32,9 +44,10 @@ class FileStructure:
         assert Path(directory_path).exists()
         self.directory_path: str = directory_path
         self.path_list = self.split_path(self.directory_path)
-        self.files: Dict[str, Any] = dict()
-        self.last_update: Dict[float, Any] = dict()
-        self.updated: Dict[str, Any] = dict()
+        self.files: dir_entry = dir_entry(dict())
+        # self.files: Dict[str, Any] = dict()
+        # self.last_update: Dict[float, Any] = dict()
+        # self.updated: Dict[str, Any] = dict()
         self.verbose: bool = verbose
 
     def get_file_structure(self) -> Dict[str, Any]:
@@ -47,31 +60,15 @@ class FileStructure:
                 FileStructure.
 
         """
-        self.files, self.last_update = self.recursive_get_directory(self.directory_path)
+        self.files = self.recursive_get_directory(self.directory_path)
         return self.files
 
     def print_file_structure(self, offset: int = 1) -> None:
-        """Prints self.files.
-
-        Calls recursive_print_list with self.files as an argument.
-
-        Args:
-            offset (int): indicates the depth of the directory and the indention used to print the file/folder.
-
-        """
+        """Calls recursive_print_list with self.files as an argument."""
         print(Path(self.directory_path).name)
         self.recursive_print_dict(self.files, offset)
 
-    def print_last_update(self, offset: int = 1) -> None:
-        """Prints self.last_update
-
-        Calls recursive_print_list with self.last_update as an argument.
-
-        """
-        print(Path(self.directory_path).stat().st_mtime)
-        self.recursive_print_dict(self.last_update, offset)
-
-    def recursive_get_directory(self, directory: str) -> Tuple[Dict[str, Any], Dict[float, Any]]:
+    def recursive_get_directory(self, directory: str) -> dir_entry:
         """Recursive function that gives the structure of all files and folder contained within a directory.
 
         Args:
@@ -85,23 +82,18 @@ class FileStructure:
         """
         assert Path(directory).exists()
 
-        file_structure: Dict[str, Any] = dict()
-        last_updates: Dict[float, Any] = dict()
+        file_structure: dir_entry = dir_entry(dict())
         for entry in Path(directory).iterdir():
             if Path(entry).is_file():
-                file_structure[entry.name] = Path(entry).stat().st_mtime
-                last_updates[Path(entry).stat().st_mtime] = None
+                file_structure[entry.name] = file_entry(Path(entry).stat().st_mtime)
             elif Path(entry).is_dir():
-                sub_dir: Dict[str, Any]
-                sub_updates: Dict[float, Any]
-                sub_dir, sub_updates = self.recursive_get_directory(str(entry))
-                file_structure[entry.name] = sub_dir
-                last_updates[Path(entry).stat().st_mtime] = sub_updates
+                file_structure[entry.name] = dir_entry(self.recursive_get_directory(str(entry)))
+                file_structure[entry.name].mtime = Path(entry).stat().st_mtime
             else:
                 raise ValueError("Directory entry is not a file or directory")
-        return file_structure, last_updates
+        return file_structure
 
-    def recursive_print_dict(self, files_dict: Dict[Any, Any], offset: int = 0) -> None:
+    def recursive_print_dict(self, files_dict: dir_entry, offset: int = 0) -> None:
         """Prints out dict that matches format of FileStructure.files.
 
         Args:
@@ -110,15 +102,15 @@ class FileStructure:
 
         """
         indent: str = 3 * offset * ' '  # indent made for each directory level
-        for entry, value in files_dict.items():
-            if isinstance(files_dict[entry], dict):
-                print(f"{indent}{entry}")
-                self.recursive_print_dict(files_dict[entry], offset + 1)
+        for key, value in files_dict.items():
+            if isinstance(files_dict[key], dict):
+                print(f"{indent}{key}: {value.mtime}")
+                self.recursive_print_dict(files_dict[key], offset + 1)
             else:
-                print(f"{indent}{entry}: {value}")
+                print(f"{indent}{key}: {value}")
 
-    def check_file_structure(self, last_sync_files: Dict[str, Any], last_sync_time: float,
-                             path: Optional[str] = None, change_found: bool = False) -> bool:
+    def check_file_structure(self, last_sync_files: Dict[str, Any], path: Optional[str] = None,
+                             change_found: bool = False) -> bool:
         """Checks for updates within the self.files since the last sync and fills self.updated.
 
         Requirements:
@@ -150,7 +142,7 @@ class FileStructure:
                 # TODO Mark as updated if in self.files, but not in self.updated
                 # Recursive call
                 new_path: str = str(Path(path) / key)
-                change_found = self.check_file_structure(last_sync_files, last_sync_time, new_path)
+                change_found = self.check_file_structure(last_sync_files, new_path)
             elif isinstance(value, float):
                 # Check if entry from self.files is in last_sync_files, if not, mark updated
                 if self.get_dict_value(path, last_sync_files) is not False:
@@ -167,8 +159,8 @@ class FileStructure:
 
         return change_found
 
-    def fill_updated(self, last_sync_files: Dict[str, Any], last_sync_time: float,
-                     path: Optional[str] = None, change_found: bool = False) -> bool:
+    def fill_updated(self, last_sync_files: Dict[str, Any], path: Optional[str] = None, 
+                     change_found: bool = False) -> bool:
         pass
 
     def split_path(self, path: str):
@@ -177,7 +169,7 @@ class FileStructure:
         elif "/" in str(path):
             return str(path).split("/")
 
-    def get_dict_value(self, path: str, search_dict: Dict[str, Any], keys: Optional[List[str]] = None) -> Any:
+    def get_dict_value(self, path: str, search_dict: dir_entry, keys: Optional[List[str]] = None) -> Any:
         if keys is None:
             path_list: List[str] = self.split_path(path)
             for index, entry in enumerate(path_list):
@@ -194,7 +186,7 @@ class FileStructure:
             else:
                 raise ValueError("Keys has no elements.")
 
-    def set_dict_value(self, path: str, search_dict: Dict[str, Any], value: Any,
+    def set_dict_value(self, path: str, search_dict: dir_entry, value: Any,
                        keys: Optional[List[str]] = None) -> Any:
         if keys is None:
             path_list: List[str] = self.split_path(path)
