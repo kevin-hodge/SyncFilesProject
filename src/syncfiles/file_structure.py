@@ -4,11 +4,11 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Tuple, Optional, Dict
+from typing import Any, List, Optional, Dict
 from pathlib import Path
 
 
-class dir_entry(dict):
+class dir_entry(Dict[str, Any]):
     def __init__(self, *args, **kwargs):
         self.mtime: float = float()
         self.updated: bool = False
@@ -109,7 +109,7 @@ class FileStructure:
             else:
                 print(f"{indent}{key}: {value}")
 
-    def check_file_structure(self, last_sync_files: Dict[str, Any], path: Optional[str] = None,
+    def check_file_structure(self, last_sync_files: dir_entry, path: Optional[str] = None,
                              change_found: bool = False) -> bool:
         """Checks for updates within the self.files since the last sync and fills self.updated.
 
@@ -133,7 +133,6 @@ class FileStructure:
         """
         # Reset updated just in case
         if path is None:
-            self.updated = dict()
             path = self.directory_path
 
         # Check values and mark as updated if necessary
@@ -148,18 +147,18 @@ class FileStructure:
                 if self.get_dict_value(path, last_sync_files) is not False:
                     if self.get_dict_value(path, self.files) > self.get_dict_value(path, last_sync_files):
                         # If file, exists in both, and newer than last sync, mark updated
-                        self.set_dict_value(new_path, self.updated, True)
+                        self.files = self.set_dict_value(new_path, self.files, True)
                     else:
                         # If file, exists in both, and not newer than last sync, mark not updated
-                        self.set_dict_value(new_path, self.updated, False)
+                        self.files = self.set_dict_value(new_path, self.files, False)
                 else:
-                    self.set_dict_value(new_path, self.updated, True)
+                    self.files = self.set_dict_value(new_path, self.files, True)
             else:
                 raise ValueError("FileStructure.files value is not a float or dictionary.")
 
         return change_found
 
-    def fill_updated(self, last_sync_files: Dict[str, Any], path: Optional[str] = None, 
+    def fill_updated(self, last_sync_files: Dict[str, Any], path: Optional[str] = None,
                      change_found: bool = False) -> bool:
         pass
 
@@ -187,7 +186,7 @@ class FileStructure:
                 raise ValueError("Keys has no elements.")
 
     def set_dict_value(self, path: str, search_dict: dir_entry, value: Any,
-                       keys: Optional[List[str]] = None) -> Any:
+                       keys: Optional[List[str]] = None, updated: bool = False) -> Any:
         if keys is None:
             path_list: List[str] = self.split_path(path)
             for index, entry in enumerate(path_list):
@@ -196,7 +195,10 @@ class FileStructure:
         if keys is not None:
             if len(keys) == 1:
                 if keys[0] in search_dict:
-                    search_dict[keys[0]] = value
+                    if updated:
+                        search_dict[keys[0]].updated = value
+                    else:
+                        search_dict[keys[0]] = value
                     return search_dict
                 else:
                     return False
