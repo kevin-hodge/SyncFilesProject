@@ -147,7 +147,7 @@ def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     try:
         for directory in state_info.directories:
             directory.get_file_structure()
-            # directory.check_file_structure()
+            directory.check_file_structure(state_info.manager.read_last_sync_file())
             if state_info.verbose:
                 print(f"Directory {str(state_info.directories.index(directory) + 1)}:")
                 directory.print_file_structure()

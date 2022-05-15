@@ -109,7 +109,7 @@ class FileStructure:
             else:
                 print(f"{indent}{key}: {value}")
 
-    def check_file_structure(self, last_sync_files: dir_entry, path: Optional[str] = None,
+    def check_file_structure(self, last_sync_files: Dict[str, Any], path: Optional[str] = None,
                              change_found: bool = False) -> bool:
         """Checks for updates within the self.files since the last sync and fills self.updated.
 
@@ -131,36 +131,39 @@ class FileStructure:
             path (str, optional): Path to the current directory.
 
         """
-        # Reset updated just in case
         if path is None:
             path = self.directory_path
 
         # Check values and mark as updated if necessary
         for key, value in self.files.items():
+            new_path: str = str(Path(path) / key)
             if isinstance(value, dict):
-                # TODO Mark as updated if in self.files, but not in self.updated
+                # Mark as updated if in self.files, but not in last_sync_files
+                if not self.get_dict_value(new_path, self.from_json(last_sync_files)):
+                    assert self.set_dict_value(new_path, self.files, value=True, updated=True)
+                    change_found = True
+                else:
+                    assert self.set_dict_value(new_path, self.files, value=False, updated=True)
                 # Recursive call
-                new_path: str = str(Path(path) / key)
-                change_found = self.check_file_structure(last_sync_files, new_path)
+                if self.check_file_structure(last_sync_files, new_path):
+                    change_found = True
             elif isinstance(value, float):
                 # Check if entry from self.files is in last_sync_files, if not, mark updated
-                if self.get_dict_value(path, last_sync_files) is not False:
-                    if self.get_dict_value(path, self.files) > self.get_dict_value(path, last_sync_files):
+                if self.get_dict_value(new_path, self.from_json(last_sync_files)) is not False:
+                    if (self.get_dict_value(new_path, self.files, updated=True) >
+                            self.get_dict_value(new_path, self.from_json(last_sync_files), updated=True)):
                         # If file, exists in both, and newer than last sync, mark updated
-                        self.files = self.set_dict_value(new_path, self.files, True)
+                        assert self.set_dict_value(new_path, self.files, value=True, updated=True)
+                        change_found = True
                     else:
                         # If file, exists in both, and not newer than last sync, mark not updated
-                        self.files = self.set_dict_value(new_path, self.files, False)
+                        assert self.set_dict_value(new_path, self.files, value=False, updated=True)
                 else:
-                    self.files = self.set_dict_value(new_path, self.files, True)
+                    assert self.set_dict_value(new_path, self.files, value=True, updated=True)
+                    change_found = True
             else:
-                raise ValueError("FileStructure.files value is not a float or dictionary.")
-
+                raise TypeError("FileStructure.files value is not a float or dictionary.")
         return change_found
-
-    def fill_updated(self, last_sync_files: Dict[str, Any], path: Optional[str] = None,
-                     change_found: bool = False) -> bool:
-        pass
 
     def split_path(self, path: str):
         if "\\" in str(path):
@@ -168,7 +171,8 @@ class FileStructure:
         elif "/" in str(path):
             return str(path).split("/")
 
-    def get_dict_value(self, path: str, search_dict: dir_entry, keys: Optional[List[str]] = None) -> Any:
+    def get_dict_value(self, path: str, search_dict: dir_entry, keys: Optional[List[str]] = None,
+                       updated: bool = False) -> Any:
         if keys is None:
             path_list: List[str] = self.split_path(path)
             for index, entry in enumerate(path_list):
@@ -177,16 +181,22 @@ class FileStructure:
         if keys is not None:
             if len(keys) == 1:
                 if keys[0] in search_dict:
-                    return search_dict[keys[0]]
+                    if updated:
+                        return search_dict[keys[0]].updated
+                    else:
+                        return search_dict[keys[0]]
                 else:
                     return False
             elif len(keys) > 1:
-                return self.get_dict_value(path, search_dict[keys[0]], keys[1:])
+                if updated:
+                    return self.get_dict_value(path, search_dict[keys[0]], keys[1:], updated=True)
+                else:
+                    return self.get_dict_value(path, search_dict[keys[0]], keys[1:])
             else:
                 raise ValueError("Keys has no elements.")
 
-    def set_dict_value(self, path: str, search_dict: dir_entry, value: Any,
-                       keys: Optional[List[str]] = None, updated: bool = False) -> Any:
+    def set_dict_value(self, path: str, search_dict: dir_entry, value: Any, keys: Optional[List[str]] = None,
+                       updated: bool = False) -> bool:
         if keys is None:
             path_list: List[str] = self.split_path(path)
             for index, entry in enumerate(path_list):
@@ -199,13 +209,42 @@ class FileStructure:
                         search_dict[keys[0]].updated = value
                     else:
                         search_dict[keys[0]] = value
-                    return search_dict
+                    return True
+                    # return search_dict
                 else:
                     return False
             elif len(keys) > 1:
-                return self.get_dict_value(path, search_dict[keys[0]], keys[1:])
+                if updated:
+                    return self.set_dict_value(path, search_dict[keys[0]], keys[1:], updated=True)
+                else:
+                    return self.set_dict_value(path, search_dict[keys[0]], keys[1:])
             else:
                 raise ValueError("Keys has no elements.")
+        else:
+            return False
 
     def update_file_structure(self) -> None:
         pass
+
+    def to_json(self, entry: dir_entry) -> Dict[str, Any]:
+        file_dict: Dict[str, Any] = dict()
+        for key in entry:
+            if isinstance(entry[key], dict):
+                file_dict[key] = {'mtime': entry[key].mtime, 'dir': self.to_json(entry[key])}
+            elif isinstance(entry[key], float):
+                file_dict[key] = float(entry[key])
+            else:
+                raise TypeError("dir_entry entry is not a float or dict.")
+        return file_dict
+
+    def from_json(self, file_dict: Dict[str, Any]) -> dir_entry:
+        entry: dir_entry = dir_entry(dict())
+        for key, value in file_dict.items():
+            if isinstance(value, dict):
+                entry[key] = self.from_json(value)
+                entry[key].mtime = value['mtime']
+            elif isinstance(value, float):
+                entry[key] = file_entry(value)
+            else:
+                raise TypeError("file_dict entry is not a float or dict.")
+        return entry

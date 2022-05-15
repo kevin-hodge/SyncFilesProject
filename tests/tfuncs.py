@@ -214,12 +214,22 @@ class TFunctions:
         return new_file_dict
 
     def recursive_check_entry(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
-                              path: Optional[str] = None) -> None:
+                              path: Optional[str] = None, updated: bool = False) -> None:
+        """Runs get_dict_value on each entry in a FileStructure and asserts that the value returned equals the value."""
         if path is None:
             path = fstruct.directory_path
         for key, value in file_dict.items():
             new_path = str(Path(path) / key)
-            if isinstance(value, dict):
-                self.recursive_check_entry(case, fstruct, value, new_path)
-            check_val: Any = fstruct.get_dict_value(new_path, fstruct.files)
-            case.assertEqual(check_val, value)
+            if updated:
+                if isinstance(value, dict):
+                    self.recursive_check_entry(case, fstruct, value, new_path, updated=True)
+                check_val: Any = fstruct.get_dict_value(new_path, fstruct.files, updated=True)
+                case.assertEqual(check_val, value.updated)
+            else:
+                if isinstance(value, dict):
+                    self.recursive_check_entry(case, fstruct, value, new_path)
+                check_val = fstruct.get_dict_value(new_path, fstruct.files)
+                case.assertEqual(check_val, value)
+
+    def write_last_sync(self):
+        pass

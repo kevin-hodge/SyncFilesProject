@@ -4,7 +4,7 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 from pathlib import Path
 import json
 
@@ -99,22 +99,20 @@ class ConfigManager():
             return True
         return False
 
-    def read_last_sync_file(self) -> Tuple[Dict[str, Any], float]:
-        # Check if last_updates_file exists
-        # Retrieve last_sync_files and last_sync_time for each entry in files
+    def read_last_sync_file(self) -> Dict[str, Any]:
+        # Check if last_updates_file exists, rtetrieve last_sync_files
         last_sync_files: Dict[str, Any] = dict()
-        last_sync_time: float = 0.0
         if self.last_sync_file.exists():
-            last_sync_data: List[Any] = list()
             with self.last_sync_file.open() as json_file:
-                last_sync_data = json.load(json_file)
+                last_sync_files = json.load(json_file)
                 if self.verbose:
                     print("Read last_sync_file.json")
-            assert len(last_sync_data) == 2
-            last_sync_files = last_sync_data[0]
-            last_sync_time = last_sync_data[1]
         else:
             if self.verbose:
                 print("No last_sync_file found.")
+        return last_sync_files
 
-        return last_sync_files, last_sync_time
+    def write_last_sync_file(self, file_dict: Dict[str, Any]) -> bool:
+        with self.last_sync_file.open("w") as json_file:
+            json.dump(file_dict, json_file)
+        return True
