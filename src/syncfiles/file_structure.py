@@ -50,7 +50,7 @@ class FileStructure:
         # self.updated: Dict[str, Any] = dict()
         self.verbose: bool = verbose
 
-    def get_file_structure(self) -> Dict[str, Any]:
+    def get_file_structure(self) -> dir_entry:
         """Reads all files and folders below the directory.
 
         Calls recursive_get_directory.
@@ -109,57 +109,50 @@ class FileStructure:
             else:
                 print(f"{indent}{key}: {value}")
 
-    def check_file_structure(self, last_sync_files: Dict[str, Any], path: Optional[str] = None,
-                             change_found: bool = False) -> bool:
+    def check_file_structure(self, last_sync_dict: Dict[str, Any], path: Optional[str] = None,
+                             file_dir: Optional[dir_entry] = None) -> bool:
         """Checks for updates within the self.files since the last sync and fills self.updated.
-
-        Requirements:
-            - TODO Req #18: The program shall load last_sync_files and last_sync_time from config file.
-            - TODO Req #14: The program shall check if last_update is greater than last_sync_time (if it exists).
-            - TODO Req #12: The program shall determine the files and folders that have been updated.
-
-        TODOs:
-            - TODO: If entry exists in self.files but not in last_sync_files, set entry in self.updated to True
-            - TODO: If exists in both last_sync_files and self.files and the entry is a file, compare last_sync_time to
-                self.last_update, if greater, set entry in self.updated to True (updated)
-            - TODO: All other entries in self.updated should be False (no change, default)
 
         Args:
             last_sync_files (dict[str, Any]): Same structure as FileStructure.files. Represents the file structure from
                 the previous sync.
-            last_sync_time (float): REMOVE. Represents time of last sync.
             path (str, optional): Path to the current directory.
 
         """
         if path is None:
             path = self.directory_path
+        if file_dir is None:
+            file_dir = self.files
 
         # Check values and mark as updated if necessary
-        for key, value in self.files.items():
+        last_sync_files: dir_entry = self.from_json(last_sync_dict)
+        change_found: bool = False
+        for key, value in file_dir.items():
             new_path: str = str(Path(path) / key)
             if isinstance(value, dict):
                 # Mark as updated if in self.files, but not in last_sync_files
-                if not self.get_dict_value(new_path, self.from_json(last_sync_files)):
-                    assert self.set_dict_value(new_path, self.files, value=True, updated=True)
+                value = dir_entry(value)
+                if self.get_dict_value(new_path, last_sync_files) is not False:
+                    value.updated = True
                     change_found = True
                 else:
-                    assert self.set_dict_value(new_path, self.files, value=False, updated=True)
+                    value.updated = False
                 # Recursive call
-                if self.check_file_structure(last_sync_files, new_path):
+                if self.check_file_structure(last_sync_files, new_path, value):
                     change_found = True
             elif isinstance(value, float):
                 # Check if entry from self.files is in last_sync_files, if not, mark updated
-                if self.get_dict_value(new_path, self.from_json(last_sync_files)) is not False:
-                    if (self.get_dict_value(new_path, self.files, updated=True) >
-                            self.get_dict_value(new_path, self.from_json(last_sync_files), updated=True)):
+                value = file_entry(value)
+                if self.get_dict_value(new_path, last_sync_files) is not False:
+                    if (self.get_dict_value(new_path, self.files) > self.get_dict_value(new_path, last_sync_files)):
                         # If file, exists in both, and newer than last sync, mark updated
-                        assert self.set_dict_value(new_path, self.files, value=True, updated=True)
+                        value.updated = True
                         change_found = True
                     else:
                         # If file, exists in both, and not newer than last sync, mark not updated
-                        assert self.set_dict_value(new_path, self.files, value=False, updated=True)
+                        value.updated = False
                 else:
-                    assert self.set_dict_value(new_path, self.files, value=True, updated=True)
+                    value.updated = True
                     change_found = True
             else:
                 raise TypeError("FileStructure.files value is not a float or dictionary.")
@@ -195,8 +188,8 @@ class FileStructure:
             else:
                 raise ValueError("Keys has no elements.")
 
-    def set_dict_value(self, path: str, search_dict: dir_entry, value: Any, keys: Optional[List[str]] = None,
-                       updated: bool = False) -> bool:
+    def set_dict_updated(self, path: str, search_dict: dir_entry, value: bool,
+                         keys: Optional[List[str]] = None) -> bool:
         if keys is None:
             path_list: List[str] = self.split_path(path)
             for index, entry in enumerate(path_list):
@@ -205,19 +198,12 @@ class FileStructure:
         if keys is not None:
             if len(keys) == 1:
                 if keys[0] in search_dict:
-                    if updated:
-                        search_dict[keys[0]].updated = value
-                    else:
-                        search_dict[keys[0]] = value
+                    search_dict[keys[0]].updated = value
                     return True
-                    # return search_dict
                 else:
                     return False
             elif len(keys) > 1:
-                if updated:
-                    return self.set_dict_value(path, search_dict[keys[0]], keys[1:], updated=True)
-                else:
-                    return self.set_dict_value(path, search_dict[keys[0]], keys[1:])
+                return self.set_dict_updated(path, search_dict[keys[0]], value, keys[1:])
             else:
                 raise ValueError("Keys has no elements.")
         else:
@@ -239,12 +225,15 @@ class FileStructure:
 
     def from_json(self, file_dict: Dict[str, Any]) -> dir_entry:
         entry: dir_entry = dir_entry(dict())
-        for key, value in file_dict.items():
-            if isinstance(value, dict):
-                entry[key] = self.from_json(value)
-                entry[key].mtime = value['mtime']
-            elif isinstance(value, float):
-                entry[key] = file_entry(value)
-            else:
-                raise TypeError("file_dict entry is not a float or dict.")
+        if 'mtime' in file_dict:
+            entry = self.from_json(file_dict['dir'])
+            entry.mtime = file_dict['mtime']
+        else:
+            for key, value in file_dict.items():
+                if isinstance(value, dict):
+                    entry[key] = self.from_json(value)
+                elif isinstance(value, float):
+                    entry[key] = file_entry(value)
+                else:
+                    raise TypeError("file_dict entry is not a float or dict.")
         return entry

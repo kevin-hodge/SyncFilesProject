@@ -9,7 +9,7 @@ import json
 import unittest
 from tests.tfuncs import TFunctions
 from syncfiles.config_manager import ConfigManager
-from syncfiles.file_structure import FileStructure
+from syncfiles.file_structure import FileStructure, dir_entry
 
 
 class ConfigManagerTestCase(unittest.TestCase):
@@ -148,11 +148,10 @@ class ConfigManagerTestCase(unittest.TestCase):
         self.assertCountEqual(last_sync_files, dict())
 
     @TFunctions.handle_last_tempfile
+    @TFunctions.handle_test_dirs
     def test_valid_last_sync(self) -> None:
-        # Setup: remove last_sync_file, create file_dict and file_time
+        # Setup
         file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path2))
-
-        # Load data to last_sync_file and initialize
         self.tf.write_json(file_dict, self.tf.last_sync_file)
         last_sync_files: Dict[str, Any]
         manager: ConfigManager = ConfigManager()
@@ -161,8 +160,17 @@ class ConfigManagerTestCase(unittest.TestCase):
         last_sync_files = manager.read_last_sync_file()
         self.assertCountEqual(last_sync_files, file_dict)
 
-        # Teardown
-        self.tf.remove_test_dirs()
+    @TFunctions.handle_last_tempfile
+    @TFunctions.handle_test_dirs
+    def test_write_last_sync(self) -> None:
+        # Setup
+        file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path2))
+        manager: ConfigManager = ConfigManager()
+        manager.write_last_sync_file(file_dict)
+
+        # Run test
+        last_sync_files: Dict[str, Any] = self.tf.get_json_contents(self.tf.last_sync_file)
+        self.assertCountEqual(last_sync_files, file_dict)
 
 
 class FileStructureTestCase(unittest.TestCase):
@@ -198,32 +206,20 @@ class FileStructureTestCase(unittest.TestCase):
             raise error
 
     @TFunctions.handle_last_tempfile
+    @TFunctions.handle_test_dirs
     def test_get_updated(self) -> None:
         if self.tf.test_path1.exists():
             shutil.rmtree(self.tf.test_path1)
+        # Set up
+        self.tf.create_rand_fstruct(str(self.tf.test_path1))
+        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+        last_sync_files: dir_entry = fstruct.get_file_structure()
+        self.tf.write_json(fstruct.files, self.tf.last_sync_file)
+        self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
+        fstruct.print_file_structure()
 
-        error: Optional[Exception] = None
-        try:
-            # Set up
-            self.tf.create_rand_fstruct(str(self.tf.test_path1))
-            fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
-            fstruct.get_file_structure()
-            self.tf.write_json(fstruct.files, self.tf.last_sync_file)
-            self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
-
-            # Run check
-            # updated: Dict[str, Any] = fstruct.check_file_structure()
-
-            # Check results
-
-        except Exception as oops:
-            error = oops
-        finally:
-            if self.tf.test_path1.exists():
-                shutil.rmtree(self.tf.test_path1)
-
-        if error is not None:
-            raise error
+        # Run check
+        fstruct.check_file_structure(last_sync_files)
 
     def test_get_dict_value(self) -> None:
         self.tf.remove_test_dirs()
@@ -234,8 +230,8 @@ class FileStructureTestCase(unittest.TestCase):
             fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
             fstruct.get_file_structure()
             # fstruct.print_file_structure()
-            self.tf.recursive_check_entry(self, fstruct, fstruct.files)
-            self.tf.recursive_check_entry(self, fstruct, fstruct.files, updated=True)
+            self.tf.recursive_get_entry(self, fstruct, fstruct.files)
+            self.tf.recursive_get_entry(self, fstruct, fstruct.files, updated=True)
 
             self.assertFalse(fstruct.get_dict_value(str(self.tf.test_path2), fstruct.files))
         except Exception as oops:
@@ -247,7 +243,7 @@ class FileStructureTestCase(unittest.TestCase):
         if error is not None:
             raise error
 
-    def test_set_dict_value(self) -> None:
+    def test_set_dict_updated(self) -> None:
         self.tf.remove_test_dirs()
 
         error: Optional[Exception] = None
@@ -258,9 +254,7 @@ class FileStructureTestCase(unittest.TestCase):
             fstruct.print_file_structure()
 
             # Set values
-            self.tf.recursive_check_entry(self, fstruct, fstruct.files)
-
-            self.assertFalse(fstruct.get_dict_value(str(self.tf.test_path1), fstruct.files))
+            self.tf.recursive_set_updated(self, fstruct, fstruct.files)
         except Exception as oops:
             error = oops
         finally:
@@ -269,6 +263,20 @@ class FileStructureTestCase(unittest.TestCase):
 
         if error is not None:
             raise error
+
+    @TFunctions.handle_last_tempfile
+    @TFunctions.handle_test_dirs
+    def test_json_conversion(self) -> None:
+        # Create fstruct
+        self.tf.create_rand_fstruct(str(self.tf.test_path1))
+        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+        before_files: dir_entry = fstruct.get_file_structure()
+        before_dict: Dict[str, Any] = fstruct.to_json(before_files)
+        self.tf.write_json(before_dict, self.tf.last_tempfile)
+        after_dict: Dict[str, Any] = self.tf.get_json_contents(self.tf.last_tempfile)
+        self.assertCountEqual(before_dict, after_dict)
+        after_files: dir_entry = fstruct.from_json(after_dict)
+        self.assertCountEqual(before_files, after_files)
 
 
 if __name__ == "__main__":

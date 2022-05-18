@@ -5,7 +5,7 @@ Author: Kevin Hodge
 """
 
 from pathlib import Path
-from typing import List, Any, Dict, Optional
+from typing import Any, Dict, Optional
 import json
 import shutil
 import random
@@ -24,8 +24,8 @@ class TFunctions:
         self.test_path1: Path = Path.cwd() / Path("test_dir1")
         self.test_path2: Path = Path.cwd() / Path("test_dir2")
 
-    def get_json_contents(self, file_path: Path) -> List[str]:
-        json_data: List[str]
+    def get_json_contents(self, file_path: Path) -> Any:
+        json_data: Any
         with file_path.open() as json_file:
             json_data = json.load(json_file)
         return json_data
@@ -213,8 +213,8 @@ class TFunctions:
                 raise TypeError("Directory entry is not a file or directory")
         return new_file_dict
 
-    def recursive_check_entry(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
-                              path: Optional[str] = None, updated: bool = False) -> None:
+    def recursive_get_entry(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
+                            path: Optional[str] = None, updated: bool = False) -> None:
         """Runs get_dict_value on each entry in a FileStructure and asserts that the value returned equals the value."""
         if path is None:
             path = fstruct.directory_path
@@ -222,14 +222,34 @@ class TFunctions:
             new_path = str(Path(path) / key)
             if updated:
                 if isinstance(value, dict):
-                    self.recursive_check_entry(case, fstruct, value, new_path, updated=True)
+                    self.recursive_get_entry(case, fstruct, value, new_path, updated=True)
                 check_val: Any = fstruct.get_dict_value(new_path, fstruct.files, updated=True)
                 case.assertEqual(check_val, value.updated)
             else:
                 if isinstance(value, dict):
-                    self.recursive_check_entry(case, fstruct, value, new_path)
+                    self.recursive_get_entry(case, fstruct, value, new_path)
                 check_val = fstruct.get_dict_value(new_path, fstruct.files)
                 case.assertEqual(check_val, value)
 
-    def write_last_sync(self):
-        pass
+    def recursive_set_updated(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
+                              path: Optional[str] = None) -> None:
+        """Runs set_dict_value on each entry in a FileStructure and asserts that the value returned equals the value.
+
+        10% chance of setting True.
+        90% chance of setting False.
+        Checks either case.
+
+        """
+        if path is None:
+            path = fstruct.directory_path
+        for key, value in file_dict.items():
+            new_path = str(Path(path) / key)
+            ex_val: bool
+            if random.random() > 0.1:
+                ex_val = False
+            else:
+                ex_val = True
+            if isinstance(value, dict):
+                self.recursive_set_updated(case, fstruct, value, new_path)
+            assert fstruct.set_dict_updated(new_path, fstruct.files, ex_val)
+            case.assertEqual(ex_val, value.updated)

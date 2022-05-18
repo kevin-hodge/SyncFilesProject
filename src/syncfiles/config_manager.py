@@ -112,7 +112,6 @@ class ConfigManager():
                 print("No last_sync_file found.")
         return last_sync_files
 
-    def write_last_sync_file(self, file_dict: Dict[str, Any]) -> bool:
+    def write_last_sync_file(self, file_dict: Dict[str, Any]) -> None:
         with self.last_sync_file.open("w") as json_file:
             json.dump(file_dict, json_file)
-        return True
