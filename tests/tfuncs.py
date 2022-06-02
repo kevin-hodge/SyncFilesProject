@@ -5,7 +5,7 @@ Author: Kevin Hodge
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Tuple, Optional
 import json
 import shutil
 import random
@@ -25,58 +25,71 @@ class TFunctions:
         self.test_path2: Path = Path.cwd() / Path("test_dir2")
 
     def get_json_contents(self, file_path: Path) -> Any:
+        """Uses json modules to read json file and return contents."""
         json_data: Any
         with file_path.open() as json_file:
             json_data = json.load(json_file)
         return json_data
 
     def write_json(self, input: Any, file_path: Path) -> None:
+        """Uses json module to write to specified json file."""
         with file_path.open("w") as json_file:
             json.dump(input, json_file)
 
     def create_dir_tempfile(self) -> None:
-        # Move config file contents and delete config file
+        """Move sync directories file contents and delete sync directories file."""
         if self.sync_dir_file.exists():
             with self.dir_tempfile.open("w") as json_file:
                 json.dump(self.get_json_contents(self.sync_dir_file), json_file)
             self.sync_dir_file.unlink()
 
     def remove_dir_tempfile(self) -> None:
-        # Clean up after test
+        """Restore sync directories file contents and delete directories temporary file."""
         if self.dir_tempfile.exists():
             with self.sync_dir_file.open("w") as json_file:
                 json.dump(self.get_json_contents(self.dir_tempfile), json_file)
             self.dir_tempfile.unlink()
 
     def create_last_tempfile(self) -> None:
-        # Move config file contents and delete config file
+        """Move last sync file contents and delete last sync file."""
         if self.last_sync_file.exists():
             with self.last_tempfile.open("w") as json_file:
                 json.dump(self.get_json_contents(self.last_sync_file), json_file)
             self.last_sync_file.unlink()
 
     def remove_last_tempfile(self) -> None:
-        # Clean up after test
+        """Restore last sync file contents and delete last sync temporary file."""
         if self.last_tempfile.exists():
             with self.last_sync_file.open("w") as json_file:
                 json.dump(self.get_json_contents(self.last_tempfile), json_file)
             self.last_tempfile.unlink()
 
     def create_test_dirs(self) -> None:
-        # Create test directories
+        """Create test directories."""
         if not self.test_path1.exists():
             self.test_path1.mkdir()
         if not self.test_path2.exists():
             self.test_path2.mkdir()
 
     def remove_test_dirs(self) -> None:
-        # Clean up after test
+        """Deletes test directories."""
         if self.test_path1.exists():
             shutil.rmtree(self.test_path1)
         if self.test_path2.exists():
             shutil.rmtree(self.test_path2)
 
     def create_rand_fstruct(self, path: str, max_depth: int = 5, max_entries: int = 5) -> Dict[str, Any]:
+        """Creates a random file structure at the specified path.
+
+        Args:
+            path (str): Path to the directory in which the random file structure will be created.
+            max_depth (optional, int): Maximum number of nested directories allowed (0 implies only files are allowed
+                in the top directory).
+            max_entries (optional, int): Maximum number of files or directories within each directory.
+
+        Returns:
+            file_dict (dict[str, Any]): Describes the random file structure (same format as FileStructure.files).
+        """
         if not Path(path).exists():
             Path(path).mkdir(exist_ok=True)
 
@@ -161,33 +174,52 @@ class TFunctions:
                 raise error
         return wrapper
 
-    def make_rand_mods(self, path: str, file_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """Makes random modifications to a file structure dictionary.
+    def make_rand_mods(self, path: str, file_dict: Dict[str, Any],
+                       par_name_change: bool = False) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
+        """Makes random modifications to a file structure and the dictionary that represents the structure.
 
         10% chance of changing directory name.
         5% change of changing file name.
         5% chance of modifying file.
 
         Args:
-            path (Path): _description_
-            file_dict (Dict[str, Any]): _description_
+            path (Path): Path to the directory where the random modifications will be made.
+            file_dict (Dict[str, Any]): file dictionary that stores file names, direcotry names, and structure.
 
         Returns:
-            Dict[str, Any]: _description_
+            new_file_dict (Dict[str, Any]): _description_
+            change_count (int): Number of changes made to the file structure.
+            change_dict (Dict[str, Any]): dictionary of changed files and all folders.
         """
         # Iterate through file structure dictionary
         new_file_dict: Dict[str, Any] = dict()
+        change_dict: Dict[str, Any] = dict()
         change_count: int = 0
         for key, value in file_dict.items():
             if isinstance(value, dict):
-                dir_name: str = str(Path(path) / key)
-                assert Path(dir_name).exists()
-                new_file_dict[key] = self.make_rand_mods(dir_name, value)
+                # BUG: files and folders inside a renamed directory need to be marked as updated
+                local_name_change: bool = False
+                new_name: str = ""
+
                 if random.random() > 0.9:
                     # Change directory name
-                    new_name: str = f"Edited_dir_{change_count}"
+                    new_name = f"Edited_dir_{change_count}"
                     change_count += 1
+                    local_name_change = True
+                elif par_name_change:
+                    change_count += 1
+
+                dir_name: str = str(Path(path) / key)
+                assert Path(dir_name).exists()
+                changes: int
+                new_file_dict[key], changes, change_dict[key] = \
+                    self.make_rand_mods(dir_name, value, local_name_change or par_name_change)
+                change_count += changes
+
+                if local_name_change:
+                    # Change directory name
                     new_file_dict[new_name] = value
+                    change_dict[new_name] = value
                     dest: str = str(Path(path) / new_name)
                     assert shutil.move(dir_name, dest) == dest
             elif isinstance(value, float):
@@ -201,17 +233,21 @@ class TFunctions:
                         assert shutil.move(file_name, dest) == dest
                         Path(dest).touch(exist_ok=True)
                         new_file_dict[new_name] = Path(dest).stat().st_mtime
+                        change_dict[new_name] = new_file_dict[new_name]
                     else:
                         # Update last modified date
                         assert Path(file_name).exists()
                         Path(file_name).touch(exist_ok=True)
                         new_file_dict[key] = Path(file_name).stat().st_mtime
+                        change_dict[key] = new_file_dict[key]
+                    change_count += 1
+                elif par_name_change:
                     change_count += 1
                 else:
                     new_file_dict[key] = value
             else:
                 raise TypeError("Directory entry is not a file or directory")
-        return new_file_dict
+        return new_file_dict, change_count, change_dict
 
     def recursive_get_entry(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
                             path: Optional[str] = None, updated: bool = False) -> None:
@@ -253,3 +289,15 @@ class TFunctions:
                 self.recursive_set_updated(case, fstruct, value, new_path)
             assert fstruct.set_dict_updated(new_path, fstruct.files, ex_val)
             case.assertEqual(ex_val, value.updated)
+
+    def recursive_check_updated(self, case: unittest.TestCase, fstruct: FileStructure) -> None:
+        pass
+
+    def recursive_print_dict(self, file_dict: Dict[str, Any], offset: int = 0) -> None:
+        indent: str = 3 * offset * ' '  # indent made for each directory level
+        for key, value in file_dict.items():
+            if isinstance(value, dict):
+                print(f"{indent}{key}")
+                self.recursive_print_dict(value, offset + 1)
+            else:
+                print(f"{indent}{key}")

@@ -210,16 +210,23 @@ class FileStructureTestCase(unittest.TestCase):
     def test_get_updated(self) -> None:
         if self.tf.test_path1.exists():
             shutil.rmtree(self.tf.test_path1)
-        # Set up
+
         self.tf.create_rand_fstruct(str(self.tf.test_path1))
         fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
         last_sync_files: dir_entry = fstruct.get_file_structure()
-        self.tf.write_json(fstruct.files, self.tf.last_sync_file)
-        self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
-        fstruct.print_file_structure()
+        # fstruct.print_file_structure()
+        # self.tf.write_json(fstruct.to_json(), self.tf.last_sync_file)
+        checksum: int
+        _, checksum, change_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
+        print(checksum)
+        fstruct.get_file_structure()
+        self.tf.recursive_print_dict(change_dict)
 
-        # Run check
-        fstruct.check_file_structure(last_sync_files)
+        # Run check (Needs to FAIL if something is updated and NOT marked as updated or marked but NOT updated)
+        changes_found: int = fstruct.check_file_structure(last_sync_files)
+        print(changes_found)
+        fstruct.print_file_structure()
+        self.assertEqual(changes_found, checksum)
 
     def test_get_dict_value(self) -> None:
         self.tf.remove_test_dirs()
@@ -251,7 +258,7 @@ class FileStructureTestCase(unittest.TestCase):
             self.tf.create_rand_fstruct(str(self.tf.test_path2))
             fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
             fstruct.get_file_structure()
-            fstruct.print_file_structure()
+            # fstruct.print_file_structure()
 
             # Set values
             self.tf.recursive_set_updated(self, fstruct, fstruct.files)

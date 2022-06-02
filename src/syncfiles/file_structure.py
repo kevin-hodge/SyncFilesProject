@@ -4,7 +4,7 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Union
 from pathlib import Path
 
 
@@ -29,14 +29,11 @@ class FileStructure:
 
     Attributes:
         directory_path (str): Contains the path to the directory that the FileStructure represents.
-        files (dict): Contains names of all files (strings) and all folders (dict with entries corresponding to the
+        path_list (str): directory_path split into a list of strings. Saves some computation time.
+        files (dir_entry): Contains names of all files (strings) and all folders (dict with entries corresponding to the
             files and directories in the directory) in the directory. Folders contained in dicts, contain names of all
             files and folders in those folders, pattern continues until a directory with no folders is found.
         ex. {"dir_name": {"file1.txt", {"sub_dir_name": {"file2.txt", "file3.txt"}}, "file4.txt"}}
-        last_update (dict): Same structure as files, contains last modification times of each file in self.files.
-        updated (dict): Same structure as files, each entry corresponds to an entry in self.files. Contains True if file
-            or folder has last_update time greater than last_sync_time or False otherwise (assumes no change to the file
-            or folder).
         verbose (bool): Indicates if messages will be printed for debugging.
 
     """
@@ -45,9 +42,6 @@ class FileStructure:
         self.directory_path: str = directory_path
         self.path_list = self.split_path(self.directory_path)
         self.files: dir_entry = dir_entry(dict())
-        # self.files: Dict[str, Any] = dict()
-        # self.last_update: Dict[float, Any] = dict()
-        # self.updated: Dict[str, Any] = dict()
         self.verbose: bool = verbose
 
     def get_file_structure(self) -> dir_entry:
@@ -97,20 +91,27 @@ class FileStructure:
         """Prints out dict that matches format of FileStructure.files.
 
         Args:
-            files_dict (dict): List that matches the format of FileStructure.files.
+            files_dict (dir_entry): dir_entry that contains a file structure described in
             offset (int): Tracks the depth of the directory and directory vs. file list.
 
         """
         indent: str = 3 * offset * ' '  # indent made for each directory level
-        for key, value in files_dict.items():
-            if isinstance(files_dict[key], dict):
-                print(f"{indent}{key}: {value.mtime}")
-                self.recursive_print_dict(files_dict[key], offset + 1)
+        for key in files_dict:
+            value: Union[dir_entry, file_entry] = files_dict[key]
+            if isinstance(value, dict):
+                dir_string: str = f"{indent}{key}: {value.mtime}"
+                if value.updated:
+                    dir_string = dir_string + " X"
+                print(dir_string)
+                self.recursive_print_dict(value, offset + 1)
             else:
-                print(f"{indent}{key}: {value}")
+                file_string: str = f"{indent}{key}: {value}"
+                if value.updated:
+                    file_string = file_string + " X"
+                print(file_string)
 
     def check_file_structure(self, last_sync_dict: Dict[str, Any], path: Optional[str] = None,
-                             file_dir: Optional[dir_entry] = None) -> bool:
+                             file_dir: Optional[dir_entry] = None) -> int:
         """Checks for updates within the self.files since the last sync and fills self.updated.
 
         Args:
@@ -126,37 +127,36 @@ class FileStructure:
 
         # Check values and mark as updated if necessary
         last_sync_files: dir_entry = self.from_json(last_sync_dict)
-        change_found: bool = False
-        for key, value in file_dir.items():
+        changes_found: int = 0
+        for key in file_dir:
+            value: Union[dir_entry, file_entry] = file_dir[key]
             new_path: str = str(Path(path) / key)
             if isinstance(value, dict):
                 # Mark as updated if in self.files, but not in last_sync_files
-                value = dir_entry(value)
                 if self.get_dict_value(new_path, last_sync_files) is not False:
-                    value.updated = True
-                    change_found = True
-                else:
                     value.updated = False
+                else:
+                    value.updated = True
+                    changes_found += 1
                 # Recursive call
-                if self.check_file_structure(last_sync_files, new_path, value):
-                    change_found = True
+                changes: int = self.check_file_structure(last_sync_files, new_path, value)
+                changes_found += changes
             elif isinstance(value, float):
                 # Check if entry from self.files is in last_sync_files, if not, mark updated
-                value = file_entry(value)
                 if self.get_dict_value(new_path, last_sync_files) is not False:
                     if (self.get_dict_value(new_path, self.files) > self.get_dict_value(new_path, last_sync_files)):
                         # If file, exists in both, and newer than last sync, mark updated
                         value.updated = True
-                        change_found = True
+                        changes_found += 1
                     else:
                         # If file, exists in both, and not newer than last sync, mark not updated
                         value.updated = False
                 else:
                     value.updated = True
-                    change_found = True
+                    changes_found += 1
             else:
                 raise TypeError("FileStructure.files value is not a float or dictionary.")
-        return change_found
+        return changes_found
 
     def split_path(self, path: str):
         if "\\" in str(path):
@@ -172,21 +172,21 @@ class FileStructure:
                 if path_list[:index+1] == self.path_list:
                     keys = path_list[index+1:]
         if keys is not None:
-            if len(keys) == 1:
-                if keys[0] in search_dict:
+            if keys[0] in search_dict:
+                if len(keys) == 1:
                     if updated:
                         return search_dict[keys[0]].updated
                     else:
                         return search_dict[keys[0]]
+                elif len(keys) > 1:
+                    if updated:
+                        return self.get_dict_value(path, search_dict[keys[0]], keys[1:], updated=True)
+                    else:
+                        return self.get_dict_value(path, search_dict[keys[0]], keys[1:])
                 else:
-                    return False
-            elif len(keys) > 1:
-                if updated:
-                    return self.get_dict_value(path, search_dict[keys[0]], keys[1:], updated=True)
-                else:
-                    return self.get_dict_value(path, search_dict[keys[0]], keys[1:])
+                    raise ValueError("Keys has no elements.")
             else:
-                raise ValueError("Keys has no elements.")
+                return False
 
     def set_dict_updated(self, path: str, search_dict: dir_entry, value: bool,
                          keys: Optional[List[str]] = None) -> bool:

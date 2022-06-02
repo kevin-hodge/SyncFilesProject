@@ -151,8 +151,6 @@ def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
             if state_info.verbose:
                 print(f"Directory {str(state_info.directories.index(directory) + 1)}:")
                 directory.print_file_structure()
-                # print("Last Updates:")
-                # directory.print_last_update()
     except Exception as err:
         return state_info.error_handle(err, "get_file_structure")
 
