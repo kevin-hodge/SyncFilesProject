@@ -162,7 +162,7 @@ class FileStructure:
             return str(path).split("/")
 
     def get_dict_value(self, path: str, search_dict: dir_entry, keys: Optional[List[str]] = None,
-                       updated: bool = False) -> Union[bool, float]:
+                       updated: bool = False) -> Any:
         """_summary_
 
         TODO: Split into get_updated and get_mtime
