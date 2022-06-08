@@ -215,8 +215,8 @@ class FileStructureTestCase(unittest.TestCase):
         fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
         last_sync_files: dir_entry = fstruct.get_file_structure()
         # fstruct.print_file_structure()
-        # self.tf.write_json(fstruct.to_json(), self.tf.last_sync_file)
         checksum: int
+        change_dict: Dict[str, Any]
         _, checksum, change_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
         print(checksum)
         fstruct.get_file_structure()
