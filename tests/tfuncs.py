@@ -24,44 +24,32 @@ class TFunctions:
         self.test_path1: Path = Path.cwd() / Path("test_dir1")
         self.test_path2: Path = Path.cwd() / Path("test_dir2")
 
-    def get_json_contents(self, file_path: Path) -> Any:
-        """Uses json modules to read json file and return contents."""
-        json_data: Any
-        with file_path.open() as json_file:
-            json_data = json.load(json_file)
-        return json_data
-
-    def write_json(self, input: Any, file_path: Path) -> None:
-        """Uses json module to write to specified json file."""
-        with file_path.open("w") as json_file:
-            json.dump(input, json_file)
-
     def create_dir_tempfile(self) -> None:
         """Move sync directories file contents and delete sync directories file."""
         if self.sync_dir_file.exists():
             with self.dir_tempfile.open("w") as json_file:
-                json.dump(self.get_json_contents(self.sync_dir_file), json_file)
+                json.dump(get_json_contents(self.sync_dir_file), json_file)
             self.sync_dir_file.unlink()
 
     def remove_dir_tempfile(self) -> None:
         """Restore sync directories file contents and delete directories temporary file."""
         if self.dir_tempfile.exists():
             with self.sync_dir_file.open("w") as json_file:
-                json.dump(self.get_json_contents(self.dir_tempfile), json_file)
+                json.dump(get_json_contents(self.dir_tempfile), json_file)
             self.dir_tempfile.unlink()
 
     def create_last_tempfile(self) -> None:
         """Move last sync file contents and delete last sync file."""
         if self.last_sync_file.exists():
             with self.last_tempfile.open("w") as json_file:
-                json.dump(self.get_json_contents(self.last_sync_file), json_file)
+                json.dump(get_json_contents(self.last_sync_file), json_file)
             self.last_sync_file.unlink()
 
     def remove_last_tempfile(self) -> None:
         """Restore last sync file contents and delete last sync temporary file."""
         if self.last_tempfile.exists():
             with self.last_sync_file.open("w") as json_file:
-                json.dump(self.get_json_contents(self.last_tempfile), json_file)
+                json.dump(get_json_contents(self.last_tempfile), json_file)
             self.last_tempfile.unlink()
 
     def create_test_dirs(self) -> None:
@@ -110,69 +98,6 @@ class TFunctions:
                 file_dict[str(file.name)] = file.stat().st_mtime
 
         return file_dict
-
-    @staticmethod
-    def handle_dir_tempfile(func):
-        """
-        Creates and removes dir_tempfile even when an exception occurs.
-        """
-        tf: TFunctions = TFunctions()
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            error: Optional[Exception] = None
-            tf.create_dir_tempfile()
-            try:
-                func(*args, **kwargs)
-            except Exception as oops:
-                error = oops
-            finally:
-                tf.remove_dir_tempfile()
-            if error is not None:
-                raise error
-        return wrapper
-
-    @staticmethod
-    def handle_test_dirs(func):
-        """
-        Creates and removes test directories even when an exception occurs.
-        """
-        tf: TFunctions = TFunctions()
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            error: Optional[Exception] = None
-            tf.create_test_dirs()
-            try:
-                func(*args, **kwargs)
-            except Exception as oops:
-                error = oops
-            finally:
-                tf.remove_test_dirs()
-            if error is not None:
-                raise error
-        return wrapper
-
-    @staticmethod
-    def handle_last_tempfile(func):
-        """
-        Creates and removes last_tempfile even when an exception occurs.
-        """
-        tf: TFunctions = TFunctions()
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            error: Optional[Exception] = None
-            tf.create_last_tempfile()
-            try:
-                func(*args, **kwargs)
-            except Exception as oops:
-                error = oops
-            finally:
-                tf.create_last_tempfile()
-            if error is not None:
-                raise error
-        return wrapper
 
     def make_rand_mods(self, path: str, file_dict: Dict[str, Any],
                        par_name_change: bool = False) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
@@ -301,3 +226,80 @@ class TFunctions:
                 self.recursive_print_dict(value, offset + 1)
             else:
                 print(f"{indent}{key}")
+
+
+def get_json_contents(file_path: Path) -> Any:
+    """Uses json modules to read json file and return contents."""
+    json_data: Any
+    with file_path.open() as json_file:
+        json_data = json.load(json_file)
+    return json_data
+
+
+def write_json(input: Any, file_path: Path) -> None:
+    """Uses json module to write to specified json file."""
+    with file_path.open("w") as json_file:
+        json.dump(input, json_file)
+
+
+def handle_dir_tempfile(func):
+    """
+    Creates and removes dir_tempfile even when an exception occurs.
+    """
+    tf: TFunctions = TFunctions()
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        error: Optional[Exception] = None
+        tf.create_dir_tempfile()
+        try:
+            func(*args, **kwargs)
+        except Exception as oops:
+            error = oops
+        finally:
+            tf.remove_dir_tempfile()
+        if error is not None:
+            raise error
+    return wrapper
+
+
+def handle_test_dirs(func):
+    """
+    Creates and removes test directories even when an exception occurs.
+    """
+    tf: TFunctions = TFunctions()
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        error: Optional[Exception] = None
+        tf.create_test_dirs()
+        try:
+            func(*args, **kwargs)
+        except Exception as oops:
+            error = oops
+        finally:
+            tf.remove_test_dirs()
+        if error is not None:
+            raise error
+    return wrapper
+
+
+def handle_last_tempfile(func):
+    """
+    Creates and removes last_tempfile even when an exception occurs.
+    """
+    tf: TFunctions = TFunctions()
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        error: Optional[Exception] = None
+        tf.create_last_tempfile()
+        try:
+            func(*args, **kwargs)
+        except Exception as oops:
+            error = oops
+        finally:
+            tf.remove_last_tempfile()
+        if error is not None:
+            raise error
+    return wrapper

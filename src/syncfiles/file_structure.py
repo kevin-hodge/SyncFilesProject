@@ -95,7 +95,7 @@ class FileStructure:
             offset (int): Tracks the depth of the directory and directory vs. file list.
 
         """
-        indent: str = 3 * offset * ' '  # indent made for each directory level
+        indent: str = 3 * offset * ' '
         for key in files_dict:
             value: Union[dir_entry, file_entry] = files_dict[key]
             if isinstance(value, dict):
@@ -125,31 +125,28 @@ class FileStructure:
         if file_dir is None:
             file_dir = self.files
 
-        # Check values and mark as updated if necessary
         last_sync_files: dir_entry = self.from_json(last_sync_dict)
         changes_found: int = 0
+
         for key in file_dir:
             value: Union[dir_entry, file_entry] = file_dir[key]
             new_path: str = str(Path(path) / key)
+
             if isinstance(value, dict):
-                # Mark as updated if in self.files, but not in last_sync_files
                 if self.get_dict_value(new_path, last_sync_files) is not False:
                     value.updated = False
                 else:
                     value.updated = True
                     changes_found += 1
-                # Recursive call
-                changes: int = self.check_file_structure(last_sync_files, new_path, value)
-                changes_found += changes
+
+                changes_found += self.check_file_structure(last_sync_files, new_path, value)
             elif isinstance(value, float):
-                # Check if entry from self.files is in last_sync_files, if not, mark updated
-                if self.get_dict_value(new_path, last_sync_files) is not False:
-                    if (self.get_dict_value(new_path, self.files) > self.get_dict_value(new_path, last_sync_files)):
-                        # If file, exists in both, and newer than last sync, mark updated
+                last_sync_time: Union[float, bool] = self.get_dict_value(new_path, last_sync_files)
+                if last_sync_time is not False:
+                    if self.get_dict_value(new_path, self.files) > last_sync_time:
                         value.updated = True
                         changes_found += 1
                     else:
-                        # If file, exists in both, and not newer than last sync, mark not updated
                         value.updated = False
                 else:
                     value.updated = True
@@ -166,9 +163,25 @@ class FileStructure:
 
     def get_dict_value(self, path: str, search_dict: dir_entry, keys: Optional[List[str]] = None,
                        updated: bool = False) -> Any:
+        """_summary_
+
+        TODO: Split into get_updated and get_mtime
+
+        Args:
+            path (str): _description_
+            search_dict (dir_entry): _description_
+            keys (Optional[List[str]], optional): _description_. Defaults to None.
+            updated (bool, optional): _description_. Defaults to False.
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            Any: _description_
+        """
         if keys is None:
             path_list: List[str] = self.split_path(path)
-            for index, entry in enumerate(path_list):
+            for index, _ in enumerate(path_list):
                 if path_list[:index+1] == self.path_list:
                     keys = path_list[index+1:]
         if keys is not None:
@@ -192,7 +205,7 @@ class FileStructure:
                          keys: Optional[List[str]] = None) -> bool:
         if keys is None:
             path_list: List[str] = self.split_path(path)
-            for index, entry in enumerate(path_list):
+            for index, _ in enumerate(path_list):
                 if path_list[:index+1] == self.path_list:
                     keys = path_list[index+1:]
         if keys is not None:
