@@ -11,7 +11,7 @@ import shutil
 import random
 import functools
 import unittest
-from syncfiles.file_structure import FileStructure
+from syncfiles.file_structure import FileStructure, file_entry, dir_entry
 
 
 class TFunctions:
@@ -147,7 +147,7 @@ class TFunctions:
                     change_dict[new_name] = value
                     dest: str = str(Path(path) / new_name)
                     assert shutil.move(dir_name, dest) == dest
-            elif isinstance(value, float):
+            elif isinstance(value, file_entry):
                 file_name: str = str(Path(path) / key)
                 assert Path(file_name).exists()
                 if random.random() > 0.1:
@@ -184,36 +184,13 @@ class TFunctions:
             if updated:
                 if isinstance(value, dict):
                     self.recursive_get_entry(case, fstruct, value, new_path, updated=True)
-                check_val: Any = fstruct.get_dict_value(new_path, fstruct.files, updated=True)
-                case.assertEqual(check_val, value.updated)
+                check_val: Any = fstruct.get_entry(new_path, fstruct.files)
+                case.assertEqual(check_val.updated, value.updated)
             else:
                 if isinstance(value, dict):
                     self.recursive_get_entry(case, fstruct, value, new_path)
-                check_val = fstruct.get_dict_value(new_path, fstruct.files)
+                check_val = fstruct.get_entry(new_path, fstruct.files)
                 case.assertEqual(check_val, value)
-
-    def recursive_set_updated(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
-                              path: Optional[str] = None) -> None:
-        """Runs set_dict_value on each entry in a FileStructure and asserts that the value returned equals the value.
-
-        10% chance of setting True.
-        90% chance of setting False.
-        Checks either case.
-
-        """
-        if path is None:
-            path = fstruct.directory_path
-        for key, value in file_dict.items():
-            new_path = str(Path(path) / key)
-            ex_val: bool
-            if random.random() > 0.1:
-                ex_val = False
-            else:
-                ex_val = True
-            if isinstance(value, dict):
-                self.recursive_set_updated(case, fstruct, value, new_path)
-            assert fstruct.set_dict_updated(new_path, fstruct.files, ex_val)
-            case.assertEqual(ex_val, value.updated)
 
     def recursive_check_updated(self, case: unittest.TestCase, fstruct: FileStructure) -> None:
         pass

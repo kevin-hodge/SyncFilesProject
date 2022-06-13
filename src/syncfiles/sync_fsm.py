@@ -5,12 +5,22 @@ Requirements:
 
 Author: Kevin Hodge
 """
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional
 from syncfiles.file_structure import FileStructure
 from syncfiles.config_manager import ConfigManager
 from syncfiles.sync_gui import SyncGUI
 import time
 from pathlib import Path
+from enum import Enum
+
+
+class States(Enum):
+    INITIAL: int = 1
+    CHECK: int = 2
+    WAIT: int = 3
+    SYNC: int = 4
+    ERROR: int = 5
+    FINAL: int = 6
 
 
 class StateInfo:
@@ -30,40 +40,51 @@ class StateInfo:
         verbose (bool, optional): Indicates if messages will be printed for debugging.
 
     """
-
     def __init__(self, verbose: bool = False) -> None:
-        self.curr_state: str = "initial"
+        self.curr_state: int = States.INITIAL
+        self.prev_state: int = str()
         self.directories: List[FileStructure] = list()
         self.manager: ConfigManager = ConfigManager()
+        self.sync_gui: SyncGUI = SyncGUI()
         self.err: Exception = Exception()
         self.err_id: str = str()
         self.exit_request: bool = False
-        self.prev_state: str = str()
-        self.sync_gui: SyncGUI = SyncGUI()
         self.sync_required: bool = False
-        self.to_update: List[Any] = list()
         self.verbose: bool = verbose
 
-    def get_return_values(self, next_state) -> Tuple[str, Any]:
-        """Handles checks and updates prior to each state transition.
+    def check_exit_prompt(self) -> str:
+        response = self.sync_gui.exit_prompt()
+        if response == "Exit":
+            self.exit_request = True
+        return response
 
-        Args:
-            next_state (str): Name of the requested next state.
+    def check_sync_required(self, num_changes: int) -> None:
+        if num_changes > 0:
+            self.sync_required = True
 
-        Returns:
-            self.curr_state (str): Name of the actual next state.
-            self: Carries program information from state to state.
+    def initialize_file_structures(self) -> None:
+        sync_directories: List[str] = self.get_sync_directories()
+        for dir in sync_directories:
+            self.add_directory(FileStructure(dir, verbose=self.verbose))
+            if self.verbose:
+                print("Directories to sync:")
+                print(self.directories[-1].directory_path)
 
-        """
-        assert isinstance(next_state, str)
-
-        self.prev_state = self.curr_state
-        if self.exit_request:
-            self.curr_state = "final"
-        else:
-            self.curr_state = next_state
-        return self.curr_state, self
-
+    def get_sync_directories(self) -> List[str]:
+        min_directories: int = 2
+        try:
+            sync_directories: List[str] = self.manager.read_sync_directories()
+            while len(sync_directories) < min_directories:
+                new_dir: str = self.get_directory_prompt(len(sync_directories), min_directories)
+                sync_directories = self.manager.check_sync_directory(new_dir, sync_directories)
+            self.manager.write_sync_directories(sync_directories)
+            return sync_directories
+        except Exception as err:
+            return self.error_handle(err, "check_sync_directories")
+ 
+    def get_directory_prompt(self, num_valid_dir: int) -> str:
+        return self.sync_gui.directory_prompt(num_valid_dir)
+ 
     def error_handle(self, err: Exception, err_id: str) -> Tuple[str, Any]:
         """Handles errors caught from try/except block.
 
@@ -80,16 +101,64 @@ class StateInfo:
 
         self.err = err
         self.err_id = err_id
-        return self.get_return_values("error")
+        return self.get_return_values(States.ERROR)
+ 
+    def get_return_values(self, next_state: Optional[str] = None) -> Tuple[int, Any]:
+        """Handles checks and updates prior to each state transition.
 
-    def check_exit_prompt(self) -> str:
-        response = self.sync_gui.exit_prompt()
-        if response == "Exit":
-            self.exit_request = True
-        return response
+        Args:
+            next_state (str): Name of the requested next state.
 
-    def get_directory_prompt(self, num_valid_dir: int) -> str:
-        return self.sync_gui.directory_prompt(num_valid_dir)
+        Returns:
+            self.curr_state (str): Name of the actual next state.
+            self: Carries program information from state to state.
+
+        """
+        self.prev_state = self.curr_state
+        if next_state is not None:
+            self.curr_state = next_state
+        else:
+            self.curr_state = self.determine_next_state()
+        return self.curr_state, self
+
+    def determine_next_state(self) -> int:
+        if self.exit_request:
+            return States.FINAL
+        elif self.sync_required:
+            return States.SYNC
+        elif self.curr_state == States.INITIAL:
+            return States.CHECK
+        elif self.curr_state == States.SYNC:
+            return States.WAIT
+        elif self.curr_state == States.CHECK:
+            return States.WAIT
+        elif self.curr_state == States.WAIT:
+            return States.CHECK
+        elif self.curr_state == States.ERROR:
+            return States.FINAL
+        else:
+            return States.WAIT
+
+    def add_directory(self, dir: FileStructure) -> None:
+        self.directories.append(dir)
+
+    def check_for_changes(self) -> int:
+        try:
+            changes_found: int = 0
+            for directory in self.get_directories():
+                directory.get_file_structure()
+                if self.verbose:
+                    print(f"Directory {str(self.directories.index(directory) + 1)}:")
+                    directory.print_file_structure()
+                changes: int = directory.check_file_structure(self.manager.read_last_sync_file())
+                if changes > 0:
+                    changes_found = changes
+            return changes_found
+        except Exception as err:
+            return self.error_handle(err, "get_file_structure")
+
+    def get_directories(self) -> List[FileStructure]:
+        return self.directories
 
 
 def initial_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
@@ -106,25 +175,9 @@ def initial_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Initializing...")
 
-    # Retrieve directories to sync and initialize FileStructures
-    min_directories: int = 2
-    try:
-        sync_directories: List[str] = state_info.manager.read_sync_directories()
-        while len(sync_directories) < min_directories:
-            new_dir: str = state_info.sync_gui.directory_prompt(len(sync_directories), min_directories)
-            sync_directories = state_info.manager.check_sync_directory(new_dir, sync_directories)
-        state_info.manager.write_sync_directories(sync_directories)
-    except Exception as err:
-        return state_info.error_handle(err, "check_sync_directories")
+    state_info.initialize_file_structures()
 
-    for dir in sync_directories:
-        state_info.directories.append(FileStructure(dir, verbose=state_info.verbose))
-        if state_info.verbose:
-            print("Directories to sync:")
-            print(state_info.directories[-1].directory_path)
-
-    next_state: str = "check"
-    return state_info.get_return_values(next_state)
+    return state_info.get_return_values()
 
 
 def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
@@ -143,24 +196,11 @@ def check_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Checking...")
 
-    # Retrieves and checks FileStructures
-    try:
-        for directory in state_info.directories:
-            directory.get_file_structure()
-            directory.check_file_structure(state_info.manager.read_last_sync_file())
-            if state_info.verbose:
-                print(f"Directory {str(state_info.directories.index(directory) + 1)}:")
-                directory.print_file_structure()
-    except Exception as err:
-        return state_info.error_handle(err, "get_file_structure")
+    num_changes: int = state_info.check_for_changes()
 
-    # Determine next state
+    state_info.check_sync_required(num_changes)
     state_info.check_exit_prompt()
-    state_info.sync_required = True  # TODO: Make this dependent on checking if the FileStructures need to be updated.
-    next_state: str = "wait"  # effectively the else condition of the if statement
-    if state_info.sync_required:
-        next_state = "sync"
-    return state_info.get_return_values(next_state)
+    return state_info.get_return_values()
 
 
 def wait_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
@@ -177,11 +217,10 @@ def wait_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Waiting...")
 
-    # Wait before checking directory again
     time.sleep(10)
 
-    next_state: str = "check"
-    return state_info.get_return_values(next_state)
+    state_info.check_exit_prompt()
+    return state_info.get_return_values()
 
 
 def sync_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
@@ -200,14 +239,15 @@ def sync_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Syncing...")
 
-    # TODO Sync Files according to state_info.to_update
-    # Probably do some kind of check here
-    next_state: str = "wait"
-    return state_info.get_return_values(next_state)
+    # TODO Sync Files
+
+    state_info.check_exit_prompt()
+    return state_info.get_return_values()
 
 
 def error_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     """Handles errors that cause transitions from other states.
+    
     Requirements:
         Req #7: The program shall notify the user if either directory cannot be found.
         TODO Needs to notify user through the GUI
@@ -223,21 +263,21 @@ def error_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Error...")
 
-    next_state: str = "final"  # default behavior when error is received is to exit
+    next_state: str = States.FINAL
 
     if state_info.err_id == "get_sync_directories":
         if state_info.verbose:
             print("Couldn't read sync directories config file")
-            print(f"Error Message: {str(state_info.err)}")  # Prints error message
+            print(f"Error Message: {str(state_info.err)}")
 
     elif state_info.err_id == "get_file_structure":
         for directory in state_info.directories:
             if not Path(directory.directory_path).exists():
-                next_state = "initial"
+                next_state = States.INITIAL
                 return state_info.get_return_values(next_state)
         if state_info.verbose:
             print("Couldn't get 1 or more directory file structures")
-            print(f"Error Message: {str(state_info.err)}")  # Prints error message
+            print(f"Error Message: {str(state_info.err)}")
 
     else:
         if state_info.verbose:
@@ -262,4 +302,4 @@ def final_state_function(state_info: StateInfo) -> Tuple[str, StateInfo]:
     if state_info.verbose:
         print("Exiting...")
 
-    return state_info.get_return_values(state_info.prev_state)
+    return state_info.get_return_values()

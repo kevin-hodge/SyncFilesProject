@@ -8,16 +8,44 @@ from typing import Any, List, Optional, Dict, Union
 from pathlib import Path
 
 
+class entry:
+    def __init__(self, mtime: float):
+        self.mtime: float = mtime
+        self.updated: bool = False
+
+    def set_updated(self) -> None:
+        self.updated = True
+
+    def get_updated(self) -> bool:
+        return self.updated
+
+    def get_modification_time(self) -> float:
+        return self.mtime
+
+
 class dir_entry(Dict[str, Any]):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.mtime: float = float()
         self.updated: bool = False
+        self.dict: Dict[str, entry] = dict()
         super().__init__(*args, **kwargs)
 
+    def add_entry(self, key: str, entry: entry) -> None:
+        self.dict[key] = entry
 
-class file_entry(float):
-    def __init__(self, *args, **kwargs):
-        self.updated: bool = False
+    def get_entry(self, keys: List[str]) -> Optional[entry]:
+        if keys[0] in self.dict:
+            if len(keys) == 1:
+                return self.dict[keys[0]]
+            elif len(keys) > 1:
+                return self.dict[keys[0]].get_entry(self.dict[keys[0]], keys[1:])
+        else:
+            return None
+
+
+class file_entry(entry):
+    def __init__(self, mtime: float) -> None:
+        super().__init__(mtime)
 
 
 class FileStructure:
@@ -41,8 +69,14 @@ class FileStructure:
         assert Path(directory_path).exists()
         self.directory_path: str = directory_path
         self.path_list = self.split_path(self.directory_path)
-        self.files: dir_entry = dir_entry(dict())
+        self.files: dir_entry = self.get_file_structure()
         self.verbose: bool = verbose
+
+    def split_path(self, path: str):
+        if "\\" in str(path):
+            return str(path).split("\\")
+        elif "/" in str(path):
+            return str(path).split("/")
 
     def get_file_structure(self) -> dir_entry:
         """Reads all files and folders below the directory.
@@ -56,11 +90,6 @@ class FileStructure:
         """
         self.files = self.recursive_get_directory(self.directory_path)
         return self.files
-
-    def print_file_structure(self, offset: int = 1) -> None:
-        """Calls recursive_print_list with self.files as an argument."""
-        print(Path(self.directory_path).name)
-        self.recursive_print_dict(self.files, offset)
 
     def recursive_get_directory(self, directory: str) -> dir_entry:
         """Recursive function that gives the structure of all files and folder contained within a directory.
@@ -87,7 +116,12 @@ class FileStructure:
                 raise ValueError("Directory entry is not a file or directory")
         return file_structure
 
-    def recursive_print_dict(self, files_dict: dir_entry, offset: int = 0) -> None:
+    def print_file_structure(self, offset: int = 1) -> None:
+        """Calls recursive_print_list with self.files as an argument."""
+        print(Path(self.directory_path).name)
+        self.recursive_print_dir(self.files, offset)
+
+    def recursive_print_dir(self, files_dict: dir_entry, offset: int = 0) -> None:
         """Prints out dict that matches format of FileStructure.files.
 
         Args:
@@ -97,22 +131,24 @@ class FileStructure:
         """
         indent: str = 3 * offset * ' '
         for key in files_dict:
-            value: Union[dir_entry, file_entry] = files_dict[key]
-            if isinstance(value, dict):
-                dir_string: str = f"{indent}{key}: {value.mtime}"
-                if value.updated:
+            files_entry: Union[dir_entry, file_entry] = files_dict[key]
+            if isinstance(files_entry, dict):
+                dir_string: str = f"{indent}{key}: {files_entry.mtime}"
+                if files_entry.updated:
                     dir_string = dir_string + " X"
                 print(dir_string)
-                self.recursive_print_dict(value, offset + 1)
+                self.recursive_print_dir(files_entry, offset + 1)
             else:
-                file_string: str = f"{indent}{key}: {value}"
-                if value.updated:
+                file_string: str = f"{indent}{key}: {files_entry.mtime}"
+                if files_entry.get_updated():
                     file_string = file_string + " X"
                 print(file_string)
 
     def check_file_structure(self, last_sync_dict: Dict[str, Any], path: Optional[str] = None,
                              file_dir: Optional[dir_entry] = None) -> int:
-        """Checks for updates within the self.files since the last sync and fills self.updated.
+        """Checks for updates within the self.files since the last sync.
+        - marks updated field for each entry 
+        - counts number of changes
 
         Args:
             last_sync_files (dict[str, Any]): Same structure as FileStructure.files. Represents the file structure from
@@ -129,109 +165,52 @@ class FileStructure:
         changes_found: int = 0
 
         for key in file_dir:
-            value: Union[dir_entry, file_entry] = file_dir[key]
+            files_entry: Union[dir_entry, file_entry] = file_dir[key]
             new_path: str = str(Path(path) / key)
+            path_list: List[str] = self.get_relative_path(new_path)
+            last_sync_entry: Optional[Union[dir_entry, file_entry]] = self.get_entry(last_sync_files, path_list)
 
-            if isinstance(value, dict):
-                if self.get_dict_value(new_path, last_sync_files) is not False:
-                    value.updated = False
-                else:
-                    value.updated = True
-                    changes_found += 1
-
-                changes_found += self.check_file_structure(last_sync_files, new_path, value)
-            elif isinstance(value, float):
-                last_sync_time: Union[float, bool] = self.get_dict_value(new_path, last_sync_files)
-                if last_sync_time is not False:
-                    if self.get_dict_value(new_path, self.files) > last_sync_time:
-                        value.updated = True
-                        changes_found += 1
-                    else:
-                        value.updated = False
-                else:
-                    value.updated = True
-                    changes_found += 1
+            if last_sync_entry is None:
+                files_entry.updated = True
+                changes_found += 1
             else:
-                raise TypeError("FileStructure.files value is not a float or dictionary.")
+                if isinstance(files_entry, file_entry):
+                    last_sync_time: float = last_sync_entry.mtime
+                    if files_entry.get_modification_time() > last_sync_time:
+                        files_entry.set_updated()
+                        changes_found += 1
+
+            if isinstance(files_entry, dict):
+                changes_found += self.check_file_structure(last_sync_dict, new_path, files_entry)
         return changes_found
 
-    def split_path(self, path: str):
-        if "\\" in str(path):
-            return str(path).split("\\")
-        elif "/" in str(path):
-            return str(path).split("/")
+    def get_relative_path(self, path: str) -> list[str]:
+        path_list: List[str] = self.split_path(path)
+        for index, _ in enumerate(path_list):
+            if path_list[:index+1] == self.path_list:
+                return path_list[index+1:]
 
-    def get_dict_value(self, path: str, search_dict: dir_entry, keys: Optional[List[str]] = None,
-                       updated: bool = False) -> Any:
-        """_summary_
-
-        TODO: Split into get_updated and get_mtime
-
-        Args:
-            path (str): _description_
-            search_dict (dir_entry): _description_
-            keys (Optional[List[str]], optional): _description_. Defaults to None.
-            updated (bool, optional): _description_. Defaults to False.
-
-        Raises:
-            ValueError: _description_
-
-        Returns:
-            Any: _description_
-        """
-        if keys is None:
-            path_list: List[str] = self.split_path(path)
-            for index, _ in enumerate(path_list):
-                if path_list[:index+1] == self.path_list:
-                    keys = path_list[index+1:]
-        if keys is not None:
-            if keys[0] in search_dict:
-                if len(keys) == 1:
-                    if updated:
-                        return search_dict[keys[0]].updated
-                    else:
-                        return search_dict[keys[0]]
-                elif len(keys) > 1:
-                    if updated:
-                        return self.get_dict_value(path, search_dict[keys[0]], keys[1:], updated=True)
-                    else:
-                        return self.get_dict_value(path, search_dict[keys[0]], keys[1:])
-                else:
-                    raise ValueError("Keys has no elements.")
-            else:
-                return False
-
-    def set_dict_updated(self, path: str, search_dict: dir_entry, value: bool,
-                         keys: Optional[List[str]] = None) -> bool:
-        if keys is None:
-            path_list: List[str] = self.split_path(path)
-            for index, _ in enumerate(path_list):
-                if path_list[:index+1] == self.path_list:
-                    keys = path_list[index+1:]
-        if keys is not None:
+    def get_entry(self, search_dir: dir_entry, keys: List[str]) -> Optional[Union[file_entry, dir_entry]]:
+        if keys[0] in search_dir:
             if len(keys) == 1:
-                if keys[0] in search_dict:
-                    search_dict[keys[0]].updated = value
-                    return True
-                else:
-                    return False
+                return search_dir[keys[0]]
             elif len(keys) > 1:
-                return self.set_dict_updated(path, search_dict[keys[0]], value, keys[1:])
-            else:
-                raise ValueError("Keys has no elements.")
+                return self.get_entry(search_dir[keys[0]], keys[1:])
         else:
-            return False
+            return None
 
-    def update_file_structure(self) -> None:
-        pass
+    def files_to_json(self) -> Dict[str, Any]:
+        return self.to_json(self.files)
 
-    def to_json(self, entry: dir_entry) -> Dict[str, Any]:
+    def to_json(self, directory: dir_entry) -> Dict[str, Any]:
         file_dict: Dict[str, Any] = dict()
-        for key in entry:
-            if isinstance(entry[key], dict):
-                file_dict[key] = {'mtime': entry[key].mtime, 'dir': self.to_json(entry[key])}
-            elif isinstance(entry[key], float):
-                file_dict[key] = float(entry[key])
+        for entry in directory:
+            if isinstance(directory[entry], dir_entry):
+                file_dict[entry] = {'mtime': directory[entry].mtime, 'dir': self.to_json(directory[entry])}
+                assert type(file_dict[entry]) == dict
+            elif isinstance(directory[entry], file_entry):
+                file_dict[entry] = float(directory[entry].mtime)
+                assert type(file_dict[entry]) == float
             else:
                 raise TypeError("dir_entry entry is not a float or dict.")
         return file_dict
@@ -242,11 +221,11 @@ class FileStructure:
             entry = self.from_json(file_dict['dir'])
             entry.mtime = file_dict['mtime']
         else:
-            for key, value in file_dict.items():
-                if isinstance(value, dict):
-                    entry[key] = self.from_json(value)
-                elif isinstance(value, float):
-                    entry[key] = file_entry(value)
+            for key, files_entry in file_dict.items():
+                if isinstance(files_entry, dict):
+                    entry[key] = self.from_json(files_entry)
+                elif isinstance(files_entry, float):
+                    entry[key] = file_entry(files_entry)
                 else:
-                    raise TypeError("file_dict entry is not a float or dict.")
+                    raise TypeError(f"file_dict entry: {type(files_entry)} is not a float or dict.")
         return entry

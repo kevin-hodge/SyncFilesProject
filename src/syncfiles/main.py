@@ -41,7 +41,7 @@ Requirements (LR: 18):
 Author: Kevin Hodge
 """
 from syncfiles.state_machine import StateMachine
-from syncfiles.sync_fsm import (StateInfo, initial_state_function, check_state_function,
+from syncfiles.sync_fsm import (StateInfo, States, initial_state_function, check_state_function,
                                 wait_state_function, sync_state_function, error_state_function,
                                 final_state_function)
 
@@ -52,12 +52,12 @@ if __name__ == '__main__':
     # Initialize StateMachine
     Sync_FSM: StateMachine = StateMachine()
     Sync_StateInfo: StateInfo = StateInfo(verbose)
-    Sync_FSM.new_state("initial", initial_state_function, initial_state=True)
-    Sync_FSM.new_state("check", check_state_function)
-    Sync_FSM.new_state("wait", wait_state_function)
-    Sync_FSM.new_state("sync", sync_state_function)
-    Sync_FSM.new_state("error", error_state_function)
-    Sync_FSM.new_state("final", final_state_function, final_state=True)
+    Sync_FSM.new_state(States.INITIAL, initial_state_function, initial_state=True)
+    Sync_FSM.new_state(States.CHECK, check_state_function)
+    Sync_FSM.new_state(States.WAIT, wait_state_function)
+    Sync_FSM.new_state(States.SYNC, sync_state_function)
+    Sync_FSM.new_state(States.ERROR, error_state_function)
+    Sync_FSM.new_state(States.FINAL, final_state_function, final_state=True)
 
     # Start StateMachine
     Sync_FSM.run(Sync_StateInfo)
