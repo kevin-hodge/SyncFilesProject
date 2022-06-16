@@ -10,7 +10,7 @@ import unittest
 import tests.tfuncs as tfuncs
 from tests.tfuncs import TFunctions
 from syncfiles.config_manager import ConfigManager
-from syncfiles.file_structure import FileStructure, dir_entry
+from syncfiles.file_structure import FileStructure
 
 
 class ConfigManagerTestCase(unittest.TestCase):
@@ -198,7 +198,7 @@ class FileStructureTestCase(unittest.TestCase):
             fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
             fstruct.get_file_structure()
             # fstruct.print_file_structure()
-            self.assertCountEqual(file_dict, fstruct.files)
+            self.assertCountEqual(file_dict, fstruct.files_to_json())
         except Exception as oops:
             error = oops
         finally:
@@ -219,15 +219,15 @@ class FileStructureTestCase(unittest.TestCase):
         # fstruct.print_file_structure()
         num_changes: int
         change_dict: Dict[str, Any]
-        _, num_changes, change_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files)
-        # print(num_changes)
+        _, num_changes, change_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files_to_json())
+        print(num_changes)
         fstruct.get_file_structure()
-        # self.tf.recursive_print_dict(change_dict)
+        self.tf.recursive_print_dict(change_dict)
 
         # Run check (Needs to FAIL if something is updated and NOT marked as updated or marked but NOT updated)
         changes_found: int = fstruct.check_file_structure(last_sync_files)
-        # print(changes_found)
-        # fstruct.print_file_structure()
+        print(changes_found)
+        fstruct.print_file_structure()
         self.assertEqual(changes_found, num_changes)
 
     @tfuncs.handle_last_tempfile
@@ -241,7 +241,7 @@ class FileStructureTestCase(unittest.TestCase):
         tfuncs.write_json(before_dict, self.tf.last_tempfile)
         after_dict: Dict[str, Any] = tfuncs.get_json_contents(self.tf.last_tempfile)
         self.assertCountEqual(before_dict, after_dict)
-        self.assertCountEqual(fstruct.from_json(after_dict), fstruct.files)
+        self.assertCountEqual(after_dict, fstruct.files_to_json())
 
 
 if __name__ == "__main__":

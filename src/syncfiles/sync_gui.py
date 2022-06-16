@@ -186,6 +186,7 @@ class SyncGUI:
         Args:
             invalid_dir (list): list initialized to [] on each function call.
             min_dir (int): number of directories required.
+
         """
         message: str = f"""Only {num_valid_dir} valid, unique directories. Must have {str(min_dir)}.
         Please enter directory to sync below."""

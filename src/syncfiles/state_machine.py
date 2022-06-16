@@ -21,11 +21,11 @@ class StateMachine:
 
     """
     def __init__(self):
-        self.state_functions: Dict[str, Callable[[Any], Any]] = dict()
-        self.initial_state: Optional[int] = None
-        self.final_states: List[int] = list()
+        self.state_functions: Dict[Any, Callable[[Any], Any]] = dict()
+        self.initial_state: Optional[Any] = None
+        self.final_states: List[Any] = list()
 
-    def new_state(self, state_name: int, state_function: Callable[[Any], Any],
+    def new_state(self, state_name: Any, state_function: Callable[[Any], Any],
                   final_state: bool = False, initial_state: bool = False) -> None:
         """Adds new state to state_functions.
 
@@ -57,7 +57,7 @@ class StateMachine:
             raise ValueError("Must set at least one final_states")
 
         while True:
-            next_state: int
+            next_state: Any
             next_state, state_info = state_function(state_info)
             if next_state in self.final_states:
                 state_function = self.state_functions[next_state]

@@ -5,13 +5,13 @@ Author: Kevin Hodge
 """
 
 from pathlib import Path
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 import json
 import shutil
 import random
 import functools
 import unittest
-from syncfiles.file_structure import FileStructure, file_entry, dir_entry
+from syncfiles.file_structure import FileStructure
 
 
 class TFunctions:
@@ -116,18 +116,17 @@ class TFunctions:
             change_count (int): Number of changes made to the file structure.
             change_dict (Dict[str, Any]): dictionary of changed files and all folders.
         """
-        # Iterate through file structure dictionary
+        if 'dir' in file_dict:
+            return self.make_rand_mods(path, file_dict['dir'], par_name_change)
         new_file_dict: Dict[str, Any] = dict()
         change_dict: Dict[str, Any] = dict()
         change_count: int = 0
         for key, value in file_dict.items():
             if isinstance(value, dict):
-                # BUG: files and folders inside a renamed directory need to be marked as updated
                 local_name_change: bool = False
                 new_name: str = ""
 
                 if random.random() > 0.9:
-                    # Change directory name
                     new_name = f"Edited_dir_{change_count}"
                     change_count += 1
                     local_name_change = True
@@ -142,17 +141,17 @@ class TFunctions:
                 change_count += changes
 
                 if local_name_change:
-                    # Change directory name
                     new_file_dict[new_name] = value
                     change_dict[new_name] = value
                     dest: str = str(Path(path) / new_name)
                     assert shutil.move(dir_name, dest) == dest
-            elif isinstance(value, file_entry):
+
+            elif isinstance(value, float):
                 file_name: str = str(Path(path) / key)
                 assert Path(file_name).exists()
+
                 if random.random() > 0.1:
                     if random.random() > 0.5:
-                        # Change file name
                         new_name = f"Edited_file_{change_count}.txt"
                         dest = str(Path(path) / new_name)
                         assert shutil.move(file_name, dest) == dest
@@ -160,7 +159,6 @@ class TFunctions:
                         new_file_dict[new_name] = Path(dest).stat().st_mtime
                         change_dict[new_name] = new_file_dict[new_name]
                     else:
-                        # Update last modified date
                         assert Path(file_name).exists()
                         Path(file_name).touch(exist_ok=True)
                         new_file_dict[key] = Path(file_name).stat().st_mtime
@@ -184,12 +182,12 @@ class TFunctions:
             if updated:
                 if isinstance(value, dict):
                     self.recursive_get_entry(case, fstruct, value, new_path, updated=True)
-                check_val: Any = fstruct.get_entry(new_path, fstruct.files)
+                check_val: Any = fstruct.get_entry([new_path])
                 case.assertEqual(check_val.updated, value.updated)
             else:
                 if isinstance(value, dict):
                     self.recursive_get_entry(case, fstruct, value, new_path)
-                check_val = fstruct.get_entry(new_path, fstruct.files)
+                check_val = fstruct.get_entry([new_path])
                 case.assertEqual(check_val, value)
 
     def recursive_check_updated(self, case: unittest.TestCase, fstruct: FileStructure) -> None:
@@ -220,9 +218,7 @@ def write_json(input: Any, file_path: Path) -> None:
 
 
 def handle_dir_tempfile(func):
-    """
-    Creates and removes dir_tempfile even when an exception occurs.
-    """
+    """Creates and removes dir_tempfile even when an exception occurs."""
     tf: TFunctions = TFunctions()
 
     @functools.wraps(func)
@@ -240,10 +236,12 @@ def handle_dir_tempfile(func):
     return wrapper
 
 
-def handle_test_dirs(func):
-    """
-    Creates and removes test directories even when an exception occurs.
-    """
+def handle_error_after_function(func: Callable[[Any], Any]) -> None:
+    pass
+
+
+def handle_test_dirs(func) -> Callable[[Any], Any]:
+    """Creates and removes test directories even when an exception occurs."""
     tf: TFunctions = TFunctions()
 
     @functools.wraps(func)
@@ -262,9 +260,7 @@ def handle_test_dirs(func):
 
 
 def handle_last_tempfile(func):
-    """
-    Creates and removes last_tempfile even when an exception occurs.
-    """
+    """Creates and removes last_tempfile even when an exception occurs."""
     tf: TFunctions = TFunctions()
 
     @functools.wraps(func)
