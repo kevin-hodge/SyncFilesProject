@@ -5,7 +5,7 @@ Author: Kevin Hodge
 """
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional
 import json
 import shutil
 import random
@@ -65,7 +65,7 @@ class TFunctions:
             shutil.rmtree(self.test_path2)
 
     def create_rand_fstruct(self, path: str, max_depth: int = 5, max_entries: int = 5) -> Dict[str, Any]:
-        """Creates a random file structure at the specified path.
+        """Creates a random file structure at the specified path and returns dict representing file structure.
 
         Args:
             path (str): Path to the directory in which the random file structure will be created.
@@ -75,6 +75,7 @@ class TFunctions:
 
         Returns:
             file_dict (dict[str, Any]): Describes the random file structure (same format as FileStructure.files).
+
         """
         if not Path(path).exists():
             Path(path).mkdir(exist_ok=True)
@@ -85,19 +86,24 @@ class TFunctions:
         for i in range(num_entries):
             if random.randint(0, max_depth-1) > 0:
                 directory = Path(path) / f"test_dir_{i}"
-                directory.mkdir(exist_ok=True)
-                file_dict[str(directory.name)] = self.create_rand_fstruct(str(directory), max_depth-1, max_entries)
+                self.create_directory(directory)
+                file_dict[str(directory.name)] = \
+                    self.create_rand_fstruct(str(directory), max_depth-1, max_entries)
             else:
                 file = Path(path) / f"test_file_{i}.txt"
-                with file.open("w"):
-                    pass
+                self.create_file(file)
                 file_dict[str(file.name)] = file.stat().st_mtime
         return file_dict
 
-    def make_rand_mods(self, path: str, file_dict: Dict[str, Any],
-                       par_name_change: bool = False) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
-        """Makes random modifications to a file structure, creates a new dictionary that represents the structure, and
-        creates a dictionary that contains the elements that have been changed.
+    def create_directory(self, path: Path) -> None:
+        path.mkdir(exist_ok=True)
+
+    def create_file(self, path: Path) -> None:
+        with path.open("w"):
+            pass
+
+    def make_rand_mods(self, path: str, file_dict: Dict[str, Any], parent_name_change: bool = False) -> int:
+        """Makes random modifications to a file structure and returns the number of changes.
 
         10% chance of changing directory name.
         5% change of changing file name.
@@ -108,40 +114,28 @@ class TFunctions:
             file_dict (Dict[str, Any]): file dictionary that stores file names, direcotry names, and structure.
 
         Returns:
-            new_file_dict (Dict[str, Any]): _description_
             change_count (int): Number of changes made to the file structure.
-            change_dict (Dict[str, Any]): dictionary of changed files and all folders.
 
         """
         if 'dir' in file_dict:
-            return self.make_rand_mods(path, file_dict['dir'], par_name_change)
-        new_file_dict: Dict[str, Any] = dict()
-        change_dict: Dict[str, Any] = dict()
+            return self.make_rand_mods(path, file_dict['dir'], parent_name_change)
         change_count: int = 0
         for key, value in file_dict.items():
             if isinstance(value, dict):
                 local_name_change: bool = False
-                new_name: str = ""
 
                 if random.random() > 0.9:
-                    new_name = f"Edited_dir_{change_count}"
-                    change_count += 1
                     local_name_change = True
-                elif par_name_change:
+                elif parent_name_change:
                     change_count += 1
 
                 dir_name: str = str(Path(path) / key)
                 assert Path(dir_name).exists()
-                changes: int
-                new_file_dict[key], changes, change_dict[key] = \
-                    self.make_rand_mods(dir_name, value, local_name_change or par_name_change)
-                change_count += changes
+                change_count += self.make_rand_mods(dir_name, value, local_name_change or parent_name_change)
 
                 if local_name_change:
-                    new_file_dict[new_name] = value
-                    change_dict[new_name] = value
-                    dest: str = str(Path(path) / new_name)
-                    assert shutil.move(dir_name, dest) == dest
+                    self.change_dir_name(path, dir_name, change_count)
+                    change_count += 1
 
             elif isinstance(value, float):
                 file_name: str = str(Path(path) / key)
@@ -149,34 +143,33 @@ class TFunctions:
 
                 if random.random() > 0.1:
                     if random.random() > 0.5:
-                        new_name = f"Edited_file_{change_count}.txt"
-                        dest = str(Path(path) / new_name)
-                        assert shutil.move(file_name, dest) == dest
-                        Path(dest).touch(exist_ok=True)
-                        new_file_dict[new_name] = Path(dest).stat().st_mtime
-                        change_dict[new_name] = new_file_dict[new_name]
+                        self.change_file_name(path, file_name, change_count)
                     else:
                         assert Path(file_name).exists()
                         Path(file_name).touch(exist_ok=True)
-                        new_file_dict[key] = Path(file_name).stat().st_mtime
-                        change_dict[key] = new_file_dict[key]
                     change_count += 1
-                elif par_name_change:
+                elif parent_name_change:
                     change_count += 1
-                else:
-                    new_file_dict[key] = value
             else:
-                raise TypeError("Directory entry is not a file or directory")
-        return new_file_dict, change_count, change_dict
+                raise TypeError("make_rand_mods file_dict entry is not a dict or float")
+        return change_count
 
-    def recursive_print_dict(self, file_dict: Dict[str, Any], offset: int = 0) -> None:
+    def change_file_name(self, path: str, old_name: str, change_count: int) -> None:
+        new_name = f"Edited_file_{change_count}.txt"
+        dest = str(Path(path) / new_name)
+        assert shutil.move(old_name, dest) == dest
+
+    def change_dir_name(self, path: str, old_name: str, change_count: int) -> None:
+        new_name: str = f"Edited_dir_{change_count}"
+        dest: str = str(Path(path) / new_name)
+        assert shutil.move(old_name, dest) == dest
+
+    def recursive_print_dir(self, path: Path, offset: int = 0) -> None:
         indent: str = 3 * offset * ' '
-        for key, value in file_dict.items():
-            if isinstance(value, dict):
-                print(f"{indent}{key}")
-                self.recursive_print_dict(value, offset + 1)
-            else:
-                print(f"{indent}{key}")
+        for entry in path.iterdir():
+            print(f"{indent}{entry.name}")
+            if entry.is_dir():
+                self.recursive_print_dir(entry, offset + 1)
 
 
 def get_json_contents(file_path: Path) -> Any:
@@ -199,21 +192,22 @@ def handle_dir_tempfile(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        error: Optional[Exception] = None
         tf.create_dir_tempfile()
-        try:
-            func(*args, **kwargs)
-        except Exception as oops:
-            error = oops
-        finally:
-            tf.remove_dir_tempfile()
-        if error is not None:
-            raise error
+        handle_error_after_function(func, tf.remove_dir_tempfile, *args, **kwargs)
     return wrapper
 
 
-def handle_error_after_function(func: Callable[[Any], Any]) -> None:
-    pass
+def handle_error_after_function(func: Callable[[Any], Any], after_func: Callable[[], None],
+                                *args: Any, **kwargs: Any) -> None:
+    error: Optional[Exception] = None
+    try:
+        func(*args, **kwargs)  # type: ignore[call-arg]
+    except Exception as oops:
+        error = oops
+    finally:
+        after_func()
+    if error is not None:
+        raise error
 
 
 def handle_test_dirs(func) -> Callable[[Any], Any]:
@@ -222,16 +216,8 @@ def handle_test_dirs(func) -> Callable[[Any], Any]:
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        error: Optional[Exception] = None
         tf.create_test_dirs()
-        try:
-            func(*args, **kwargs)
-        except Exception as oops:
-            error = oops
-        finally:
-            tf.remove_test_dirs()
-        if error is not None:
-            raise error
+        handle_error_after_function(func, tf.remove_test_dirs, *args, **kwargs)
     return wrapper
 
 
@@ -241,14 +227,6 @@ def handle_last_tempfile(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        error: Optional[Exception] = None
         tf.create_last_tempfile()
-        try:
-            func(*args, **kwargs)
-        except Exception as oops:
-            error = oops
-        finally:
-            tf.remove_last_tempfile()
-        if error is not None:
-            raise error
+        handle_error_after_function(func, tf.remove_last_tempfile, *args, **kwargs)
     return wrapper

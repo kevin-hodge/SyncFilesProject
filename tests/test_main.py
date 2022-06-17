@@ -209,16 +209,15 @@ class FileStructureTestCase(unittest.TestCase):
         last_sync_files: Dict[str, Any] = fstruct.files_to_json()
         # fstruct.print_file_structure()
         num_changes: int
-        change_dict: Dict[str, Any]
-        _, num_changes, change_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files_to_json())
+        num_changes = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files_to_json())
         # print(num_changes)
         fstruct.get_file_structure()
-        # self.tf.recursive_print_dict(change_dict)
 
         # Run check (Needs to FAIL if something is updated and NOT marked as updated or marked but NOT updated)
         changes_found: int = fstruct.check_file_structure(last_sync_files)
         # print(changes_found)
         # fstruct.print_file_structure()
+        # self.tf.recursive_print_dir(self.tf.test_path1)
         self.assertEqual(changes_found, num_changes)
 
     @tfuncs.handle_last_tempfile
@@ -240,7 +239,7 @@ class FileStructureTestCase(unittest.TestCase):
         fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
         fstruct.get_file_structure()
         fstruct.print_file_structure()
-        print(fstruct.files_to_list())
+        # print(fstruct.files_to_list())
 
 
 if __name__ == "__main__":

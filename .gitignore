@@ -12,6 +12,9 @@
 .ipynb_checkpoints/
 .pytest_cache/
 
+# pytest
+htmlcov/
+
 # Private config
 sync_directories_file.json
 temp_sync_directories_file.json
