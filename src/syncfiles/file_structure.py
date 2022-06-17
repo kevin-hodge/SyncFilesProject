@@ -3,7 +3,7 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, KeysView, List, Optional, Dict, Union
+from typing import Any, KeysView, List, Optional, Dict
 from pathlib import Path
 
 
@@ -119,9 +119,9 @@ class FileStructure:
         for entry in Path(directory).iterdir():
             last_mod_time: float = Path(entry).stat().st_mtime
             if Path(entry).is_file():
-                file_structure.add_entry(entry.name, file_entry(last_mod_time))
+                file_structure.add_entry(str(entry.name), file_entry(last_mod_time))
             elif Path(entry).is_dir():
-                file_structure.add_entry(entry.name, self.recursive_get_directory(str(entry)))
+                file_structure.add_entry(str(entry.name), self.recursive_get_directory(str(entry)))
             else:
                 raise ValueError("Directory entry is not a file or directory")
         return file_structure
@@ -140,19 +140,17 @@ class FileStructure:
 
         """
         indent: str = 3 * offset * ' '
-        for key in directory.get_keys():
-            files_entry: entry = directory.get_entry(key)
+        for entry_name in directory.get_keys():
+            files_entry: entry = directory.get_entry(entry_name)
+            self.print_entry(indent, entry_name, files_entry)
             if isinstance(files_entry, dir_entry):
-                dir_string: str = f"{indent}{key}: {files_entry.mtime}"
-                if files_entry.get_updated():
-                    dir_string = dir_string + " X"
-                print(dir_string)
                 self.recursive_print_dir(files_entry, offset + 1)
-            else:
-                file_string: str = f"{indent}{key}: {files_entry.mtime}"
-                if files_entry.get_updated():
-                    file_string = file_string + " X"
-                print(file_string)
+
+    def print_entry(self, indent: str, entry_name: str, entry: entry) -> None:
+        entry_repr: str = f"{indent}{entry_name}: {entry.get_mod_time()}"
+        if entry.get_updated():
+            entry_repr = entry_repr + " X"
+        print(entry_repr)
 
     def check_file_structure(self, last_sync_dict: Dict[str, Any], path: Optional[str] = None,
                              file_dir: Optional[dir_entry] = None) -> int:
@@ -177,6 +175,7 @@ class FileStructure:
         for key in file_dir.get_keys():
             files_entry: entry = file_dir.get_entry(key)
             new_path: str = str(Path(path) / key)
+            # new_path: str = key
             path_list: List[str] = self.get_relative_path(new_path)
             last_sync_entry: Optional[entry] = last_sync_files.get_entry_path(path_list)
 
@@ -201,32 +200,42 @@ class FileStructure:
                 return path_list[index+1:]
         raise ValueError("get_relative_path argument 'path' is not contained in top_level_dir_path_list")
 
-    def get_entry(self, keys: List[str]) -> Optional[entry]:
-        return self.files.get_entry_path(keys)
-
     def files_to_json(self) -> Dict[str, Any]:
         return self.to_json(self.files)
 
     def to_json(self, directory: dir_entry) -> Dict[str, Any]:
         file_dict: Dict[str, Any] = dict()
         for dir_entry_name in directory.get_keys():
-            file_dict[dir_entry_name] = self.convert_dir_entry_to_dict_entry(dir_entry_name, directory)
+            directory_entry: entry = directory.get_entry(dir_entry_name)
+            if isinstance(directory_entry, dir_entry):
+                file_dict[dir_entry_name] = {'mtime': directory_entry.get_mod_time(),
+                                             'dir': self.to_json(directory_entry)}
+            elif isinstance(directory_entry, file_entry):
+                file_dict[dir_entry_name] = directory_entry.get_mod_time()
+            else:
+                raise TypeError(f"{type(directory_entry)} is not a dir_entry or file_entry.")
         return file_dict
 
-    def convert_dir_entry_to_dict_entry(self, dir_entry_name: str,
-                                        directory: dir_entry) -> Union[Dict[str, Any], float]:
-        directory_entry: entry = directory.get_entry(dir_entry_name)
-        if isinstance(directory_entry, dir_entry):
-            return {'mtime': directory_entry.get_mod_time(),
-                    'dir': self.to_json(directory_entry)}
-        elif isinstance(directory_entry, file_entry):
-            return directory_entry.get_mod_time()
-        else:
-            raise TypeError(f"{type(directory_entry)} is not a dir_entry or file_entry.")
+    def files_to_list(self) -> List[str]:
+        return self.to_list(self.files)
+
+    def to_list(self, directory: dir_entry, path: Optional[str] = None) -> List[str]:
+        if path is None:
+            path = self.directory_path
+        file_list: List[str] = []
+        for file_or_dir_name in directory.get_keys():
+            file_or_dir_entry: entry = directory.get_entry(file_or_dir_name)
+            file_or_dir_path: Path = Path(path) / file_or_dir_name
+            file_or_dir_path_string: str = str(file_or_dir_path)
+            file_list.append(file_or_dir_path_string)
+            if isinstance(file_or_dir_entry, dir_entry):
+                directory_entry: dir_entry = file_or_dir_entry
+                file_list.extend(self.to_list(directory_entry, file_or_dir_path_string))
+        return file_list
 
     def from_json(self, file_dict: Dict[str, Any]) -> dir_entry:
         directory: dir_entry = dir_entry()
-        if 'mtime' in file_dict:
+        if 'dir' in file_dict:
             directory = self.from_json(file_dict['dir'])
             directory.set_mod_time(file_dict['mtime'])
         else:

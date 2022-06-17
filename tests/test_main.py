@@ -3,7 +3,7 @@
 
 Author: Kevin Hodge
 """
-from typing import List, Any, Dict, Optional, Tuple
+from typing import List, Any, Dict, Tuple
 import shutil
 import json
 import unittest
@@ -187,24 +187,15 @@ class FileStructureTestCase(unittest.TestCase):
         with self.assertRaises(AssertionError):
             FileStructure(str(self.tf.test_path1))  # type: ignore[arg-type]
 
+    @tfuncs.handle_test_dirs
     def test_get_rand_fstruct(self) -> None:
         if self.tf.test_path1.exists():
             shutil.rmtree(self.tf.test_path1)
-
-        error: Optional[Exception] = None
-        try:
-            # Build, get, and print directory
-            file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path1))
-            fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
-            fstruct.get_file_structure()
-            # fstruct.print_file_structure()
-            self.assertCountEqual(file_dict, fstruct.files_to_json())
-        except Exception as oops:
-            error = oops
-        finally:
-            shutil.rmtree(self.tf.test_path1)
-        if error is not None:
-            raise error
+        file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path1))
+        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
+        fstruct.get_file_structure()
+        # fstruct.print_file_structure()
+        self.assertCountEqual(file_dict, fstruct.files_to_json())
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
@@ -220,20 +211,19 @@ class FileStructureTestCase(unittest.TestCase):
         num_changes: int
         change_dict: Dict[str, Any]
         _, num_changes, change_dict = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files_to_json())
-        print(num_changes)
+        # print(num_changes)
         fstruct.get_file_structure()
-        self.tf.recursive_print_dict(change_dict)
+        # self.tf.recursive_print_dict(change_dict)
 
         # Run check (Needs to FAIL if something is updated and NOT marked as updated or marked but NOT updated)
         changes_found: int = fstruct.check_file_structure(last_sync_files)
-        print(changes_found)
-        fstruct.print_file_structure()
+        # print(changes_found)
+        # fstruct.print_file_structure()
         self.assertEqual(changes_found, num_changes)
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
     def test_json_conversion(self) -> None:
-        # Create fstruct
         self.tf.create_rand_fstruct(str(self.tf.test_path1))
         fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
         fstruct.get_file_structure()
@@ -242,6 +232,15 @@ class FileStructureTestCase(unittest.TestCase):
         after_dict: Dict[str, Any] = tfuncs.get_json_contents(self.tf.last_tempfile)
         self.assertCountEqual(before_dict, after_dict)
         self.assertCountEqual(after_dict, fstruct.files_to_json())
+
+    @tfuncs.handle_last_tempfile
+    @tfuncs.handle_test_dirs
+    def test_list_conversion(self) -> None:
+        self.tf.create_rand_fstruct(str(self.tf.test_path2))
+        fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
+        fstruct.get_file_structure()
+        fstruct.print_file_structure()
+        print(fstruct.files_to_list())
 
 
 if __name__ == "__main__":

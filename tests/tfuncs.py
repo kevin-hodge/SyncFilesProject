@@ -10,8 +10,6 @@ import json
 import shutil
 import random
 import functools
-import unittest
-from syncfiles.file_structure import FileStructure
 
 
 class TFunctions:
@@ -86,22 +84,20 @@ class TFunctions:
 
         for i in range(num_entries):
             if random.randint(0, max_depth-1) > 0:
-                # Create directory (0% chance of making directory at max depth)
                 directory = Path(path) / f"test_dir_{i}"
                 directory.mkdir(exist_ok=True)
                 file_dict[str(directory.name)] = self.create_rand_fstruct(str(directory), max_depth-1, max_entries)
             else:
-                # Create file
                 file = Path(path) / f"test_file_{i}.txt"
                 with file.open("w"):
                     pass
                 file_dict[str(file.name)] = file.stat().st_mtime
-
         return file_dict
 
     def make_rand_mods(self, path: str, file_dict: Dict[str, Any],
                        par_name_change: bool = False) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
-        """Makes random modifications to a file structure and the dictionary that represents the structure.
+        """Makes random modifications to a file structure, creates a new dictionary that represents the structure, and
+        creates a dictionary that contains the elements that have been changed.
 
         10% chance of changing directory name.
         5% change of changing file name.
@@ -115,6 +111,7 @@ class TFunctions:
             new_file_dict (Dict[str, Any]): _description_
             change_count (int): Number of changes made to the file structure.
             change_dict (Dict[str, Any]): dictionary of changed files and all folders.
+
         """
         if 'dir' in file_dict:
             return self.make_rand_mods(path, file_dict['dir'], par_name_change)
@@ -172,29 +169,8 @@ class TFunctions:
                 raise TypeError("Directory entry is not a file or directory")
         return new_file_dict, change_count, change_dict
 
-    def recursive_get_entry(self, case: unittest.TestCase, fstruct: FileStructure, file_dict: Dict[str, Any],
-                            path: Optional[str] = None, updated: bool = False) -> None:
-        """Runs get_dict_value on each entry in a FileStructure and asserts that the value returned equals the value."""
-        if path is None:
-            path = fstruct.directory_path
-        for key, value in file_dict.items():
-            new_path = str(Path(path) / key)
-            if updated:
-                if isinstance(value, dict):
-                    self.recursive_get_entry(case, fstruct, value, new_path, updated=True)
-                check_val: Any = fstruct.get_entry([new_path])
-                case.assertEqual(check_val.updated, value.updated)
-            else:
-                if isinstance(value, dict):
-                    self.recursive_get_entry(case, fstruct, value, new_path)
-                check_val = fstruct.get_entry([new_path])
-                case.assertEqual(check_val, value)
-
-    def recursive_check_updated(self, case: unittest.TestCase, fstruct: FileStructure) -> None:
-        pass
-
     def recursive_print_dict(self, file_dict: Dict[str, Any], offset: int = 0) -> None:
-        indent: str = 3 * offset * ' '  # indent made for each directory level
+        indent: str = 3 * offset * ' '
         for key, value in file_dict.items():
             if isinstance(value, dict):
                 print(f"{indent}{key}")
