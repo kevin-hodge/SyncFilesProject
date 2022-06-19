@@ -4,8 +4,6 @@
 Author: Kevin Hodge
 """
 from typing import List, Any, Dict, Tuple
-import shutil
-import json
 import unittest
 import tests.tfuncs as tfuncs
 from tests.tfuncs import TFunctions
@@ -73,12 +71,9 @@ class ConfigManagerTestCase(unittest.TestCase):
 
     @tfuncs.handle_dir_tempfile
     def test_read_nonexistant_dirs(self) -> None:
-        # Set up
         self.tf.remove_test_dirs()
-
-        # Checks if invalid dir is returned
-        with self.tf.sync_dir_file.open("w") as json_file:
-            json.dump([str(self.tf.test_path1), str(self.tf.test_path2)], json_file)
+        invalid_dirs: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
+        tfuncs.write_json(invalid_dirs, self.tf.sync_dir_file)
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
 
@@ -152,26 +147,28 @@ class ConfigManagerTestCase(unittest.TestCase):
     @tfuncs.handle_test_dirs
     def test_valid_last_sync(self) -> None:
         # Setup
-        file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path2))
-        tfuncs.write_json(file_dict, self.tf.last_sync_file)
+        self.tf.create_rand_fstruct(str(self.tf.test_path2))
+        fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
+        tfuncs.write_json(fstruct.files_to_json(), self.tf.last_sync_file)
         last_sync_files: Dict[str, Any]
         manager: ConfigManager = ConfigManager()
 
         # Run test
         last_sync_files = manager.read_last_sync_file()
-        self.assertCountEqual(last_sync_files, file_dict)
+        self.assertCountEqual(last_sync_files, fstruct.files_to_json())
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
     def test_write_last_sync(self) -> None:
-        # Setup
-        file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path2))
+        test_directory: str = str(self.tf.test_path2)
+        self.tf.create_rand_fstruct(test_directory)
+        fstruct: FileStructure = FileStructure(test_directory)
         manager: ConfigManager = ConfigManager()
-        manager.write_last_sync_file(file_dict)
+        manager.write_last_sync_file(fstruct.files_to_json())
 
         # Run test
         last_sync_files: Dict[str, Any] = tfuncs.get_json_contents(self.tf.last_sync_file)
-        self.assertCountEqual(last_sync_files, file_dict)
+        self.assertCountEqual(last_sync_files, fstruct.files_to_json())
 
 
 class FileStructureTestCase(unittest.TestCase):
@@ -182,64 +179,51 @@ class FileStructureTestCase(unittest.TestCase):
 
     def test_init_nonexistant_dir(self) -> None:
         # Delete directory just in case it exists
-        if self.tf.test_path1.exists():
-            shutil.rmtree(self.tf.test_path1)
+        test_directory: str = str(self.tf.test_path1)
+        self.tf.remove_test_dirs()
         with self.assertRaises(AssertionError):
-            FileStructure(str(self.tf.test_path1))  # type: ignore[arg-type]
+            FileStructure(test_directory)  # type: ignore[arg-type]
 
     @tfuncs.handle_test_dirs
     def test_get_rand_fstruct(self) -> None:
-        if self.tf.test_path1.exists():
-            shutil.rmtree(self.tf.test_path1)
-        file_dict: Dict[str, Any] = self.tf.create_rand_fstruct(str(self.tf.test_path1))
-        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
-        fstruct.get_file_structure()
-        # fstruct.print_file_structure()
-        self.assertCountEqual(file_dict, fstruct.files_to_json())
+        test_directory: str = str(self.tf.test_path1)
+        self.tf.remove_test_dirs()
+        self.tf.create_rand_fstruct(test_directory)
+        fstruct: FileStructure = FileStructure(test_directory)
+        self.assertCountEqual(self.tf.dir_to_list(test_directory), fstruct.files_to_list())
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
     def test_get_updated(self) -> None:
-        if self.tf.test_path1.exists():
-            shutil.rmtree(self.tf.test_path1)
-
-        self.tf.create_rand_fstruct(str(self.tf.test_path1))
-        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
-        fstruct.get_file_structure()
+        test_directory: str = str(self.tf.test_path1)
+        self.tf.remove_test_dirs()
+        self.tf.create_rand_fstruct(test_directory)
+        fstruct: FileStructure = FileStructure(test_directory)
         last_sync_files: Dict[str, Any] = fstruct.files_to_json()
-        # fstruct.print_file_structure()
+        fstruct.print_file_structure()
         num_changes: int
-        num_changes = self.tf.make_rand_mods(fstruct.directory_path, fstruct.files_to_json())
-        # print(num_changes)
-        fstruct.get_file_structure()
+        num_changes = self.tf.make_rand_mods(test_directory)
+        print(num_changes)
+        fstruct.update_file_structure()
 
         # Run check (Needs to FAIL if something is updated and NOT marked as updated or marked but NOT updated)
         changes_found: int = fstruct.check_file_structure(last_sync_files)
-        # print(changes_found)
-        # fstruct.print_file_structure()
-        # self.tf.recursive_print_dir(self.tf.test_path1)
+        print(changes_found)
+        fstruct.print_file_structure()
+        # self.tf.recursive_print_dir(test_directory)
         self.assertEqual(changes_found, num_changes)
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
     def test_json_conversion(self) -> None:
-        self.tf.create_rand_fstruct(str(self.tf.test_path1))
-        fstruct: FileStructure = FileStructure(str(self.tf.test_path1))
-        fstruct.get_file_structure()
+        test_directory: str = str(self.tf.test_path1)
+        self.tf.create_rand_fstruct(test_directory)
+        fstruct: FileStructure = FileStructure(test_directory)
         before_dict: Dict[str, Any] = fstruct.files_to_json()
         tfuncs.write_json(before_dict, self.tf.last_tempfile)
         after_dict: Dict[str, Any] = tfuncs.get_json_contents(self.tf.last_tempfile)
         self.assertCountEqual(before_dict, after_dict)
         self.assertCountEqual(after_dict, fstruct.files_to_json())
-
-    @tfuncs.handle_last_tempfile
-    @tfuncs.handle_test_dirs
-    def test_list_conversion(self) -> None:
-        self.tf.create_rand_fstruct(str(self.tf.test_path2))
-        fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
-        fstruct.get_file_structure()
-        fstruct.print_file_structure()
-        # print(fstruct.files_to_list())
 
 
 if __name__ == "__main__":

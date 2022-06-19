@@ -1,7 +1,4 @@
-"""Defines StateMachine and Sync Finite State Machine State Behavior.
-
-Requirements:
-    - Req #16: The program shall ask user for directories if config file does not contain sync directories.
+"""Defines Sync Finite State Machine State Behavior.
 
 Author: Kevin Hodge
 """
@@ -142,7 +139,7 @@ class StateInfo:
     def check_for_changes(self) -> int:
         changes_found: int = 0
         for directory in self.get_directories():
-            directory.get_file_structure()
+            directory.update_file_structure()
             if self.verbose:
                 print(f"Directory {str(self.directories.index(directory) + 1)}:")
                 directory.print_file_structure()

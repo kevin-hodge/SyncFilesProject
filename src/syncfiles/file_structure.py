@@ -79,7 +79,7 @@ class FileStructure:
         assert Path(directory_path).exists()
         self.directory_path: str = directory_path
         self.top_level_dir_path_list = self.split_path(self.directory_path)
-        self.files: dir_entry = self.get_file_structure()
+        self.files: dir_entry = self.update_file_structure()
         self.verbose: bool = verbose
 
     def split_path(self, path: str):
@@ -88,20 +88,20 @@ class FileStructure:
         elif "/" in str(path):
             return str(path).split("/")
 
-    def get_file_structure(self) -> dir_entry:
+    def update_file_structure(self) -> dir_entry:
         """Reads all files and folders below the directory.
 
-        Calls recursive_get_directory.
+        Calls get_directory.
 
         Returns:
             self.files (dict): Structure of this dictionary is described in the arguments documentation of
                 FileStructure.
 
         """
-        self.files = self.recursive_get_directory(self.directory_path)
+        self.files = self.get_directory(self.directory_path)
         return self.files
 
-    def recursive_get_directory(self, directory: str) -> dir_entry:
+    def get_directory(self, directory: str) -> dir_entry:
         """Recursive function that gives the structure of all files and folder contained within a directory.
 
         Args:
@@ -121,9 +121,7 @@ class FileStructure:
             if Path(entry).is_file():
                 file_structure.add_entry(str(entry.name), file_entry(last_mod_time))
             elif Path(entry).is_dir():
-                file_structure.add_entry(str(entry.name), self.recursive_get_directory(str(entry)))
-            else:
-                raise ValueError("Directory entry is not a file or directory")
+                file_structure.add_entry(str(entry.name), self.get_directory(str(entry)))
         return file_structure
 
     def print_file_structure(self, offset: int = 1) -> None:
