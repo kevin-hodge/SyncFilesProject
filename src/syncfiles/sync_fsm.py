@@ -2,6 +2,7 @@
 
 Author: Kevin Hodge
 """
+
 from typing import Any, List, Tuple, Optional
 from syncfiles.file_structure import FileStructure
 from syncfiles.config_manager import ConfigManager

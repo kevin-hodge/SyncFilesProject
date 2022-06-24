@@ -1,8 +1,8 @@
 """Sync Files Project Test
 
-
 Author: Kevin Hodge
 """
+
 from typing import List, Any, Dict, Tuple
 import unittest
 import tests.tfuncs as tfuncs

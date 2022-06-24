@@ -1,6 +1,5 @@
 """Contains useful functions for testing.
 
-
 Author: Kevin Hodge
 """
 

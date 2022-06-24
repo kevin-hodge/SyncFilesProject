@@ -20,6 +20,7 @@ sync_directories_file.json
 temp_sync_directories_file.json
 last_sync_file.json
 temp_last_sync_file.json
+sync_directories.txt
 
 # Byte-compiled / optimized / DLL files
 **/__pycache__/
