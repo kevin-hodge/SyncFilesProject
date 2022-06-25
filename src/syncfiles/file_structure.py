@@ -9,14 +9,14 @@ from pathlib import Path
 
 class entry:
     """Contains info on a file/folder.
-    
+
     Attributes:
         mod_time (float): last modification time of entry.
         updated (int): described the modification status of entry.
             0: Not modified
             1: Name Changed
             2: Last modified time changed
-    
+
     """
     def __init__(self, mod_time: float = -1.0):
         self.mod_time: float = mod_time
@@ -31,7 +31,7 @@ class entry:
     def set_mod_time_updated(self) -> None:
         self.updated = 2
 
-    def get_updated(self) -> bool:
+    def get_updated(self) -> int:
         return self.updated
 
     def set_mod_time(self, mod_time: float) -> None:

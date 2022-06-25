@@ -122,8 +122,6 @@ class TFunctions:
                 elif parent_name_change:
                     change_list.append(entry_path_string)
 
-                # Resolved: If directory name changed, name needs to be changed before changing deeper entries.
-                # Otherwise, deeper entries will be added to change_list, but path will be incorrect
                 dir_change_list: List[str] = \
                     self.make_rand_mods(entry_path_string, local_name_change or parent_name_change)
                 change_list.extend(dir_change_list)
@@ -160,7 +158,7 @@ class TFunctions:
         for entry in Path(path).iterdir():
             print(f"{indent}{entry.name}")
             if entry.is_dir():
-                self.recursive_print_dir(entry, offset + 1)
+                self.recursive_print_dir(str(entry), offset + 1)
 
     def dir_to_list(self, path: str) -> List[str]:
         dir_list: List[str] = []
