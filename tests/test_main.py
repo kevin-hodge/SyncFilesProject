@@ -195,23 +195,27 @@ class FileStructureTestCase(unittest.TestCase):
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
     def test_get_updated(self) -> None:
-        test_directory: str = str(self.tf.test_path1)
         self.tf.remove_test_dirs()
+        test_directory: str = str(self.tf.test_path1)
         self.tf.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory)
         last_sync_files: Dict[str, Any] = fstruct.files_to_json()
-        fstruct.print_file_structure()
-        num_changes: int
-        num_changes = self.tf.make_rand_mods(test_directory)
-        print(num_changes)
+        # fstruct.print_file_structure()
+        change_list: List[str]
+        change_list = self.tf.make_rand_mods(test_directory)
+        print(len(change_list))
+        # print(change_list)
         fstruct.update_file_structure()
 
-        # Run check (Needs to FAIL if something is updated and NOT marked as updated or marked but NOT updated)
         changes_found: int = fstruct.check_file_structure(last_sync_files)
         print(changes_found)
         fstruct.print_file_structure()
-        # self.tf.recursive_print_dir(test_directory)
-        self.assertEqual(changes_found, num_changes)
+        self.tf.recursive_print_dir(test_directory)
+        self.assertEqual(changes_found, len(change_list))
+        print(fstruct.get_updated_list())
+        print(change_list)
+        self.maxDiff = None
+        self.assertCountEqual(sorted(fstruct.get_updated_list()), sorted(change_list))
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs

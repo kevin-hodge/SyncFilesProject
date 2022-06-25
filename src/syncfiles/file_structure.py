@@ -8,21 +8,37 @@ from pathlib import Path
 
 
 class entry:
-    def __init__(self, mtime: float = -1.0):
-        self.mtime: float = mtime
-        self.updated: bool = False
+    """Contains info on a file/folder.
+    
+    Attributes:
+        mod_time (float): last modification time of entry.
+        updated (int): described the modification status of entry.
+            0: Not modified
+            1: Name Changed
+            2: Last modified time changed
+    
+    """
+    def __init__(self, mod_time: float = -1.0):
+        self.mod_time: float = mod_time
+        self.updated: int = 0
 
-    def set_updated(self) -> None:
-        self.updated = True
+    def set_updated(self, updated: int = 1) -> None:
+        self.updated = updated
+
+    def set_name_updated(self) -> None:
+        self.updated = 1
+
+    def set_mod_time_updated(self) -> None:
+        self.updated = 2
 
     def get_updated(self) -> bool:
         return self.updated
 
-    def set_mod_time(self, mtime: float) -> None:
-        self.mtime = mtime
+    def set_mod_time(self, mod_time: float) -> None:
+        self.mod_time = mod_time
 
     def get_mod_time(self) -> float:
-        return self.mtime
+        return self.mod_time
 
 
 class file_entry(entry):
@@ -66,7 +82,7 @@ class FileStructure:
         - Req #10: File structures shall be stored in a class "FileStructure".
 
     Attributes:
-        directory_path (str): Contains the path to the directory that the FileStructure represents.
+        directory_path (str): Path to the directory that the FileStructure represents.
         path_list (str): directory_path split into a list of strings. Saves some computation time.
         files (dir_entry): Contains names of all files (strings) and all folders (dict with entries corresponding to the
             files and directories in the directory) in the directory. Folders contained in dicts, contain names of all
@@ -130,7 +146,7 @@ class FileStructure:
         self.recursive_print_dir(self.files, offset)
 
     def recursive_print_dir(self, directory: dir_entry, offset: int = 0) -> None:
-        """Prints out dict that matches format of FileStructure.files.
+        """Prints out dict that matches format of self.files.
 
         Args:
             files_dict (dir_entry): dir_entry that contains a file structure described in
@@ -139,14 +155,14 @@ class FileStructure:
         """
         indent: str = 3 * offset * ' '
         for entry_name in directory.get_keys():
-            files_entry: entry = directory.get_entry(entry_name)
-            self.print_entry(indent, entry_name, files_entry)
-            if isinstance(files_entry, dir_entry):
-                self.recursive_print_dir(files_entry, offset + 1)
+            fstruct_entry: entry = directory.get_entry(entry_name)
+            self.print_entry(indent, entry_name, fstruct_entry)
+            if isinstance(fstruct_entry, dir_entry):
+                self.recursive_print_dir(fstruct_entry, offset + 1)
 
     def print_entry(self, indent: str, entry_name: str, entry: entry) -> None:
         entry_repr: str = f"{indent}{entry_name}: {entry.get_mod_time()}"
-        if entry.get_updated():
+        if entry.get_updated() > 0:
             entry_repr = entry_repr + " X"
         print(entry_repr)
 
@@ -171,24 +187,22 @@ class FileStructure:
         changes_found: int = 0
 
         for key in file_dir.get_keys():
-            files_entry: entry = file_dir.get_entry(key)
+            fstruct_entry: entry = file_dir.get_entry(key)
             new_path: str = str(Path(path) / key)
-            # new_path: str = key
             path_list: List[str] = self.get_relative_path(new_path)
             last_sync_entry: Optional[entry] = last_sync_files.get_entry_path(path_list)
 
             if last_sync_entry is None:
-                files_entry.set_updated()
+                fstruct_entry.set_name_updated()
                 changes_found += 1
             else:
-                if isinstance(files_entry, file_entry):
-                    last_sync_time: float = last_sync_entry.get_mod_time()
-                    if files_entry.get_mod_time() > last_sync_time:
-                        files_entry.set_updated()
+                if isinstance(fstruct_entry, file_entry):
+                    if fstruct_entry.get_mod_time() > last_sync_entry.get_mod_time():
+                        fstruct_entry.set_mod_time_updated()
                         changes_found += 1
 
-            if isinstance(files_entry, dir_entry):
-                changes_found += self.check_file_structure(last_sync_dict, new_path, files_entry)
+            if isinstance(fstruct_entry, dir_entry):
+                changes_found += self.check_file_structure(last_sync_dict, new_path, fstruct_entry)
         return changes_found
 
     def get_relative_path(self, path: str) -> List[str]:
@@ -217,7 +231,7 @@ class FileStructure:
     def files_to_list(self) -> List[str]:
         return self.to_list(self.files)
 
-    def to_list(self, directory: dir_entry, path: Optional[str] = None) -> List[str]:
+    def to_list(self, directory: dir_entry, only_updated: bool = False, path: Optional[str] = None) -> List[str]:
         if path is None:
             path = self.directory_path
         file_list: List[str] = []
@@ -225,11 +239,18 @@ class FileStructure:
             file_or_dir_entry: entry = directory.get_entry(file_or_dir_name)
             file_or_dir_path: Path = Path(path) / file_or_dir_name
             file_or_dir_path_string: str = str(file_or_dir_path)
-            file_list.append(file_or_dir_path_string)
+            if only_updated:
+                if file_or_dir_entry.get_updated() > 0:
+                    file_list.append(file_or_dir_path_string)
+            else:
+                file_list.append(file_or_dir_path_string)
             if isinstance(file_or_dir_entry, dir_entry):
                 directory_entry: dir_entry = file_or_dir_entry
-                file_list.extend(self.to_list(directory_entry, file_or_dir_path_string))
+                file_list.extend(self.to_list(directory_entry, only_updated, file_or_dir_path_string))
         return file_list
+
+    def get_updated_list(self) -> List[str]:
+        return self.to_list(self.files, only_updated=True)
 
     def from_json(self, file_dict: Dict[str, Any]) -> dir_entry:
         directory: dir_entry = dir_entry()
@@ -237,11 +258,11 @@ class FileStructure:
             directory = self.from_json(file_dict['dir'])
             directory.set_mod_time(file_dict['mtime'])
         else:
-            for key, files_entry in file_dict.items():
-                if isinstance(files_entry, dict):
-                    directory.add_entry(key, self.from_json(files_entry))
-                elif isinstance(files_entry, float):
-                    directory.add_entry(key, file_entry(files_entry))
+            for key, fstruct_entry in file_dict.items():
+                if isinstance(fstruct_entry, dict):
+                    directory.add_entry(key, self.from_json(fstruct_entry))
+                elif isinstance(fstruct_entry, float):
+                    directory.add_entry(key, file_entry(fstruct_entry))
                 else:
-                    raise TypeError(f"{type(files_entry)} is not a float or dict.")
+                    raise TypeError(f"{type(fstruct_entry)} is not a float or dict.")
         return directory

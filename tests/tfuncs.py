@@ -96,7 +96,7 @@ class TFunctions:
     def create_file(self, path: Path) -> None:
         path.touch(exist_ok=True)
 
-    def make_rand_mods(self, path: str, parent_name_change: bool = False) -> int:
+    def make_rand_mods(self, path: str, parent_name_change: bool = False) -> List[str]:
         """Makes random modifications to a file structure and returns the number of changes.
 
         10% chance of changing directory name.
@@ -110,49 +110,54 @@ class TFunctions:
             change_count (int): Number of changes made to the file structure.
 
         """
-        change_count: int = 0
+        change_list: List[str] = []
         for entry_path in Path(path).iterdir():
+            entry_path_string: str = str(entry_path)
             if entry_path.is_dir():
                 local_name_change: bool = False
                 if random.random() > 0.9:
                     local_name_change = True
-
-                change_count += self.make_rand_mods(str(entry_path), local_name_change or parent_name_change)
-
-                if local_name_change:
-                    self.change_dir_name(path, str(entry_path), change_count)
-                    change_count += 1
+                    entry_path_string = self.change_dir_name(path, str(entry_path), len(change_list))
+                    change_list.append(entry_path_string)
                 elif parent_name_change:
-                    change_count += 1
+                    change_list.append(entry_path_string)
+
+                # Resolved: If directory name changed, name needs to be changed before changing deeper entries.
+                # Otherwise, deeper entries will be added to change_list, but path will be incorrect
+                dir_change_list: List[str] = \
+                    self.make_rand_mods(entry_path_string, local_name_change or parent_name_change)
+                change_list.extend(dir_change_list)
             elif Path(entry_path).is_file():
                 if random.random() > 0.1:
                     if random.random() > 0.5:
-                        self.change_file_name(path, str(entry_path), change_count)
+                        entry_path_string = self.change_file_name(path, str(entry_path), len(change_list))
                     else:
                         self.update_last_mod_time(entry_path)
-                    change_count += 1
+                    change_list.append(entry_path_string)
                 elif parent_name_change:
-                    change_count += 1
+                    change_list.append(entry_path_string)
             else:
                 raise TypeError("make_rand_mods file_dict entry is not a dict or float")
-        return change_count
+        return change_list
 
-    def change_file_name(self, path: str, old_path: str, change_count: int) -> None:
+    def change_file_name(self, path: str, old_path: str, change_count: int) -> str:
         new_name = f"Edited_file_{change_count}.txt"
         dest = str(Path(path) / new_name)
         assert shutil.move(old_path, dest) == dest
+        return dest
 
-    def change_dir_name(self, path: str, old_path: str, change_count: int) -> None:
+    def change_dir_name(self, path: str, old_path: str, change_count: int) -> str:
         new_name: str = f"Edited_dir_{change_count}"
         dest: str = str(Path(path) / new_name)
         assert shutil.move(old_path, dest) == dest
+        return dest
 
     def update_last_mod_time(self, entry_path: Path) -> None:
         entry_path.touch(exist_ok=True)
 
-    def recursive_print_dir(self, path: Path, offset: int = 0) -> None:
+    def recursive_print_dir(self, path: str, offset: int = 0) -> None:
         indent: str = 3 * offset * ' '
-        for entry in path.iterdir():
+        for entry in Path(path).iterdir():
             print(f"{indent}{entry.name}")
             if entry.is_dir():
                 self.recursive_print_dir(entry, offset + 1)
