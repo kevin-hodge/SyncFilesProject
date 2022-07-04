@@ -42,18 +42,18 @@ class FileStructureTestCase(unittest.TestCase):
         # fstruct.print_file_structure()
         change_list: List[str]
         change_list = self.tf.make_rand_mods(test_directory)
-        print(len(change_list))
+        # print(len(change_list))
         # print(change_list)
         fstruct.update_file_structure()
 
         changes_found: int = fstruct.check_file_structure(last_sync_files)
-        print(changes_found)
-        fstruct.print_file_structure()
-        self.tf.recursive_print_dir(test_directory)
+        # print(changes_found)
+        # fstruct.print_file_structure()
+        # self.tf.recursive_print_dir(test_directory)
         self.assertEqual(changes_found, len(change_list))
-        print(fstruct.get_updated_list())
-        print(change_list)
-        self.maxDiff = None
+        # print(fstruct.get_updated_list())
+        # print(change_list)
+        # self.maxDiff = None
         self.assertCountEqual(sorted(fstruct.get_updated_list()), sorted(change_list))
 
     @tfuncs.handle_last_tempfile

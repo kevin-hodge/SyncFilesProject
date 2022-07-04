@@ -227,3 +227,13 @@ def handle_last_tempfile(func):
         tf.create_last_tempfile()
         handle_error_after_function(func, tf.remove_last_tempfile, *args, **kwargs)
     return wrapper
+
+
+def remove_prefixes(entry_list: List[str], prefix: str) -> List[str]:
+    copy_list: List[str] = entry_list[:]
+    for entry_index, entry in enumerate(entry_list):
+        if entry[:len(prefix)] == prefix:
+            copy_list[entry_index] = entry[len(prefix)+1:]
+        else:
+            raise ValueError("remove_prfixes argument prefix is not contained in all entries of entry_list.")
+    return copy_list
