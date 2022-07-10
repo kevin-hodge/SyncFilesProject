@@ -43,24 +43,49 @@ class SyncManager:
         self.fstructs_updated_list: List[List[str]] = []
         for fstruct in fstructs:
             self.fstruct_dirs.append(fstruct.directory_path)
-            self.fstructs_files_list.append(fstruct.files_to_list())
-            self.fstructs_updated_list.append(fstruct.get_updated_list())
+            files_list: List[str] = self.remove_prefixes(fstruct.files_to_list(), self.fstruct_dirs[-1])
+            self.fstructs_files_list.append(files_list)
+            updated_list: List[str] = self.remove_prefixes(fstruct.get_updated_list(), self.fstruct_dirs[-1])
+            self.fstructs_updated_list.append(updated_list)
         self.sync()
 
+    def remove_prefixes(self, files_list: List[str], prefix: str) -> List[str]:
+        files_list_copy: List[str] = files_list[:]
+        for index, entry in enumerate(files_list_copy):
+            files_list_copy[index] = self.remove_prefix(entry, prefix)
+        return files_list_copy
+
+    def remove_prefix(self, fstruct_entry: str, prefix: str) -> str:
+        assert self.starts_with(fstruct_entry, prefix)
+        return self.remove_leading_slash(fstruct_entry[len(prefix):])
+
+    def starts_with(self, entry: str, prefix: str) -> bool:
+        if entry[:len(prefix)] == prefix:
+            return True
+        else:
+            raise ValueError("starts_with argument entry does not contain prefix.")
+
+    def remove_leading_slash(self, path: str) -> str:
+        if path[0] == "/" or path[0] == "\\":
+            return path[1:]
+        else:
+            return path
+
     def sync(self) -> None:
-        for fstruct_list in self.fstructs_files_list:
+        for fstruct_index, fstruct_list in enumerate(self.fstructs_files_list):
             for fstruct_entry in fstruct_list:
                 if fstruct_entry not in self.visited_entries:
-                    self.perform_entry_action(fstruct_entry)
+                    self.perform_entry_action(fstruct_entry, self.fstruct_dirs[fstruct_index])
                     self.visited_entries[fstruct_entry] = 0
 
-    def perform_entry_action(self, fstruct_entry: str) -> None:
-        attributes: List[int] = self.get_entry_attributes(fstruct_entry)
+    def perform_entry_action(self, fstruct_entry: str, parent_dir: str) -> None:
+        attributes: List[int] = self.get_entry_attributes(fstruct_entry, parent_dir)
         self.execute_entry_action(attributes, fstruct_entry)
 
-    def get_entry_attributes(self, fstruct_entry: str) -> List[int]:
+    def get_entry_attributes(self, fstruct_entry: str, parent_dir: str) -> List[int]:
         attributes: List[int] = [0] * 5
-        if Path(fstruct_entry).is_file():
+        entry_path: Path = Path(parent_dir) / fstruct_entry
+        if Path(entry_path).is_file():
             attributes[0] = 1
         if fstruct_entry in self.fstructs_files_list[0]:
             attributes[1] = 1
@@ -83,6 +108,12 @@ class SyncManager:
             self.copy_file_from_to(fstruct_entry, dir2, dir1)
         elif self.check_attributes(attributes, [1, 0, 1, -1, 0]):
             self.delete_file_from(fstruct_entry, dir2)
+        elif self.check_attributes(attributes, [1, 1, 1, 1, 0]):
+            self.delete_file_from(fstruct_entry, dir2)
+            self.copy_file_from_to(fstruct_entry, dir1, dir2)
+        elif self.check_attributes(attributes, [1, 1, 1, 0, 1]):
+            self.delete_file_from(fstruct_entry, dir1)
+            self.copy_file_from_to(fstruct_entry, dir2, dir1)
 
     def check_attributes(self, attributes: List[int], compare_list: List[int]) -> bool:
         for index, attr in enumerate(attributes):
@@ -91,26 +122,13 @@ class SyncManager:
         return True
 
     def copy_file_from_to(self, fstruct_entry: str, from_dir: str, to_dir: str) -> None:
-        relative_path: str = self.remove_prefix(fstruct_entry, from_dir)
-        dest: str = str(Path(to_dir) / relative_path)
-        shutil.copyfile(fstruct_entry, dest)
-
-    def remove_prefix(self, fstruct_entry: str, prefix: str) -> str:
-        assert self.starts_with(fstruct_entry, prefix)
-        return self.remove_leading_slash(fstruct_entry[len(prefix):])
-
-    def starts_with(self, entry: str, prefix: str) -> bool:
-        if entry[:len(prefix)] == prefix:
-            return True
-        else:
-            raise ValueError("starts_with argument entry does not contain prefix.")
-
-    def remove_leading_slash(self, path: str) -> str:
-        if path[0] == "/" or path[0] == "\\":
-            return path[1:]
-        else:
-            return path
+        source: str = str(Path(from_dir) / fstruct_entry)
+        dest: str = str(Path(to_dir) / fstruct_entry)
+        shutil.copyfile(source, dest)
 
     def delete_file_from(self, fstruct_entry: str, from_dir: str) -> None:
-        assert self.starts_with(fstruct_entry, from_dir)
-        Path(fstruct_entry).unlink()
+        entry_path: Path = Path(from_dir) / fstruct_entry
+        entry_path.unlink()
+
+    def add_timestamp_to_name(self, fstruct_entry: str, dir: str) -> None:
+        pass

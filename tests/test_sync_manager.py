@@ -112,6 +112,71 @@ class SyncManagerTestCase(unittest.TestCase):
         self.assertCountEqual(files_in1, [])
         self.assertCountEqual(files_in2, [])
 
+    @tfuncs.handle_test_dirs
+    def test_file_in1_in2_updated1_notupdated2(self) -> None:
+        common_file_name: str = "test_file.txt"
+        file_in1: Path = self.tf.test_path1 / common_file_name
+        self.tf.create_file(file_in1)
+        file_in2: Path = self.tf.test_path2 / common_file_name
+        self.tf.create_file(file_in2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+        print(last_sync_dict)
+
+        with file_in1.open('w') as file_to_update:
+            file_to_update.write('This file is updated.')
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        SyncManager(fstruct_list)
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1: List[str] = fstruct_list[0].files_to_list()
+        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
+        files_in2: List[str] = fstruct_list[1].files_to_list()
+        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        self.assertCountEqual(files_in1, files_in2)
+
+        with file_in1.open() as same_as_before_file:
+            message: str = same_as_before_file.read()
+            self.assertEqual(message, 'This file is updated.')
+        with file_in2.open() as updated_file:
+            message = updated_file.read()
+            self.assertEqual(message, 'This file is updated.')
+
+    @tfuncs.handle_test_dirs
+    def test_file_in1_in2_notupdated1_updated2(self) -> None:
+        common_file_name: str = "test_file.txt"
+        file_in1: Path = self.tf.test_path1 / common_file_name
+        self.tf.create_file(file_in1)
+        file_in2: Path = self.tf.test_path2 / common_file_name
+        self.tf.create_file(file_in2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+
+        with file_in2.open('w') as file_to_update:
+            file_to_update.write('This file is updated.')
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        SyncManager(fstruct_list)
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1: List[str] = fstruct_list[0].files_to_list()
+        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
+        files_in2: List[str] = fstruct_list[1].files_to_list()
+        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        self.assertCountEqual(files_in1, files_in2)
+
+        with file_in2.open() as same_as_before_file:
+            message: str = same_as_before_file.read()
+            self.assertEqual(message, 'This file is updated.')
+        with file_in1.open() as updated_file:
+            message = updated_file.read()
+            self.assertEqual(message, 'This file is updated.')
+
 
 if __name__ == "__main__":
     unittest.main()
