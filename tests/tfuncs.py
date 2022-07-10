@@ -231,9 +231,12 @@ def handle_last_tempfile(func):
 
 def remove_prefixes(entry_list: List[str], prefix: str) -> List[str]:
     copy_list: List[str] = entry_list[:]
-    for entry_index, entry in enumerate(entry_list):
-        if entry[:len(prefix)] == prefix:
-            copy_list[entry_index] = entry[len(prefix)+1:]
-        else:
-            raise ValueError("remove_prfixes argument prefix is not contained in all entries of entry_list.")
+    for index, entry in enumerate(entry_list):
+        copy_list[index] = remove_prefix(entry, prefix)
     return copy_list
+
+
+def remove_prefix(entry: str, prefix: str) -> str:
+    if entry[:len(prefix)] == prefix:
+        return entry[len(prefix)+1:]
+    raise ValueError("remove_prefix argument prefix is not contained in entry.")

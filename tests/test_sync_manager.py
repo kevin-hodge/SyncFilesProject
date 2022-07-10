@@ -177,6 +177,46 @@ class SyncManagerTestCase(unittest.TestCase):
             message = updated_file.read()
             self.assertEqual(message, 'This file is updated.')
 
+    @tfuncs.handle_test_dirs
+    def test_file_in1_in2_updated1_updated2(self) -> None:
+        common_file_name: str = "test_file.txt"
+        file_in1: Path = self.tf.test_path1 / common_file_name
+        self.tf.create_file(file_in1)
+        file_in2: Path = self.tf.test_path2 / common_file_name
+        self.tf.create_file(file_in2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+
+        with file_in1.open('w') as file_to_update:
+            file_to_update.write('This file is updated.')
+        with file_in2.open('w') as file_to_update:
+            file_to_update.write('This file is also updated.')
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        SyncManager(fstruct_list)
+
+        # Check each directory contains correct file names with timestamps
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1: List[str] = fstruct_list[0].files_to_list()
+        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
+        files_in2: List[str] = fstruct_list[1].files_to_list()
+        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        self.assertCountEqual(files_in1, files_in2)
+        additional_timestamp_string: str = f" (YYYY-MM-DD XX:XX:XX.XXXX)"
+
+        # Check each file contains correct contents
+        file_contents: Dict[str, str] = {}
+        for file in self.tf.test_path1.iterdir():
+            with file.open() as read_file:
+                first_file: str = tfuncs.remove_prefix(str(file), str(self.tf.test_path1))
+                file_contents[first_file] = read_file.read()
+        for file in self.tf.test_path2.iterdir():
+            with file.open() as read_file:
+                second_file: str = tfuncs.remove_prefix(str(file), str(self.tf.test_path2))
+                assert file_contents[second_file] == read_file.read()
+
 
 if __name__ == "__main__":
     unittest.main()
