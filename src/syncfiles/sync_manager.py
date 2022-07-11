@@ -3,7 +3,7 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from pathlib import Path
 import shutil
 from datetime import datetime, timezone
@@ -126,33 +126,8 @@ class SyncManager:
         entry_timestamp: datetime = datetime.fromtimestamp(entry_path.stat().st_mtime, tz=timezone.utc)
         timestamp_format: str = "%Y-%m-%d-%H-%M-%S-%f"
         timestamp: str = entry_timestamp.strftime(timestamp_format)
-        # name_without_suffixes, suffixes = self.remove_suffixes(entry_path)
-        # new_name_without_suffixes: str = f"{str(name_without_suffixes)} ({entry_timestamp})"
-        # new_name_with_suffixes: str = self.append_suffixes(new_name_without_suffixes, suffixes)
         new_name: str = f"{str(entry_path)} ({timestamp})"
         return entry_path.parent / new_name
-
-    def remove_suffixes(self, entry_path: Path) -> Tuple[str, List[str]]:
-        suffixes: List[str] = entry_path.suffixes
-        name_without_suffixes: str = entry_path.name
-        for suffix in suffixes:
-            name_without_suffixes = self.remove_suffix(name_without_suffixes, suffix)
-        return name_without_suffixes, suffixes
-
-    def remove_suffix(self, fstruct_entry: str, suffix: str) -> str:
-        assert self.ends_with(fstruct_entry, suffix)
-        return fstruct_entry[:-len(suffix)]
-
-    def ends_with(self, entry: str, suffix: str) -> bool:
-        if entry[-len(suffix):] == suffix:
-            return True
-        raise ValueError("ends_with argument entry does not contain suffix.")
-
-    def append_suffixes(self, entry_name: str, suffixes: List[str]) -> str:
-        new_name: str = entry_name
-        for suffix in suffixes:
-            new_name = new_name + suffix
-        return new_name
 
     def attempt_rename(self, new_path: Path, entry_path: Path) -> Path:
         for attempt in range(100):
