@@ -3,9 +3,10 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from pathlib import Path
 import shutil
+from datetime import datetime, timezone
 from syncfiles.file_structure import FileStructure
 
 
@@ -13,26 +14,7 @@ class SyncManager:
     """Synchronizes files and folders between two FileStructures.
 
     Tasks:
-        - get list of all entries from each file structure.
-        - get list of all updated entries from each file structure.
-        - loop through file structures and create a dictionary of visited entries
-            - dictionary key should be path of entry, value should indicate if the entry is a file, if it exists in dir
-            1, if it exists in dir 2, if it is updated in dir 1, and if it is updated in dir 2.
-        - handle following cases for 2 directories:
-            - if ENTRY IN dir 1, NOT IN dir 2, and UPDATED in dir 1:
-                - COPY from dir 1 to dir 2
-            - if ENTRY IN dir 1, NOT IN dir 2, and NOT UPDATED in dir 2:
-                - DELETE from dir 1
-            - if ENTRY NOT IN dir 1, IN dir 2, and UPDATED in dir 2:
-                - COPY from dir 2 to dir 1
-            - if ENTRY NOT IN dir 1, IN dir 2, and NOT UPDATED in dir 2:
-                - DELETE from dir 2
-            - if ENTRY IN dir 1 AND dir 2, and UPDATED in dir 1 and NOT UPDATED in dir 2:
-                - DELETE from dir 2 AND COPY from dir 1 to dir 2
-            - if ENTRY IN dir 1 AND dir 2, and NOT UPDATED in dir 1 and UPDATED in dir 2:
-                - DELETE from dir 1 AND COPY from dir 2 to dir 1
-            - if ENTRY IN dir 1 AND dir 2, and UPDATED in dir 1 and UPDATED in dir 2:
-                - RENAME entry in dir 1 and dir 2 AND COPY from dir 2 to dir 1 AND COPY from dir 1 to dir 2
+        - Handle updated folders.
 
     """
     def __init__(self, fstructs: List[FileStructure]) -> None:
@@ -62,8 +44,7 @@ class SyncManager:
     def starts_with(self, entry: str, prefix: str) -> bool:
         if entry[:len(prefix)] == prefix:
             return True
-        else:
-            raise ValueError("starts_with argument entry does not contain prefix.")
+        raise ValueError("starts_with argument entry does not contain prefix.")
 
     def remove_leading_slash(self, path: str) -> str:
         if path[0] == "/" or path[0] == "\\":
@@ -114,6 +95,11 @@ class SyncManager:
         elif self.check_attributes(attributes, [1, 1, 1, 0, 1]):
             self.delete_file_from(fstruct_entry, dir1)
             self.copy_file_from_to(fstruct_entry, dir2, dir1)
+        elif self.check_attributes(attributes, [1, 1, 1, 1, 1]):
+            new_name_dir1: str = self.rename_with_timestamp(fstruct_entry, dir1)
+            self.copy_file_from_to(new_name_dir1, dir1, dir2)
+            new_name_dir2: str = self.rename_with_timestamp(fstruct_entry, dir2)
+            self.copy_file_from_to(new_name_dir2, dir2, dir1)
 
     def check_attributes(self, attributes: List[int], compare_list: List[int]) -> bool:
         for index, attr in enumerate(attributes):
@@ -130,5 +116,51 @@ class SyncManager:
         entry_path: Path = Path(from_dir) / fstruct_entry
         entry_path.unlink()
 
-    def add_timestamp_to_name(self, fstruct_entry: str, dir: str) -> None:
-        pass
+    def rename_with_timestamp(self, fstruct_entry: str, parent_dir: str) -> str:
+        entry_path: Path = Path(parent_dir) / fstruct_entry
+        new_path: Path = self.get_name_with_timestamp(entry_path)
+        new_path = self.attempt_rename(new_path, entry_path)
+        return (str(new_path.name))
+
+    def get_name_with_timestamp(self, entry_path: Path) -> Path:
+        entry_timestamp: datetime = datetime.fromtimestamp(entry_path.stat().st_mtime, tz=timezone.utc)
+        timestamp_format: str = "%Y-%m-%d-%H-%M-%S-%f"
+        timestamp: str = entry_timestamp.strftime(timestamp_format)
+        # name_without_suffixes, suffixes = self.remove_suffixes(entry_path)
+        # new_name_without_suffixes: str = f"{str(name_without_suffixes)} ({entry_timestamp})"
+        # new_name_with_suffixes: str = self.append_suffixes(new_name_without_suffixes, suffixes)
+        new_name: str = f"{str(entry_path)} ({timestamp})"
+        return entry_path.parent / new_name
+
+    def remove_suffixes(self, entry_path: Path) -> Tuple[str, List[str]]:
+        suffixes: List[str] = entry_path.suffixes
+        name_without_suffixes: str = entry_path.name
+        for suffix in suffixes:
+            name_without_suffixes = self.remove_suffix(name_without_suffixes, suffix)
+        return name_without_suffixes, suffixes
+
+    def remove_suffix(self, fstruct_entry: str, suffix: str) -> str:
+        assert self.ends_with(fstruct_entry, suffix)
+        return fstruct_entry[:-len(suffix)]
+
+    def ends_with(self, entry: str, suffix: str) -> bool:
+        if entry[-len(suffix):] == suffix:
+            return True
+        raise ValueError("ends_with argument entry does not contain suffix.")
+
+    def append_suffixes(self, entry_name: str, suffixes: List[str]) -> str:
+        new_name: str = entry_name
+        for suffix in suffixes:
+            new_name = new_name + suffix
+        return new_name
+
+    def attempt_rename(self, new_path: Path, entry_path: Path) -> Path:
+        for attempt in range(100):
+            if attempt == 0:
+                path_name: Path = new_path
+            try:
+                entry_path.rename(path_name)
+                return path_name
+            except FileExistsError:
+                path_name = Path(f"{path_name} {attempt}")
+        raise FileExistsError(f"{str(entry_path)} has been copied 100 times.")
