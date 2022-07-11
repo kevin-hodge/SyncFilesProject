@@ -19,17 +19,19 @@ class SyncManager:
     """
     def __init__(self, fstructs: List[FileStructure]) -> None:
         assert len(fstructs) == 2
-        self.visited_entries: Dict[str, int] = {}
         self.fstruct_dirs: List[str] = []
         self.fstructs_files_list: List[List[str]] = []
         self.fstructs_updated_list: List[List[str]] = []
+        self.get_fstruct_info(fstructs)
+        self.sync()
+
+    def get_fstruct_info(self, fstructs: List[FileStructure]) -> None:
         for fstruct in fstructs:
             self.fstruct_dirs.append(fstruct.directory_path)
             files_list: List[str] = self.remove_prefixes(fstruct.files_to_list(), self.fstruct_dirs[-1])
             self.fstructs_files_list.append(files_list)
             updated_list: List[str] = self.remove_prefixes(fstruct.get_updated_list(), self.fstruct_dirs[-1])
             self.fstructs_updated_list.append(updated_list)
-        self.sync()
 
     def remove_prefixes(self, files_list: List[str], prefix: str) -> List[str]:
         files_list_copy: List[str] = files_list[:]
@@ -53,11 +55,12 @@ class SyncManager:
             return path
 
     def sync(self) -> None:
+        visited_entries: Dict[str, int] = {}
         for fstruct_index, fstruct_list in enumerate(self.fstructs_files_list):
             for fstruct_entry in fstruct_list:
-                if fstruct_entry not in self.visited_entries:
+                if fstruct_entry not in visited_entries:
                     self.perform_entry_action(fstruct_entry, self.fstruct_dirs[fstruct_index])
-                    self.visited_entries[fstruct_entry] = 0
+                    visited_entries[fstruct_entry] = 0
 
     def perform_entry_action(self, fstruct_entry: str, parent_dir: str) -> None:
         attributes: List[int] = self.get_entry_attributes(fstruct_entry, parent_dir)
