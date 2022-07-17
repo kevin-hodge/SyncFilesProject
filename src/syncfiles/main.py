@@ -42,17 +42,21 @@ Author: Kevin Hodge
 """
 
 from syncfiles.state_machine import StateMachine
-from syncfiles.sync_fsm import (StateInfo, State, initial_state_function, check_state_function,
-                                wait_state_function, sync_state_function, error_state_function,
-                                final_state_function)
+from syncfiles.config_manager import ConfigManager
+from syncfiles.sync_gui import SyncGUI
+from syncfiles.sync_fsm import (StateInfo, State, initial_state_function, check_state_function, wait_state_function,
+                                sync_state_function, error_state_function, final_state_function)
+
 
 if __name__ == '__main__':
     # Only For Debugging
     verbose: bool = True
 
-    # Initialize StateMachine
+
+    config: ConfigManager = ConfigManager()
+    gui: SyncGUI = SyncGUI()
+    Sync_StateInfo: StateInfo = StateInfo(State.INITIAL, config, gui, verbose)
     Sync_FSM: StateMachine = StateMachine()
-    Sync_StateInfo: StateInfo = StateInfo(verbose)
     Sync_FSM.new_state(State.INITIAL, initial_state_function, initial_state=True)
     Sync_FSM.new_state(State.CHECK, check_state_function)
     Sync_FSM.new_state(State.WAIT, wait_state_function)
@@ -60,5 +64,5 @@ if __name__ == '__main__':
     Sync_FSM.new_state(State.ERROR, error_state_function)
     Sync_FSM.new_state(State.FINAL, final_state_function, final_state=True)
 
-    # Start StateMachine
+
     Sync_FSM.run(Sync_StateInfo)

@@ -31,19 +31,19 @@ class StateInfo:
         err_id (str): Gives exception identifier to help track down bugs.
         exit_request (bool): Indicates exit has been requested.
         prev_state (str): Stores name of previous state.
-        sync_gui (SyncGUI): Reference to graphical user interface of the program.
+        gui (SyncGUI): Reference to graphical user interface of the program.
         sync_required (bool): Indicates that directories need to be synchronized.
         to_update (list[Any]): Same structure as directories, but has 1 if file/folder needs to be updated
         and 0 otherwise.
         verbose (bool, optional): Indicates if messages will be printed for debugging.
 
     """
-    def __init__(self, verbose: bool = False) -> None:
-        self.curr_state: State = State.INITIAL
-        self.prev_state: State = State.INITIAL
+    def __init__(self, initial: State, config: ConfigManager, gui: SyncGUI, verbose: bool = False) -> None:
+        self.curr_state: State = initial
+        self.prev_state: State = initial
         self.directories: List[FileStructure] = list()
-        self.manager: ConfigManager = ConfigManager()
-        self.sync_gui: SyncGUI = SyncGUI()
+        self.config: ConfigManager = config
+        self.gui: SyncGUI = gui
         self.err: Exception = Exception()
         self.err_id: str = "Unknown Function"
         self.exit_request: bool = False
@@ -51,7 +51,7 @@ class StateInfo:
         self.verbose: bool = verbose
 
     def check_exit_prompt(self) -> str:
-        response = self.sync_gui.exit_prompt()
+        response = self.gui.exit_prompt()
         if response == "Exit":
             self.exit_request = True
         return response
@@ -66,19 +66,22 @@ class StateInfo:
             self.add_directory(FileStructure(dir, verbose=self.verbose))
             if self.verbose:
                 print("Directories to sync:")
-                print(self.directories[-1].directory_path)
+                print(self.directories[-1].get_directory_path())
+
+    def add_directory(self, dir: FileStructure) -> None:
+        self.directories.append(dir)
 
     def get_sync_directories(self) -> List[str]:
         min_directories: int = 2
-        sync_directories: List[str] = self.manager.read_sync_directories()
+        sync_directories: List[str] = self.config.read_sync_directories()
         while len(sync_directories) < min_directories:
             new_dir: str = self.get_directory_prompt(len(sync_directories), min_directories)
-            sync_directories = self.manager.check_sync_directory(new_dir, sync_directories)
-        self.manager.write_sync_directories(sync_directories)
+            sync_directories = self.config.check_sync_directory(new_dir, sync_directories)
+        self.config.write_sync_directories(sync_directories)
         return sync_directories
 
     def get_directory_prompt(self, num_valid_dir: int, min_dir: int) -> str:
-        return self.sync_gui.directory_prompt(num_valid_dir, min_dir)
+        return self.gui.directory_prompt(num_valid_dir, min_dir)
 
     def handle_error(self, err: Exception, err_id: str) -> Tuple[State, Any]:
         """Handles errors caught from try/except block.
@@ -91,9 +94,6 @@ class StateInfo:
             Return values from get_return_values().
 
         """
-        assert isinstance(err, Exception)
-        assert isinstance(err_id, str)
-
         self.err = err
         self.err_id = err_id
         return self.get_return_values(State.ERROR)
@@ -134,9 +134,6 @@ class StateInfo:
         else:
             return State.FINAL
 
-    def add_directory(self, dir: FileStructure) -> None:
-        self.directories.append(dir)
-
     def check_for_changes(self) -> int:
         changes_found: int = 0
         for directory in self.get_directories():
@@ -144,7 +141,7 @@ class StateInfo:
             if self.verbose:
                 print(f"Directory {str(self.directories.index(directory) + 1)}:")
                 directory.print_file_structure()
-            changes: int = directory.check_file_structure(self.manager.read_last_sync_file())
+            changes: int = directory.check_file_structure(self.config.read_last_sync_file())
             if changes > 0:
                 changes_found = changes
         return changes_found
@@ -267,7 +264,7 @@ def error_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
 
     if state_info.err_id == "check_for_changes":
         for directory in state_info.get_directories():
-            if not Path(directory.directory_path).exists():
+            if not Path(directory.get_directory_path()).exists():
                 next_state: State = State.INITIAL
                 return state_info.get_return_values(next_state)
 

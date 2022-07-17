@@ -23,7 +23,6 @@ class SyncManager:
         self.fstructs_files_list: List[List[str]] = []
         self.fstructs_updated_list: List[List[str]] = []
         self.get_fstruct_info(fstructs)
-        self.sync()
 
     def get_fstruct_info(self, fstructs: List[FileStructure]) -> None:
         for fstruct in fstructs:

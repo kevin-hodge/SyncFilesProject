@@ -1,5 +1,4 @@
-"""ConfigManager handles configuration files for the program.
-
+"""Contains ConfigManager.
 
 Author: Kevin Hodge
 """
@@ -10,7 +9,7 @@ import json
 
 
 class ConfigManager():
-    """_summary_
+    """Reads and writes configuration files for the program.
 
     Args:
         config_path (Path): Path to the configuration directory.
@@ -41,20 +40,16 @@ class ConfigManager():
             - Req #15: The program shall store and get sync directories from a config file.
 
         """
-        # Read file (with ensures file is closed even if an exception occurs)
         buffer: List[str] = []
         if self.sync_dir_file.exists():
             with self.sync_dir_file.open() as file_to_read:
                 buffer = json.load(file_to_read)
 
-        # Ensures buffer is the right datatype
         if not isinstance(buffer, list):
             buffer = []
 
-        # Removes invalid directories. Loops through in reverse order to avoid removing elements that change the
-        # indices of all elements after and cause elements to be skipped.
         directories: List[str] = []
-        for _, entry in enumerate(buffer[::-1]):
+        for entry in buffer[::-1]:
             buffer.pop()
             if Path(entry).exists() and entry not in buffer:
                 directories.append(entry)
@@ -78,7 +73,7 @@ class ConfigManager():
         return existing_dirs
 
     def write_sync_directories(self, buffer: List[str]) -> bool:
-        """Adds list of directories to sync_dir_file.
+        """Adds list of directories to sync_dir_file if list contains at least two elements.
 
         Args:
             buffer (List[Path]): list of paths
@@ -89,10 +84,8 @@ class ConfigManager():
         Requirements:
             - Req #17: The program shall update config file with directory provided by user (if it exists).
         """
-        # Creates and writes or overwrites JSON config file if User inputs new directories to sync
         assert isinstance(buffer, list)
 
-        # Writes str paths to file
         if len(buffer) >= self.min_dir:
             with self.sync_dir_file.open("w") as file_to_write:
                 json.dump(buffer, file_to_write)
@@ -100,7 +93,6 @@ class ConfigManager():
         return False
 
     def read_last_sync_file(self) -> Dict[str, Any]:
-        # Check if last_updates_file exists, rtetrieve last_sync_files
         last_sync_files: Dict[str, Any] = dict()
         if self.last_sync_file.exists():
             with self.last_sync_file.open() as json_file:

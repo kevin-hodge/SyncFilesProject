@@ -94,7 +94,7 @@ class FileStructure:
     def __init__(self, directory_path: str, verbose: bool = False) -> None:
         assert Path(directory_path).exists()
         self.directory_path: str = directory_path
-        self.top_level_dir_path_list = self.split_path(self.directory_path)
+        self.top_level_dir_path_list = self.split_path(self.get_directory_path())
         self.files: dir_entry = self.update_file_structure()
         self.verbose: bool = verbose
 
@@ -139,6 +139,9 @@ class FileStructure:
             elif Path(entry).is_dir():
                 file_structure.add_entry(str(entry.name), self.get_directory(str(entry)))
         return file_structure
+
+    def get_directory_path(self) -> str:
+        return self.directory_path
 
     def print_file_structure(self, offset: int = 1) -> None:
         """Calls recursive_print_list with self.files as an argument."""

@@ -27,7 +27,8 @@ class SyncManagerTestCase(unittest.TestCase):
         self.tf.create_file(file_in1_notin2)
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
         files_in1: List[str] = fstruct_list[0].files_to_list()
@@ -60,7 +61,8 @@ class SyncManagerTestCase(unittest.TestCase):
         last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
         files_in1: List[str] = fstruct_list[0].files_to_list()
@@ -81,7 +83,8 @@ class SyncManagerTestCase(unittest.TestCase):
         self.tf.create_file(file_notin1_in2)
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
         files_in1: List[str] = fstruct_list[0].files_to_list()
@@ -101,7 +104,8 @@ class SyncManagerTestCase(unittest.TestCase):
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
         files_in1: List[str] = fstruct_list[0].files_to_list()
@@ -128,7 +132,8 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
         files_in1: List[str] = fstruct_list[0].files_to_list()
@@ -160,7 +165,8 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
         files_in1: List[str] = fstruct_list[0].files_to_list()
@@ -194,7 +200,8 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         # Check each directory contains correct file names with timestamps
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -205,8 +212,8 @@ class SyncManagerTestCase(unittest.TestCase):
         self.assertCountEqual(files_in1, files_in2)
         self.assertEqual(len(files_in1), 2)
         self.assertEqual(len(files_in2), 2)
-        print(f"files_in1: {files_in1}")
-        print(f"files_in2: {files_in2}")
+        # print(f"files_in1: {files_in1}")
+        # print(f"files_in2: {files_in2}")
 
         # Check contents of files in one directory match contents of same files in other directory
         file_contents: Dict[str, str] = {}
@@ -232,7 +239,8 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
         # Check each directory contains correct file names with timestamps
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
