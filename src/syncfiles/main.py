@@ -52,7 +52,6 @@ if __name__ == '__main__':
     # Only For Debugging
     verbose: bool = True
 
-
     config: ConfigManager = ConfigManager()
     gui: SyncGUI = SyncGUI()
     Sync_StateInfo: StateInfo = StateInfo(State.INITIAL, config, gui, verbose)
@@ -63,6 +62,5 @@ if __name__ == '__main__':
     Sync_FSM.new_state(State.SYNC, sync_state_function)
     Sync_FSM.new_state(State.ERROR, error_state_function)
     Sync_FSM.new_state(State.FINAL, final_state_function, final_state=True)
-
 
     Sync_FSM.run(Sync_StateInfo)

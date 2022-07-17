@@ -6,7 +6,6 @@ Author: Kevin Hodge
 from typing import List, Any, Dict, Tuple
 import unittest
 import tests.tfuncs as tfuncs
-from tests.tfuncs import TFunctions
 from syncfiles.config_manager import ConfigManager
 from syncfiles.file_structure import FileStructure
 
@@ -14,7 +13,7 @@ from syncfiles.file_structure import FileStructure
 class ConfigManagerTestCase(unittest.TestCase):
     """Test case for ConfigManager"""
     def __init__(self, *args, **kwargs) -> None:
-        self.tf: TFunctions = TFunctions()
+        self.tf: tfuncs.TFunctions = tfuncs.TFunctions()
         super().__init__(*args, **kwargs)
 
     @tfuncs.handle_dir_tempfile
@@ -147,7 +146,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     @tfuncs.handle_test_dirs
     def test_read_last_sync(self) -> None:
         # Setup
-        self.tf.create_rand_fstruct(str(self.tf.test_path2))
+        tfuncs.create_rand_fstruct(str(self.tf.test_path2))
         fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
         tfuncs.write_json(fstruct.files_to_json(), self.tf.last_sync_file)
         last_sync_files: Dict[str, Any]
@@ -161,7 +160,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     @tfuncs.handle_test_dirs
     def test_write_last_sync(self) -> None:
         test_directory: str = str(self.tf.test_path2)
-        self.tf.create_rand_fstruct(test_directory)
+        tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory)
         manager: ConfigManager = ConfigManager()
         manager.write_last_sync_file(fstruct.files_to_json())

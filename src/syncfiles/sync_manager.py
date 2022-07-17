@@ -26,7 +26,7 @@ class SyncManager:
 
     def get_fstruct_info(self, fstructs: List[FileStructure]) -> None:
         for fstruct in fstructs:
-            self.fstruct_dirs.append(fstruct.directory_path)
+            self.fstruct_dirs.append(fstruct.get_directory_path())
             files_list: List[str] = self.remove_prefixes(fstruct.files_to_list(), self.fstruct_dirs[-1])
             self.fstructs_files_list.append(files_list)
             updated_list: List[str] = self.remove_prefixes(fstruct.get_updated_list(), self.fstruct_dirs[-1])

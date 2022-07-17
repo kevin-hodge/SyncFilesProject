@@ -9,12 +9,11 @@ from pathlib import Path
 from syncfiles.file_structure import FileStructure
 from syncfiles.sync_manager import SyncManager
 import tests.tfuncs as tfuncs
-from tests.tfuncs import TFunctions
 
 
 class SyncManagerTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs) -> None:
-        self.tf = TFunctions()
+        self.tf: tfuncs.TFunctions = tfuncs.TFunctions()
         super().__init__(*args, **kwargs)
 
     @tfuncs.handle_test_dirs
@@ -24,7 +23,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         test_filename: str = "test_file.txt"
         file_in1_notin2: Path = self.tf.test_path1 / test_filename
-        self.tf.create_file(file_in1_notin2)
+        tfuncs.create_file(file_in1_notin2)
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
         synchonizer: SyncManager = SyncManager(fstruct_list)
@@ -55,7 +54,7 @@ class SyncManagerTestCase(unittest.TestCase):
     @tfuncs.handle_test_dirs
     def test_file_in1_notin2_notupdated1(self) -> None:
         file_in1_notin2: Path = self.tf.test_path1 / "test_file.txt"
-        self.tf.create_file(file_in1_notin2)
+        tfuncs.create_file(file_in1_notin2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
@@ -80,7 +79,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         test_filename: str = "test_file.txt"
         file_notin1_in2: Path = self.tf.test_path2 / test_filename
-        self.tf.create_file(file_notin1_in2)
+        tfuncs.create_file(file_notin1_in2)
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
         synchonizer: SyncManager = SyncManager(fstruct_list)
@@ -98,7 +97,7 @@ class SyncManagerTestCase(unittest.TestCase):
     @tfuncs.handle_test_dirs
     def test_file_notin1_in2_notupdated1(self) -> None:
         file_notin1_in2: Path = self.tf.test_path2 / "test_file.txt"
-        self.tf.create_file(file_notin1_in2)
+        tfuncs.create_file(file_notin1_in2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
@@ -120,9 +119,9 @@ class SyncManagerTestCase(unittest.TestCase):
     def test_file_in1_in2_updated1_notupdated2(self) -> None:
         common_file_name: str = "test_file.txt"
         file_in1: Path = self.tf.test_path1 / common_file_name
-        self.tf.create_file(file_in1)
+        tfuncs.create_file(file_in1)
         file_in2: Path = self.tf.test_path2 / common_file_name
-        self.tf.create_file(file_in2)
+        tfuncs.create_file(file_in2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
@@ -153,9 +152,9 @@ class SyncManagerTestCase(unittest.TestCase):
     def test_file_in1_in2_notupdated1_updated2(self) -> None:
         common_file_name: str = "test_file.txt"
         file_in1: Path = self.tf.test_path1 / common_file_name
-        self.tf.create_file(file_in1)
+        tfuncs.create_file(file_in1)
         file_in2: Path = self.tf.test_path2 / common_file_name
-        self.tf.create_file(file_in2)
+        tfuncs.create_file(file_in2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
@@ -186,9 +185,9 @@ class SyncManagerTestCase(unittest.TestCase):
     def test_file_in1_in2_updated1_updated2(self) -> None:
         common_file_name: str = "test_file.txt"
         file_in1: Path = self.tf.test_path1 / common_file_name
-        self.tf.create_file(file_in1)
+        tfuncs.create_file(file_in1)
         file_in2: Path = self.tf.test_path2 / common_file_name
-        self.tf.create_file(file_in2)
+        tfuncs.create_file(file_in2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
@@ -230,9 +229,9 @@ class SyncManagerTestCase(unittest.TestCase):
     def test_file_in1_in2_notupdated1_notupdated2(self) -> None:
         common_file_name: str = "test_file.txt"
         file_in1: Path = self.tf.test_path1 / common_file_name
-        self.tf.create_file(file_in1)
+        tfuncs.create_file(file_in1)
         file_in2: Path = self.tf.test_path2 / common_file_name
-        self.tf.create_file(file_in2)
+        tfuncs.create_file(file_in2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()

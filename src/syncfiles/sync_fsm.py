@@ -4,6 +4,7 @@ Author: Kevin Hodge
 """
 
 from typing import Any, List, Tuple, Optional
+# from syncfiles.sync_exception import SyncException
 from syncfiles.file_structure import FileStructure
 from syncfiles.config_manager import ConfigManager
 from syncfiles.sync_gui import SyncGUI
@@ -60,8 +61,7 @@ class StateInfo:
         if num_changes > 0:
             self.sync_required = True
 
-    def initialize_file_structures(self) -> None:
-        sync_directories: List[str] = self.get_sync_directories()
+    def initialize_file_structures(self, sync_directories: List[str]) -> None:
         for dir in sync_directories:
             self.add_directory(FileStructure(dir, verbose=self.verbose))
             if self.verbose:
@@ -165,7 +165,8 @@ def initial_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
         print("Initializing...")
 
     try:
-        state_info.initialize_file_structures()
+        sync_directories: List[str] = state_info.get_sync_directories()
+        state_info.initialize_file_structures(sync_directories)
     except Exception as e:
         return state_info.handle_error(e, "initialize_file_structures")
 

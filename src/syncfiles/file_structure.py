@@ -42,8 +42,7 @@ class entry:
 
 
 class file_entry(entry):
-    def __init__(self, mtime: float = -1.0) -> None:
-        super().__init__(mtime)
+    pass
 
 
 class dir_entry(entry):

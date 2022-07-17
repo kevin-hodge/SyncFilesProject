@@ -3,6 +3,7 @@
 Author: Kevin Hodge
 """
 
+from enum import Enum
 from typing import Dict, Callable, List, Any, Optional
 
 
@@ -21,11 +22,11 @@ class StateMachine:
 
     """
     def __init__(self):
-        self.state_functions: Dict[Any, Callable[[Any], Any]] = dict()
-        self.initial_state: Optional[Any] = None
-        self.final_states: List[Any] = list()
+        self.state_functions: Dict[Enum, Callable[[Any], Any]] = dict()
+        self.initial_state: Optional[Enum] = None
+        self.final_states: List[Enum] = list()
 
-    def new_state(self, state_name: Any, state_function: Callable[[Any], Any],
+    def new_state(self, state_name: Enum, state_function: Callable[[Any], Any],
                   final_state: bool = False, initial_state: bool = False) -> None:
         """Adds new state to state_functions.
 
@@ -37,9 +38,9 @@ class StateMachine:
 
         """
         self.state_functions[state_name] = state_function
-        if final_state != 0:
+        if final_state:
             self.final_states.append(state_name)
-        if initial_state != 0:
+        if initial_state:
             self.initial_state = state_name
 
     def run(self, state_info: Any) -> None:
@@ -49,15 +50,15 @@ class StateMachine:
             state_info (class): Contains information about the state machine carried from state to state.
 
         """
-        try:
+        if self.initial_state is not None:
             state_function: Callable[[Any], Any] = self.state_functions[self.initial_state]
-        except Exception:
+        else:
             raise ValueError("Must set initial_state")
         if not self.final_states:
             raise ValueError("Must set at least one final_states")
 
         while True:
-            next_state: Any
+            next_state: Enum
             next_state, state_info = state_function(state_info)
             if next_state in self.final_states:
                 state_function = self.state_functions[next_state]

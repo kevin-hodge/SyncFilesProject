@@ -13,13 +13,12 @@ import functools
 
 class TFunctions:
     """Contains useful functions that can be used by any test case."""
-    def __init__(self):
-        self.sync_dir_file: Path = Path.cwd() / Path("sync_directories_file.json")
-        self.dir_tempfile: Path = Path.cwd() / Path("temp_sync_directories_file.json")
-        self.last_sync_file: Path = Path.cwd() / Path("last_sync_file.json")
-        self.last_tempfile: Path = Path.cwd() / Path("temp_last_sync_file.json")
-        self.test_path1: Path = Path.cwd() / Path("test_dir1")
-        self.test_path2: Path = Path.cwd() / Path("test_dir2")
+    sync_dir_file: Path = Path.cwd() / Path("sync_directories_file.json")
+    dir_tempfile: Path = Path.cwd() / Path("temp_sync_directories_file.json")
+    last_sync_file: Path = Path.cwd() / Path("last_sync_file.json")
+    last_tempfile: Path = Path.cwd() / Path("temp_last_sync_file.json")
+    test_path1: Path = Path.cwd() / Path("test_dir1")
+    test_path2: Path = Path.cwd() / Path("test_dir2")
 
     def create_dir_tempfile(self) -> None:
         """Move sync directories file contents and delete sync directories file."""
@@ -63,110 +62,119 @@ class TFunctions:
         if self.test_path2.exists():
             shutil.rmtree(self.test_path2)
 
-    def create_rand_fstruct(self, path: str, max_depth: int = 3, max_entries: int = 5) -> None:
-        """Creates a random file structure at the specified path.
 
-        Args:
-            path (str): Path to the directory in which the random file structure will be created.
-            max_depth (optional, int): Maximum number of nested directories allowed (0 implies only files are allowed
-                in the top directory).
-            max_entries (optional, int): Maximum number of files or directories within each directory.
+def create_rand_fstruct(path: str, max_depth: int = 3, max_entries: int = 5) -> None:
+    """Creates a random file structure at the specified path.
 
-        Returns:
-            file_dict (dict[str, Any]): Describes the random file structure (same format as FileStructure.files).
+    Args:
+        path (str): Path to the directory in which the random file structure will be created.
+        max_depth (optional, int): Maximum number of nested directories allowed (0 implies only files are allowed
+            in the top directory).
+        max_entries (optional, int): Maximum number of files or directories within each directory.
 
-        """
-        if not Path(path).exists():
-            Path(path).mkdir(exist_ok=True)
+    Returns:
+        file_dict (dict[str, Any]): Describes the random file structure (same format as FileStructure.files).
 
-        num_entries: int = random.randint(0, max_entries)
+    """
+    if not Path(path).exists():
+        Path(path).mkdir(exist_ok=True)
 
-        for i in range(num_entries):
-            if random.randint(0, max_depth-1) > 0:
-                directory = Path(path) / f"test_dir_{i}"
-                self.create_directory(directory)
-                self.create_rand_fstruct(str(directory), max_depth-1, max_entries)
-            else:
-                file = Path(path) / f"test_file_{i}.txt"
-                self.create_file(file)
+    num_entries: int = random.randint(0, max_entries)
 
-    def create_directory(self, path: Path) -> None:
-        path.mkdir(exist_ok=True)
+    for i in range(num_entries):
+        if random.randint(0, max_depth-1) > 0:
+            directory = Path(path) / f"test_dir_{i}"
+            create_directory(directory)
+            create_rand_fstruct(str(directory), max_depth-1, max_entries)
+        else:
+            file = Path(path) / f"test_file_{i}.txt"
+            create_file(file)
 
-    def create_file(self, path: Path) -> None:
-        path.touch(exist_ok=True)
 
-    def make_rand_mods(self, path: str, parent_name_change: bool = False) -> List[str]:
-        """Makes random modifications to a file structure and returns the number of changes.
+def create_directory(path: Path) -> None:
+    path.mkdir(exist_ok=True)
 
-        10% chance of changing directory name.
-        45% change of changing file name.
-        45% chance of updating file last modification time.
 
-        Args:
-            path (Path): Path to the directory where the random modifications will be made.
+def create_file(path: Path) -> None:
+    path.touch(exist_ok=True)
 
-        Returns:
-            change_count (int): Number of changes made to the file structure.
 
-        """
-        change_list: List[str] = []
-        for entry_path in Path(path).iterdir():
-            entry_path_string: str = str(entry_path)
-            if entry_path.is_dir():
-                local_name_change: bool = False
-                if random.random() > 0.9:
-                    local_name_change = True
-                    entry_path_string = self.change_dir_name(path, str(entry_path), len(change_list))
-                    change_list.append(entry_path_string)
-                elif parent_name_change:
-                    change_list.append(entry_path_string)
+def make_rand_mods(path: str, parent_name_change: bool = False) -> List[str]:
+    """Makes random modifications to a file structure and returns a list of changed entries.
 
-                dir_change_list: List[str] = \
-                    self.make_rand_mods(entry_path_string, local_name_change or parent_name_change)
-                change_list.extend(dir_change_list)
-            elif Path(entry_path).is_file():
-                if random.random() > 0.1:
-                    if random.random() > 0.5:
-                        entry_path_string = self.change_file_name(path, str(entry_path), len(change_list))
-                    else:
-                        self.update_last_mod_time(entry_path)
-                    change_list.append(entry_path_string)
-                elif parent_name_change:
-                    change_list.append(entry_path_string)
-            else:
-                raise TypeError("make_rand_mods file_dict entry is not a dict or float")
-        return change_list
+    10% chance of changing directory name.
+    45% change of changing file name.
+    45% chance of updating file last modification time.
 
-    def change_file_name(self, path: str, old_path: str, change_count: int) -> str:
-        new_name = f"Edited_file_{change_count}.txt"
-        dest = str(Path(path) / new_name)
-        assert shutil.move(old_path, dest) == dest
-        return dest
+    Args:
+        path (Path): Path to the directory where the random modifications will be made.
 
-    def change_dir_name(self, path: str, old_path: str, change_count: int) -> str:
-        new_name: str = f"Edited_dir_{change_count}"
-        dest: str = str(Path(path) / new_name)
-        assert shutil.move(old_path, dest) == dest
-        return dest
+    Returns:
+        change_count (int): Number of changes made to the file structure.
 
-    def update_last_mod_time(self, entry_path: Path) -> None:
-        entry_path.touch(exist_ok=True)
+    """
+    change_list: List[str] = []
+    for entry_path in Path(path).iterdir():
+        entry_path_string: str = str(entry_path)
+        if entry_path.is_dir():
+            local_name_change: bool = False
+            if random.random() > 0.9:
+                local_name_change = True
+                entry_path_string = change_dir_name(path, str(entry_path), len(change_list))
+                change_list.append(entry_path_string)
+            elif parent_name_change:
+                change_list.append(entry_path_string)
 
-    def recursive_print_dir(self, path: str, offset: int = 0) -> None:
-        indent: str = 3 * offset * ' '
-        for entry in Path(path).iterdir():
-            print(f"{indent}{entry.name}")
-            if entry.is_dir():
-                self.recursive_print_dir(str(entry), offset + 1)
+            dir_change_list: List[str] = \
+                make_rand_mods(entry_path_string, local_name_change or parent_name_change)
+            change_list.extend(dir_change_list)
+        elif Path(entry_path).is_file():
+            if random.random() > 0.1:
+                if random.random() > 0.5:
+                    entry_path_string = change_file_name(path, str(entry_path), len(change_list))
+                else:
+                    update_last_mod_time(entry_path)
+                change_list.append(entry_path_string)
+            elif parent_name_change:
+                change_list.append(entry_path_string)
+        else:
+            raise TypeError("make_rand_mods file_dict entry is not a dict or float")
+    return change_list
 
-    def dir_to_list(self, path: str) -> List[str]:
-        dir_list: List[str] = []
-        for entry in Path(path).iterdir():
-            dir_list.append(str(entry))
-            if entry.is_dir():
-                dir_list.extend(self.dir_to_list(str(entry)))
-        return dir_list
+
+def change_file_name(path: str, old_path: str, change_count: int) -> str:
+    new_name = f"Edited_file_{change_count}.txt"
+    dest = str(Path(path) / new_name)
+    assert shutil.move(old_path, dest) == dest
+    return dest
+
+
+def change_dir_name(path: str, old_path: str, change_count: int) -> str:
+    new_name: str = f"Edited_dir_{change_count}"
+    dest: str = str(Path(path) / new_name)
+    assert shutil.move(old_path, dest) == dest
+    return dest
+
+
+def update_last_mod_time(entry_path: Path) -> None:
+    entry_path.touch(exist_ok=True)
+
+
+def recursive_print_dir(path: str, offset: int = 0) -> None:
+    indent: str = 3 * offset * ' '
+    for entry in Path(path).iterdir():
+        print(f"{indent}{entry.name}")
+        if entry.is_dir():
+            recursive_print_dir(str(entry), offset + 1)
+
+
+def dir_to_list(path: str) -> List[str]:
+    dir_list: List[str] = []
+    for entry in Path(path).iterdir():
+        dir_list.append(str(entry))
+        if entry.is_dir():
+            dir_list.extend(dir_to_list(str(entry)))
+    return dir_list
 
 
 def get_json_contents(file_path: Path) -> Any:
