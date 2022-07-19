@@ -18,21 +18,20 @@ class entry:
             2: Last modified time changed
 
     """
-    def __init__(self, mod_time: float = -1.0):
-        self.mod_time: float = mod_time
-        self.updated: int = 0
+    def __init__(self):
+        self.updated: bool = False
 
-    def set_updated(self, updated: int = 1) -> None:
+    def set_updated(self, updated: bool = True) -> None:
         self.updated = updated
-
-    def set_name_updated(self) -> None:
-        self.updated = 1
-
-    def set_mod_time_updated(self) -> None:
-        self.updated = 2
 
     def get_updated(self) -> int:
         return self.updated
+
+
+class file_entry(entry):
+    def __init__(self, mod_time: float = -1.0) -> None:
+        self.mod_time: float = mod_time
+        super().__init__()
 
     def set_mod_time(self, mod_time: float) -> None:
         self.mod_time = mod_time
@@ -41,14 +40,10 @@ class entry:
         return self.mod_time
 
 
-class file_entry(entry):
-    pass
-
-
 class dir_entry(entry):
-    def __init__(self, mtime: float = -1.0) -> None:
+    def __init__(self) -> None:
         self.dict: Dict[str, entry] = dict()
-        super().__init__(mtime)
+        super().__init__()
 
     def add_entry(self, key: str, entry: entry) -> None:
         self.dict[key] = entry
@@ -130,7 +125,7 @@ class FileStructure:
         """
         assert Path(directory).exists()
 
-        file_structure: dir_entry = dir_entry(Path(directory).stat().st_mtime)
+        file_structure: dir_entry = dir_entry()
         for entry in Path(directory).iterdir():
             last_mod_time: float = Path(entry).stat().st_mtime
             if Path(entry).is_file():
@@ -163,9 +158,11 @@ class FileStructure:
                 self.recursive_print_dir(fstruct_entry, offset + 1)
 
     def print_entry(self, indent: str, entry_name: str, entry: entry) -> None:
-        entry_repr: str = f"{indent}{entry_name}: {entry.get_mod_time()}"
+        entry_repr: str = f"{indent}{entry_name}"
+        if isinstance(entry, file_entry):
+            entry_repr += f": {entry.get_mod_time()}"
         if entry.get_updated() > 0:
-            entry_repr = entry_repr + " X"
+            entry_repr += " X"
         print(entry_repr)
 
     def check_file_structure(self, last_sync_dict: Dict[str, Any], path: Optional[str] = None,
@@ -195,12 +192,12 @@ class FileStructure:
             last_sync_entry: Optional[entry] = last_sync_files.get_entry_path(path_list)
 
             if last_sync_entry is None:
-                fstruct_entry.set_name_updated()
+                fstruct_entry.set_updated()
                 changes_found += 1
             else:
-                if isinstance(fstruct_entry, file_entry):
+                if isinstance(fstruct_entry, file_entry) and isinstance(last_sync_entry, file_entry):
                     if fstruct_entry.get_mod_time() > last_sync_entry.get_mod_time():
-                        fstruct_entry.set_mod_time_updated()
+                        fstruct_entry.set_updated()
                         changes_found += 1
 
             if isinstance(fstruct_entry, dir_entry):
@@ -222,8 +219,7 @@ class FileStructure:
         for dir_entry_name in directory.get_keys():
             directory_entry: entry = directory.get_entry(dir_entry_name)
             if isinstance(directory_entry, dir_entry):
-                file_dict[dir_entry_name] = {'mtime': directory_entry.get_mod_time(),
-                                             'dir': self.to_json(directory_entry)}
+                file_dict[dir_entry_name] = {'dir': self.to_json(directory_entry)}
             elif isinstance(directory_entry, file_entry):
                 file_dict[dir_entry_name] = directory_entry.get_mod_time()
             else:
@@ -258,7 +254,6 @@ class FileStructure:
         directory: dir_entry = dir_entry()
         if 'dir' in file_dict:
             directory = self.from_json(file_dict['dir'])
-            directory.set_mod_time(file_dict['mtime'])
         else:
             for key, fstruct_entry in file_dict.items():
                 if isinstance(fstruct_entry, dict):

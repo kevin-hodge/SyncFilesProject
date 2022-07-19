@@ -1,4 +1,4 @@
-"""Sync Files Project: file_manager Test
+"""Tests file_structure.py
 
 Author: Kevin Hodge
 """
