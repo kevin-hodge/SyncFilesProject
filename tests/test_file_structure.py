@@ -1,4 +1,4 @@
-"""Sync Files Project: file_manager Test
+"""Tests file_structure.py
 
 Author: Kevin Hodge
 """
@@ -6,14 +6,13 @@ Author: Kevin Hodge
 from typing import List, Any, Dict
 import unittest
 import tests.tfuncs as tfuncs
-from tests.tfuncs import TFunctions
 from syncfiles.file_structure import FileStructure
 
 
 class FileStructureTestCase(unittest.TestCase):
     """Test case for FileStructure"""
     def __init__(self, *args, **kwargs) -> None:
-        self.tf: TFunctions = TFunctions()
+        self.tf: tfuncs.TFunctions = tfuncs.TFunctions()
         super().__init__(*args, **kwargs)
 
     def test_init_nonexistant_dir(self) -> None:
@@ -27,21 +26,21 @@ class FileStructureTestCase(unittest.TestCase):
     def test_get_rand_fstruct(self) -> None:
         test_directory: str = str(self.tf.test_path1)
         self.tf.remove_test_dirs()
-        self.tf.create_rand_fstruct(test_directory)
+        tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory)
-        self.assertCountEqual(self.tf.dir_to_list(test_directory), fstruct.files_to_list())
+        self.assertCountEqual(tfuncs.dir_to_list(test_directory), fstruct.files_to_list())
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
     def test_get_updated(self) -> None:
         self.tf.remove_test_dirs()
         test_directory: str = str(self.tf.test_path1)
-        self.tf.create_rand_fstruct(test_directory)
+        tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory)
         last_sync_files: Dict[str, Any] = fstruct.files_to_json()
         # fstruct.print_file_structure()
         change_list: List[str]
-        change_list = self.tf.make_rand_mods(test_directory)
+        change_list = tfuncs.make_rand_mods(test_directory)
         # print(len(change_list))
         # print(change_list)
         fstruct.update_file_structure()
@@ -60,7 +59,7 @@ class FileStructureTestCase(unittest.TestCase):
     @tfuncs.handle_test_dirs
     def test_json_conversion(self) -> None:
         test_directory: str = str(self.tf.test_path1)
-        self.tf.create_rand_fstruct(test_directory)
+        tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory)
         before_dict: Dict[str, Any] = fstruct.files_to_json()
         tfuncs.write_json(before_dict, self.tf.last_tempfile)
