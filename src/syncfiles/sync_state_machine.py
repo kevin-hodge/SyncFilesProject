@@ -4,7 +4,7 @@ Author: Kevin Hodge
 """
 
 
-class SyncState(object):
+class SyncState:
     def run(self) -> None:
         raise NotImplementedError
 

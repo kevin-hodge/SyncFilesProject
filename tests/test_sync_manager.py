@@ -3,7 +3,7 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import unittest
 from pathlib import Path
 from syncfiles.file_structure import FileStructure
@@ -30,10 +30,7 @@ class SyncManagerTestCase(unittest.TestCase):
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
         self.assertCountEqual(files_in1, [test_filename])
         self.assertCountEqual(files_in2, [test_filename])
@@ -51,6 +48,13 @@ class SyncManagerTestCase(unittest.TestCase):
             fstruct.update_file_structure()
             fstruct.check_file_structure(last_sync_dict)
 
+    def get_file_lists_without_prefixes(self, fstruct_list: List[FileStructure]) -> Tuple[List[str], List[str]]:
+        files_in1: List[str] = fstruct_list[0].files_to_list()
+        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].get_directory_path())
+        files_in2: List[str] = fstruct_list[1].files_to_list()
+        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].get_directory_path())
+        return files_in1, files_in2
+
     @tfuncs.handle_test_dirs
     def test_file_in1_notin2_notupdated1(self) -> None:
         file_in1_notin2: Path = self.tf.test_path1 / "test_file.txt"
@@ -64,10 +68,7 @@ class SyncManagerTestCase(unittest.TestCase):
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
         self.assertCountEqual(files_in1, [])
         self.assertCountEqual(files_in2, [])
@@ -86,10 +87,7 @@ class SyncManagerTestCase(unittest.TestCase):
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
         self.assertCountEqual(files_in1, [test_filename])
         self.assertCountEqual(files_in2, [test_filename])
@@ -107,10 +105,7 @@ class SyncManagerTestCase(unittest.TestCase):
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
         self.assertCountEqual(files_in1, [])
         self.assertCountEqual(files_in2, [])
@@ -135,10 +130,7 @@ class SyncManagerTestCase(unittest.TestCase):
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
 
         with file_in1.open() as same_as_before_file:
@@ -168,10 +160,7 @@ class SyncManagerTestCase(unittest.TestCase):
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
 
         with file_in2.open() as same_as_before_file:
@@ -204,10 +193,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         # Check each directory contains correct file names with timestamps
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
         self.assertEqual(len(files_in1), 2)
         self.assertEqual(len(files_in2), 2)
@@ -243,10 +229,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         # Check each directory contains correct file names with timestamps
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-        files_in1: List[str] = fstruct_list[0].files_to_list()
-        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].directory_path)
-        files_in2: List[str] = fstruct_list[1].files_to_list()
-        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].directory_path)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
         self.assertCountEqual(files_in1, files_in2)
         self.assertEqual(len(files_in1), 1)
         self.assertEqual(len(files_in2), 1)

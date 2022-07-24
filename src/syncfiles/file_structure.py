@@ -19,41 +19,41 @@ class entry:
 
     """
     def __init__(self):
-        self.updated: bool = False
+        self.__updated: bool = False
 
     def set_updated(self, updated: bool = True) -> None:
-        self.updated = updated
+        self.__updated = updated
 
     def get_updated(self) -> int:
-        return self.updated
+        return self.__updated
 
 
 class file_entry(entry):
     def __init__(self, mod_time: float = -1.0) -> None:
-        self.mod_time: float = mod_time
+        self.__mod_time: float = mod_time
         super().__init__()
 
     def set_mod_time(self, mod_time: float) -> None:
-        self.mod_time = mod_time
+        self.__mod_time = mod_time
 
     def get_mod_time(self) -> float:
-        return self.mod_time
+        return self.__mod_time
 
 
 class dir_entry(entry):
     def __init__(self) -> None:
-        self.dict: Dict[str, entry] = dict()
+        self.__dict: Dict[str, entry] = dict()
         super().__init__()
 
     def add_entry(self, key: str, entry: entry) -> None:
-        self.dict[key] = entry
+        self.__dict[key] = entry
 
     def get_entry(self, requested_entry: str) -> entry:
-        return self.dict[requested_entry]
+        return self.__dict[requested_entry]
 
     def get_entry_path(self, keys: List[str]) -> Optional[entry]:
-        if keys[0] in self.dict:
-            file_or_dir_entry: entry = self.dict[keys[0]]
+        if keys[0] in self.__dict:
+            file_or_dir_entry: entry = self.__dict[keys[0]]
             if len(keys) == 1:
                 return file_or_dir_entry
             elif len(keys) > 1 and isinstance(file_or_dir_entry, dir_entry):
@@ -65,7 +65,7 @@ class dir_entry(entry):
             return None
 
     def get_keys(self) -> KeysView[str]:
-        return self.dict.keys()
+        return self.__dict.keys()
 
 
 class FileStructure:
@@ -86,8 +86,7 @@ class FileStructure:
 
     """
     def __init__(self, directory_path: str, verbose: bool = False) -> None:
-        assert Path(directory_path).exists()
-        self.directory_path: str = directory_path
+        self.__directory_path: str = directory_path
         self.top_level_dir_path_list = self.split_path(self.get_directory_path())
         self.files: dir_entry = self.update_file_structure()
         self.verbose: bool = verbose
@@ -108,7 +107,7 @@ class FileStructure:
                 FileStructure.
 
         """
-        self.files = self.get_directory(self.directory_path)
+        self.files = self.get_directory(self.__directory_path)
         return self.files
 
     def get_directory(self, directory: str) -> dir_entry:
@@ -135,11 +134,11 @@ class FileStructure:
         return file_structure
 
     def get_directory_path(self) -> str:
-        return self.directory_path
+        return self.__directory_path
 
     def print_file_structure(self, offset: int = 1) -> None:
         """Calls recursive_print_list with self.files as an argument."""
-        print(Path(self.directory_path).name)
+        print(Path(self.__directory_path).name)
         self.recursive_print_dir(self.files, offset)
 
     def recursive_print_dir(self, directory: dir_entry, offset: int = 0) -> None:
@@ -178,7 +177,7 @@ class FileStructure:
 
         """
         if path is None:
-            path = self.directory_path
+            path = self.__directory_path
         if file_dir is None:
             file_dir = self.files
 
@@ -231,7 +230,7 @@ class FileStructure:
 
     def to_list(self, directory: dir_entry, only_updated: bool = False, path: Optional[str] = None) -> List[str]:
         if path is None:
-            path = self.directory_path
+            path = self.__directory_path
         file_list: List[str] = []
         for file_or_dir_name in directory.get_keys():
             file_or_dir_entry: entry = directory.get_entry(file_or_dir_name)

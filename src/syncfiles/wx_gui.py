@@ -3,23 +3,23 @@
 Author: Kevin Hodge
 """
 
-from syncfiles.sync_gui import SyncGUI
+from syncfiles.sync_ui import SyncUI
 from typing import Any, List
 import wx
 
 
-class WxGUI(SyncGUI):
+class WxGUI(SyncUI):
     """Class that handles all GUI interactions.
 
     Attributes:
         None
 
     """
-    def exit_prompt(self) -> str:
+    def exit_prompt(self) -> bool:
         """Open a window to ask the user a question and get a response, then close the window."""
         app: YesNoPromptApp = YesNoPromptApp(message="Check Again?", button_text=["Continue", "Exit"])
         app.MainLoop()
-        return app.response
+        return app.response == "Exit"
 
     def directory_prompt(self, num_valid_dir: int, min_dir: int = 2) -> str:
         """Asks user to enter a valid directory

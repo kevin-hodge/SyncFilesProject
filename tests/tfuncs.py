@@ -13,12 +13,13 @@ import functools
 
 class TFunctions:
     """Contains useful functions that can be used by any test case."""
-    sync_dir_file: Path = Path.cwd() / Path("sync_directories_file.json")
-    dir_tempfile: Path = Path.cwd() / Path("temp_sync_directories_file.json")
-    last_sync_file: Path = Path.cwd() / Path("last_sync_file.json")
-    last_tempfile: Path = Path.cwd() / Path("temp_last_sync_file.json")
-    test_path1: Path = Path.cwd() / Path("test_dir1")
-    test_path2: Path = Path.cwd() / Path("test_dir2")
+    config_path: Path = Path.cwd()
+    sync_dir_file: Path = config_path / Path("sync_directories_file.json")
+    dir_tempfile: Path = config_path / Path("temp_sync_directories_file.json")
+    last_sync_file: Path = config_path / Path("last_sync_file.json")
+    last_tempfile: Path = config_path / Path("temp_last_sync_file.json")
+    test_path1: Path = config_path / Path("test_dir1")
+    test_path2: Path = config_path / Path("test_dir2")
 
     def create_dir_tempfile(self) -> None:
         """Move sync directories file contents and delete sync directories file."""

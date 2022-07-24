@@ -5,15 +5,15 @@ Author: Kevin Hodge
 """
 
 
-class SyncGUI:
-    """Abstract Class that handles all GUI interactions.
+class SyncUI:
+    """Abstract Class that handles all UI interactions.
 
     Attributes:
         None
 
     """
-    def exit_prompt(self) -> str:
-        """Open a window to ask the user a question and get a response, then close the window."""
+    def exit_prompt(self) -> bool:
+        """Ask the user if app should exit and return answer."""
         raise NotImplementedError
 
     def directory_prompt(self, num_valid_dir: int, min_dir: int = 2) -> str:

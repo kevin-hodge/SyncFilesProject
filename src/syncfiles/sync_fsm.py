@@ -7,7 +7,7 @@ from typing import Any, List, Tuple, Optional
 # from syncfiles.sync_exception import SyncException
 from syncfiles.file_structure import FileStructure
 from syncfiles.config_manager import ConfigManager
-from syncfiles.sync_gui import SyncGUI
+from syncfiles.sync_ui import SyncUI
 import time
 from pathlib import Path
 from enum import Enum
@@ -39,23 +39,23 @@ class StateInfo:
         verbose (bool, optional): Indicates if messages will be printed for debugging.
 
     """
-    def __init__(self, initial: State, config: ConfigManager, gui: SyncGUI, verbose: bool = False) -> None:
+    def __init__(self, initial: State, config: ConfigManager, gui: SyncUI, verbose: bool = False) -> None:
         self.curr_state: State = initial
         self.prev_state: State = initial
         self.directories: List[FileStructure] = []
         self.config: ConfigManager = config
-        self.gui: SyncGUI = gui
+        self.gui: SyncUI = gui
         self.err: Exception = Exception()
         self.err_id: str = "Unknown Function"
         self.exit_request: bool = False
         self.sync_required: bool = False
         self.verbose: bool = verbose
 
-    def check_exit_prompt(self) -> str:
-        response = self.gui.exit_prompt()
-        if response == "Exit":
+    def check_exit_prompt(self) -> bool:
+        exit_request: bool = self.gui.exit_prompt()
+        if exit_request:
             self.exit_request = True
-        return response
+        return self.exit_request
 
     def check_sync_required(self, num_changes: int) -> None:
         if num_changes > 0:

@@ -6,14 +6,16 @@ Author: Kevin Hodge
 import unittest
 from typing import List
 from syncfiles.config_manager import ConfigManager
-from syncfiles.sync_gui import SyncGUI
 from syncfiles.sync_state_machine import SyncState
 from syncfiles.sync_states import Initial, Wait, Check, Sync, Error, Final, StateData
+from tests.mock_ui import MockUI
+from tests import tfuncs
 
 
 class SyncStateTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs) -> None:
-        self.state_data: StateData = StateData(ConfigManager(), SyncGUI())
+        self.tf: tfuncs.TFunctions = tfuncs.TFunctions()
+        self.state_data: StateData = StateData(ConfigManager(), MockUI())
         self.states: List[SyncState] = [
             Initial(self.state_data),
             Wait(self.state_data),
@@ -31,3 +33,11 @@ class SyncStateTestCase(unittest.TestCase):
     def test_get_next(self) -> None:
         for state in self.states:
             assert isinstance(state.get_next(), SyncState)
+
+    def test_initial(self) -> None:
+        config: ConfigManager = ConfigManager()
+        mock_ui: MockUI = MockUI()
+        state_data: StateData = StateData(config, mock_ui)
+        initial: Initial = Initial(state_data)
+        assert isinstance(initial, Initial)
+        initial.run()
