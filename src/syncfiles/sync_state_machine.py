@@ -4,7 +4,7 @@ Author: Kevin Hodge
 """
 
 
-class SyncState:
+class SyncState(object):
     def run(self) -> None:
         raise NotImplementedError
 
@@ -31,6 +31,6 @@ class SyncStateMachine:
     def run(self) -> None:
         while True:
             self.state.run()
-            self.state = self.state.get_next()
+            self.state = self.state.get_next()  # type: ignore[assignment]
             if isinstance(self.state, End):
                 break

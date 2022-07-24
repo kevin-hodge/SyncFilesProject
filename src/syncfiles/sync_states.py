@@ -24,6 +24,9 @@ class StateData:
     def get_directories(self) -> List[FileStructure]:
         return self.directories
 
+    def add_directory(self, directory: FileStructure) -> None:
+        self.directories.append(directory)
+
     def set_directories(self, directories: List[FileStructure]) -> None:
         self.directories = directories
 
@@ -63,11 +66,11 @@ class Initial(DataState):
         return sync_directories
 
     def initialize_file_structures(self, sync_directories: List[str]) -> None:
-        self.state_data.set_directories(sync_directories)
-        if self.state_data.verbose:
-            for dir in self.state_data.get_directories():
+        for dir in sync_directories:
+            self.state_data.add_directory(FileStructure(dir, verbose=self.state_data.verbose))
+            if self.state_data.verbose:
                 print("Directories to sync:")
-                print(dir.get_directory_path())
+                print(self.state_data.get_directories()[-1].get_directory_path())
 
 
 class Check(DataState):
