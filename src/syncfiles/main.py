@@ -43,7 +43,7 @@ Author: Kevin Hodge
 
 from syncfiles.state_machine import StateMachine
 from syncfiles.config_manager import ConfigManager
-from syncfiles.sync_gui import SyncGUI
+from syncfiles.wx_gui import WxGUI
 from syncfiles.sync_fsm import (StateInfo, State, initial_state_function, check_state_function, wait_state_function,
                                 sync_state_function, error_state_function, final_state_function)
 
@@ -53,14 +53,14 @@ if __name__ == '__main__':
     verbose: bool = True
 
     config: ConfigManager = ConfigManager()
-    gui: SyncGUI = SyncGUI()
-    Sync_StateInfo: StateInfo = StateInfo(State.INITIAL, config, gui, verbose)
-    Sync_FSM: StateMachine = StateMachine()
-    Sync_FSM.new_state(State.INITIAL, initial_state_function, initial_state=True)
-    Sync_FSM.new_state(State.CHECK, check_state_function)
-    Sync_FSM.new_state(State.WAIT, wait_state_function)
-    Sync_FSM.new_state(State.SYNC, sync_state_function)
-    Sync_FSM.new_state(State.ERROR, error_state_function)
-    Sync_FSM.new_state(State.FINAL, final_state_function, final_state=True)
+    gui: WxGUI = WxGUI()
+    state_info: StateInfo = StateInfo(State.INITIAL, config, gui, verbose)
+    state_machine: StateMachine = StateMachine()
+    state_machine.new_state(State.INITIAL, initial_state_function, initial_state=True)
+    state_machine.new_state(State.CHECK, check_state_function)
+    state_machine.new_state(State.WAIT, wait_state_function)
+    state_machine.new_state(State.SYNC, sync_state_function)
+    state_machine.new_state(State.ERROR, error_state_function)
+    state_machine.new_state(State.FINAL, final_state_function, final_state=True)
 
-    Sync_FSM.run(Sync_StateInfo)
+    state_machine.run(state_info)

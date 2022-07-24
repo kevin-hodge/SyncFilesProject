@@ -18,12 +18,17 @@ class ConfigManager():
         verbose (bool)
 
     """
+    config_path: Path = Path.cwd()
+    sync_dir_file: Path = config_path / "sync_directories_file.json"
+    last_sync_file: Path = config_path / "last_sync_file.json"
+    min_dir: int = 2
+    verbose: bool = False
+
     def __init__(self, verbose: bool = False) -> None:
-        self.config_path: Path = Path.cwd()
-        self.sync_dir_file: Path = self.config_path / "sync_directories_file.json"
-        self.last_sync_file: Path = self.config_path / "last_sync_file.json"
-        self.min_dir: int = 2
-        self.verbose: bool = verbose
+        self.verbose = verbose
+
+    def get_min_dir(self) -> int:
+        return self.min_dir
 
     def read_sync_directories(self) -> List[str]:
         """Gets directories to be synchronized from config file and/or from user.

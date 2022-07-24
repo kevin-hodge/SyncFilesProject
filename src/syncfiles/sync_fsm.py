@@ -42,7 +42,7 @@ class StateInfo:
     def __init__(self, initial: State, config: ConfigManager, gui: SyncGUI, verbose: bool = False) -> None:
         self.curr_state: State = initial
         self.prev_state: State = initial
-        self.directories: List[FileStructure] = list()
+        self.directories: List[FileStructure] = []
         self.config: ConfigManager = config
         self.gui: SyncGUI = gui
         self.err: Exception = Exception()
