@@ -4,18 +4,21 @@
 Author: Kevin Hodge
 """
 
+from abc import ABC, abstractmethod
 
-class SyncUI:
+
+class SyncUI(ABC):
     """Abstract Class that handles all UI interactions.
 
     Attributes:
         None
 
     """
+    @abstractmethod
     def exit_prompt(self) -> bool:
         """Ask the user if app should exit and return answer."""
-        raise NotImplementedError
 
+    @abstractmethod
     def directory_prompt(self, num_valid_dir: int, min_dir: int = 2) -> str:
         """Asks user to enter a valid directory
 
@@ -24,4 +27,3 @@ class SyncUI:
             min_dir (int): number of directories required.
 
         """
-        raise NotImplementedError

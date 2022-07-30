@@ -3,13 +3,17 @@
 Author: Kevin Hodge
 """
 
+from abc import ABC, abstractmethod
 
-class SyncState:
+
+class SyncState(ABC):
+    @abstractmethod
     def run(self) -> None:
-        raise NotImplementedError
+        """Executes state behavior."""
 
+    @abstractmethod
     def get_next(self) -> object:
-        raise NotImplementedError
+        """Gets next state."""
 
 
 class End(SyncState):

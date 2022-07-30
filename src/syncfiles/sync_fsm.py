@@ -140,7 +140,7 @@ class StateInfo:
             directory.update_file_structure()
             if self.verbose:
                 print(f"Directory {str(self.directories.index(directory) + 1)}:")
-                directory.print_file_structure()
+                print(directory.print_file_structure(), end="")
             changes: int = directory.check_file_structure(self.config.read_last_sync_file())
             if changes > 0:
                 changes_found = changes
@@ -182,7 +182,6 @@ def check_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
     Returns:
         state_info.curr_state (str): Name of the actual next state.
         state_info: Carries program information from state to state.
-
     """
     assert len(state_info.directories) > 0
 
@@ -208,7 +207,6 @@ def wait_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
     Returns:
         state_info.curr_state (str): Name of the actual next state.
         state_info: Carries program information from state to state.
-
     """
     if state_info.verbose:
         print("Waiting...")
@@ -228,7 +226,6 @@ def sync_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
     Returns:
         state_info.curr_state (str): Name of the actual next state.
         state_info: Carries program information from state to state.
-
     """
     assert state_info.sync_required
 
@@ -244,17 +241,12 @@ def sync_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
 def error_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
     """Handles errors that cause transitions from other states.
 
-    Requirements:
-        Req #7: The program shall notify the user if either directory cannot be found.
-        TODO Needs to notify user through the GUI
-
     Args:
         state_info (StateInfo): Carries program information from state to state.
 
     Returns:
         state_info.curr_state (str): Name of the actual next state.
         state_info: Carries program information from state to state.
-
     """
     error_description: str = f"Error in {state_info.prev_state}: {state_info.err_id} raised the following error:"
     error_message: str = f"Error Message: {str(state_info.err)}"
@@ -281,7 +273,6 @@ def final_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
     Returns:
         state_info.curr_state (str): Name of the actual next state.
         state_info: Carries program information from state to state.
-
     """
     if state_info.verbose:
         print("Exiting...")

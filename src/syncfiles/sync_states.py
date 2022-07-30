@@ -79,11 +79,6 @@ class Initial(DataState):
         sync_directories: List[str] = self.get_sync_directories()
         self.initialize_file_structures(sync_directories)
 
-    def get_next(self) -> SyncState:
-        if self.get_error_raised():
-            return Error(self.state_data)
-        return Wait(self.state_data)
-
     def get_sync_directories(self) -> List[str]:
         sync_directories: List[str] = self.config.read_sync_directories()
         while len(sync_directories) < self.config.get_min_dir():
@@ -99,6 +94,11 @@ class Initial(DataState):
             if self.verbose:
                 print("Directories to sync:")
                 print(self.get_fstructs()[-1].get_directory_path())
+
+    def get_next(self) -> SyncState:
+        if self.get_error_raised():
+            return Error(self.state_data)
+        return Wait(self.state_data)
 
 
 class Check(DataState):

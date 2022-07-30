@@ -9,6 +9,7 @@ import json
 import shutil
 import random
 import functools
+import threading
 
 
 class TFunctions:
@@ -20,10 +21,14 @@ class TFunctions:
     last_tempfile: Path = config_path / Path("temp_last_sync_file.json")
     test_path1: Path = config_path / Path("test_dir1")
     test_path2: Path = config_path / Path("test_dir2")
+    sync_dir_lock: threading.Lock = threading.Lock()
+    last_sync_lock: threading.Lock = threading.Lock()
+    test_dir_lock: threading.Lock = threading.Lock()
 
     def create_dir_tempfile(self) -> None:
         """Move sync directories file contents and delete sync directories file."""
         if self.sync_dir_file.exists():
+            self.sync_dir_lock.acquire()
             with self.dir_tempfile.open("w") as json_file:
                 json.dump(get_json_contents(self.sync_dir_file), json_file)
             self.sync_dir_file.unlink()
@@ -34,10 +39,12 @@ class TFunctions:
             with self.sync_dir_file.open("w") as json_file:
                 json.dump(get_json_contents(self.dir_tempfile), json_file)
             self.dir_tempfile.unlink()
+            self.sync_dir_lock.release()
 
     def create_last_tempfile(self) -> None:
         """Move last sync file contents and delete last sync file."""
         if self.last_sync_file.exists():
+            self.last_sync_lock.acquire(timeout=1)
             with self.last_tempfile.open("w") as json_file:
                 json.dump(get_json_contents(self.last_sync_file), json_file)
             self.last_sync_file.unlink()
@@ -48,9 +55,11 @@ class TFunctions:
             with self.last_sync_file.open("w") as json_file:
                 json.dump(get_json_contents(self.last_tempfile), json_file)
             self.last_tempfile.unlink()
+            self.last_sync_lock.release()
 
     def create_test_dirs(self) -> None:
         """Create test directories."""
+        self.test_dir_lock.acquire(timeout=1)
         if not self.test_path1.exists():
             self.test_path1.mkdir()
         if not self.test_path2.exists():
@@ -60,8 +69,12 @@ class TFunctions:
         """Deletes test directories."""
         if self.test_path1.exists():
             shutil.rmtree(self.test_path1)
+            if self.test_dir_lock.locked():
+                self.test_dir_lock.release()
         if self.test_path2.exists():
             shutil.rmtree(self.test_path2)
+            if self.test_dir_lock.locked():
+                self.test_dir_lock.release()
 
 
 def create_rand_fstruct(path: str, max_depth: int = 3, max_entries: int = 5) -> None:
@@ -85,19 +98,19 @@ def create_rand_fstruct(path: str, max_depth: int = 3, max_entries: int = 5) -> 
     for i in range(num_entries):
         if random.randint(0, max_depth-1) > 0:
             directory = Path(path) / f"test_dir_{i}"
-            create_directory(directory)
+            create_directory(str(directory))
             create_rand_fstruct(str(directory), max_depth-1, max_entries)
         else:
             file = Path(path) / f"test_file_{i}.txt"
-            create_file(file)
+            create_file(str(file))
 
 
-def create_directory(path: Path) -> None:
-    path.mkdir(exist_ok=True)
+def create_directory(path: str) -> None:
+    Path(path).mkdir(exist_ok=True)
 
 
-def create_file(path: Path) -> None:
-    path.touch(exist_ok=True)
+def create_file(path: str) -> None:
+    Path(path).touch(exist_ok=True)
 
 
 def make_rand_mods(path: str, parent_name_change: bool = False) -> List[str]:
@@ -112,7 +125,6 @@ def make_rand_mods(path: str, parent_name_change: bool = False) -> List[str]:
 
     Returns:
         change_count (int): Number of changes made to the file structure.
-
     """
     change_list: List[str] = []
     for entry_path in Path(path).iterdir():
@@ -121,7 +133,7 @@ def make_rand_mods(path: str, parent_name_change: bool = False) -> List[str]:
             local_name_change: bool = False
             if random.random() > 0.9:
                 local_name_change = True
-                entry_path_string = change_dir_name(path, str(entry_path), len(change_list))
+                entry_path_string = change_dir_name(str(entry_path), len(change_list))
                 change_list.append(entry_path_string)
             elif parent_name_change:
                 change_list.append(entry_path_string)
@@ -132,9 +144,9 @@ def make_rand_mods(path: str, parent_name_change: bool = False) -> List[str]:
         elif Path(entry_path).is_file():
             if random.random() > 0.1:
                 if random.random() > 0.5:
-                    entry_path_string = change_file_name(path, str(entry_path), len(change_list))
+                    entry_path_string = change_file_name(str(entry_path), len(change_list))
                 else:
-                    update_last_mod_time(entry_path)
+                    update_last_mod_time(str(entry_path))
                 change_list.append(entry_path_string)
             elif parent_name_change:
                 change_list.append(entry_path_string)
@@ -143,22 +155,22 @@ def make_rand_mods(path: str, parent_name_change: bool = False) -> List[str]:
     return change_list
 
 
-def change_file_name(path: str, old_path: str, change_count: int) -> str:
+def change_file_name(old_path: str, change_count: int) -> str:
     new_name = f"Edited_file_{change_count}.txt"
-    dest = str(Path(path) / new_name)
+    dest = str(Path(old_path).parent / new_name)
     assert shutil.move(old_path, dest) == dest
     return dest
 
 
-def change_dir_name(path: str, old_path: str, change_count: int) -> str:
+def change_dir_name(old_path: str, change_count: int) -> str:
     new_name: str = f"Edited_dir_{change_count}"
-    dest: str = str(Path(path) / new_name)
+    dest: str = str(Path(old_path).parent / new_name)
     assert shutil.move(old_path, dest) == dest
     return dest
 
 
-def update_last_mod_time(entry_path: Path) -> None:
-    entry_path.touch(exist_ok=True)
+def update_last_mod_time(entry_path: str) -> None:
+    Path(entry_path).touch(exist_ok=True)
 
 
 def recursive_print_dir(path: str, offset: int = 0) -> None:

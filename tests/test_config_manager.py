@@ -25,7 +25,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         self.assertCountEqual(buffer, [])
 
     def test_check_nonexistant_dirs(self) -> None:
-        # Deletes invalid directory just in case it exists
+        # Remove test dirs just in case they exist
         self.tf.remove_test_dirs()
 
         # Checks if invalid dir is added to result
@@ -116,9 +116,6 @@ class ConfigManagerTestCase(unittest.TestCase):
 
     @tfuncs.handle_dir_tempfile
     def test_write_too_few_dirs(self) -> None:
-        # Setup: Move config contents
-        self.tf.create_dir_tempfile()
-
         # Write to config and check config contents
         input: List[str] = [str(self.tf.test_path2)]
         manager: ConfigManager = ConfigManager()

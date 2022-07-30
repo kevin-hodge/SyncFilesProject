@@ -24,6 +24,14 @@ class State2(SyncState):
 
 
 class SyncStateMachineTestCase(unittest.TestCase):
+    def test_no_set_initial(self) -> None:
+        state_machine: SyncStateMachine = SyncStateMachine()
+        state_machine.run()
+
+    def test_derived_class(self) -> None:
+        State1()
+        State2()
+
     def test_build_and_run(self) -> None:
         state1: State1 = State1()
         state_machine: SyncStateMachine = SyncStateMachine()
@@ -32,7 +40,3 @@ class SyncStateMachineTestCase(unittest.TestCase):
             state_machine.run()
         except ValueError as err:
             assert str(err) == "Pass"
-
-    def test_no_set_initial(self) -> None:
-        state_machine: SyncStateMachine = SyncStateMachine()
-        state_machine.run()
