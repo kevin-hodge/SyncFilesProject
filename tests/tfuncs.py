@@ -30,14 +30,14 @@ class TFunctions:
         if self.sync_dir_file.exists():
             self.sync_dir_lock.acquire()
             with self.dir_tempfile.open("w") as json_file:
-                json.dump(get_json_contents(self.sync_dir_file), json_file)
+                json.dump(get_json_contents(str(self.sync_dir_file)), json_file)
             self.sync_dir_file.unlink()
 
     def remove_dir_tempfile(self) -> None:
         """Restore sync directories file contents and delete directories temporary file."""
         if self.dir_tempfile.exists():
             with self.sync_dir_file.open("w") as json_file:
-                json.dump(get_json_contents(self.dir_tempfile), json_file)
+                json.dump(get_json_contents(str(self.dir_tempfile)), json_file)
             self.dir_tempfile.unlink()
             self.sync_dir_lock.release()
 
@@ -46,14 +46,14 @@ class TFunctions:
         if self.last_sync_file.exists():
             self.last_sync_lock.acquire(timeout=1)
             with self.last_tempfile.open("w") as json_file:
-                json.dump(get_json_contents(self.last_sync_file), json_file)
+                json.dump(get_json_contents(str(self.last_sync_file)), json_file)
             self.last_sync_file.unlink()
 
     def remove_last_tempfile(self) -> None:
         """Restore last sync file contents and delete last sync temporary file."""
         if self.last_tempfile.exists():
             with self.last_sync_file.open("w") as json_file:
-                json.dump(get_json_contents(self.last_tempfile), json_file)
+                json.dump(get_json_contents(str(self.last_tempfile)), json_file)
             self.last_tempfile.unlink()
             self.last_sync_lock.release()
 
@@ -190,17 +190,17 @@ def dir_to_list(path: str) -> List[str]:
     return dir_list
 
 
-def get_json_contents(file_path: Path) -> Any:
+def get_json_contents(file_path: str) -> Any:
     """Uses json modules to read json file and return contents."""
     json_data: Any
-    with file_path.open() as json_file:
+    with Path(file_path).open() as json_file:
         json_data = json.load(json_file)
     return json_data
 
 
-def write_json(input: Any, file_path: Path) -> None:
+def write_json(input: Any, file_path: str) -> None:
     """Uses json module to write to specified json file."""
-    with file_path.open("w") as json_file:
+    with Path(file_path).open("w") as json_file:
         json.dump(input, json_file)
 
 

@@ -22,10 +22,10 @@ class MockUI(SyncUI):
 
     def directory_prompt(self, num_valid_dir: int, min_dir: int = 2) -> str:
         if self.__request_count >= len(self.__directories):
-            self.__request_count = 0
+            self.__request_count = 1
         else:
             self.__request_count += 1
-        return self.__directories[self.__request_count]
+        return self.__directories[self.__request_count-1]
 
     def get_exit_request(self) -> bool:
         return self.__exit_request

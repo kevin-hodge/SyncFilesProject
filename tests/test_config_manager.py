@@ -61,7 +61,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_read_not_list(self) -> None:
         # Write invalid contents
         input: str = "JSON contents are not a list"
-        tfuncs.write_json(input, self.tf.sync_dir_file)
+        tfuncs.write_json(input, str(self.tf.sync_dir_file))
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
 
@@ -72,7 +72,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_read_nonexistant_dirs(self) -> None:
         self.tf.remove_test_dirs()
         invalid_dirs: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
-        tfuncs.write_json(invalid_dirs, self.tf.sync_dir_file)
+        tfuncs.write_json(invalid_dirs, str(self.tf.sync_dir_file))
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
 
@@ -84,7 +84,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_read_repeated_dirs(self) -> None:
         # Enter and read repeated directories
         input: List[str] = [str(self.tf.test_path2), str(self.tf.test_path2)]
-        tfuncs.write_json(input, self.tf.sync_dir_file)
+        tfuncs.write_json(input, str(self.tf.sync_dir_file))
         manager: ConfigManager = ConfigManager()
         result: List[str] = manager.read_sync_directories()
 
@@ -96,7 +96,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_read_valid_dirs(self) -> None:
         # Enter and read correct directories
         input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
-        tfuncs.write_json(input, self.tf.sync_dir_file)
+        tfuncs.write_json(input, str(self.tf.sync_dir_file))
         user_entry: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
         manager: ConfigManager = ConfigManager()
         buffer: List[str] = manager.read_sync_directories()
@@ -106,12 +106,11 @@ class ConfigManagerTestCase(unittest.TestCase):
 
     @tfuncs.handle_dir_tempfile
     def test_write_valid_dirs(self) -> None:
-        # Setup: Move config contents
         # Write to config and check config contents
         input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
         manager: ConfigManager = ConfigManager()
         assert manager.write_sync_directories(input)
-        result: List[str] = tfuncs.get_json_contents(self.tf.sync_dir_file)
+        result: List[str] = tfuncs.get_json_contents(str(self.tf.sync_dir_file))
         self.assertCountEqual(input, result)
 
     @tfuncs.handle_dir_tempfile
@@ -145,7 +144,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         # Setup
         tfuncs.create_rand_fstruct(str(self.tf.test_path2))
         fstruct: FileStructure = FileStructure(str(self.tf.test_path2))
-        tfuncs.write_json(fstruct.files_to_json(), self.tf.last_sync_file)
+        tfuncs.write_json(fstruct.files_to_json(), str(self.tf.last_sync_file))
         last_sync_files: Dict[str, Any]
         manager: ConfigManager = ConfigManager()
 
@@ -163,7 +162,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         manager.write_last_sync_file(fstruct.files_to_json())
 
         # Run test
-        last_sync_files: Dict[str, Any] = tfuncs.get_json_contents(self.tf.last_sync_file)
+        last_sync_files: Dict[str, Any] = tfuncs.get_json_contents(str(self.tf.last_sync_file))
         self.assertCountEqual(last_sync_files, fstruct.files_to_json())
 
 

@@ -157,8 +157,8 @@ class FileStructureTestCase(unittest.TestCase):
         tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory)
         before_dict: Dict[str, Any] = fstruct.files_to_json()
-        tfuncs.write_json(before_dict, self.tf.last_tempfile)
-        after_dict: Dict[str, Any] = tfuncs.get_json_contents(self.tf.last_tempfile)
+        tfuncs.write_json(before_dict, str(self.tf.last_tempfile))
+        after_dict: Dict[str, Any] = tfuncs.get_json_contents(str(self.tf.last_tempfile))
         self.assertCountEqual(before_dict, after_dict)
         self.assertCountEqual(after_dict, fstruct.files_to_json())
 

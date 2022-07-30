@@ -51,12 +51,6 @@ class DataState(SyncState):
     def set_sync_required(self, sync_required: bool = True) -> None:
         self.state_data.sync_required = sync_required
 
-    def get_verbose(self) -> bool:
-        return self.state_data.verbose
-
-    def set_verbose(self, verbose: bool = True) -> None:
-        self.state_data.verbose = verbose
-
     def get_error_raised(self) -> bool:
         return self.state_data.error_raised
 
@@ -71,7 +65,7 @@ class DataState(SyncState):
             self.error = SyncException(err)
 
     def run_commands(self) -> None:
-        raise NotImplementedError
+        """Commands run by default run function"""
 
 
 class Initial(DataState):
@@ -89,21 +83,32 @@ class Initial(DataState):
         return sync_directories
 
     def initialize_file_structures(self, sync_directories: List[str]) -> None:
+        if self.verbose:
+            print("Directories to sync:")
         for dir in sync_directories:
             self.add_fstruct(FileStructure(dir, verbose=self.verbose))
             if self.verbose:
-                print("Directories to sync:")
                 print(self.get_fstructs()[-1].get_directory_path())
 
     def get_next(self) -> SyncState:
         if self.get_error_raised():
             return Error(self.state_data)
-        return Wait(self.state_data)
+        if self.get_exit_request():
+            return Final(self.state_data)
+        return Check(self.state_data)
 
 
 class Check(DataState):
     def run_commands(self) -> None:
         pass
+        # for index, fstruct in enumerate(self.get_fstructs()):
+        #     fstruct.update_file_structure()
+        #     if self.verbose:
+        #         print(f"Directory {str(index + 1)}:")
+        #         print(fstruct.print_file_structure(), end="")
+        #     changes: int = fstruct.check_file_structure(self.config.read_last_sync_file())
+        #     if changes > 0:
+        #         self.set_sync_required()
 
     def get_next(self) -> SyncState:
         if self.get_error_raised():
@@ -126,7 +131,7 @@ class Wait(DataState):
             return Final(self.state_data)
         elif self.get_sync_required():
             return Sync(self.state_data)
-        return Wait(self.state_data)
+        return Check(self.state_data)
 
 
 class Sync(DataState):
