@@ -41,26 +41,17 @@ Requirements (LR: 18):
 Author: Kevin Hodge
 """
 
-from syncfiles.state_machine import StateMachine
 from syncfiles.config_manager import ConfigManager
 from syncfiles.wx_gui import WxGUI
-from syncfiles.sync_fsm import (StateInfo, State, initial_state_function, check_state_function, wait_state_function,
-                                sync_state_function, error_state_function, final_state_function)
+from syncfiles.sync_state_machine import SyncStateMachine
+from syncfiles.sync_states import Initial, StateData
 
 
 if __name__ == '__main__':
-    # Only For Debugging
-    verbose: bool = True
-
     config: ConfigManager = ConfigManager()
     gui: WxGUI = WxGUI()
-    state_info: StateInfo = StateInfo(State.INITIAL, config, gui, verbose)
-    state_machine: StateMachine = StateMachine()
-    state_machine.new_state(State.INITIAL, initial_state_function, initial_state=True)
-    state_machine.new_state(State.CHECK, check_state_function)
-    state_machine.new_state(State.WAIT, wait_state_function)
-    state_machine.new_state(State.SYNC, sync_state_function)
-    state_machine.new_state(State.ERROR, error_state_function)
-    state_machine.new_state(State.FINAL, final_state_function, final_state=True)
-
-    state_machine.run(state_info)
+    state_data: StateData = StateData(config, gui, verbose=True)
+    initial: Initial = Initial(state_data)
+    state_machine: SyncStateMachine = SyncStateMachine()
+    state_machine.set_initial_state(initial)
+    state_machine.run()

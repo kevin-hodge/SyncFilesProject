@@ -4,6 +4,7 @@ Author: Kevin Hodge
 """
 
 from typing import List, Optional
+import time
 from syncfiles.file_structure import FileStructure
 from syncfiles.sync_ui import SyncUI
 from syncfiles.config_manager import ConfigManager
@@ -108,11 +109,11 @@ class Check(DataState):
         for index, fstruct in enumerate(self.get_fstructs()):
             fstruct.update_file_structure()
             changes: int = fstruct.check_file_structure(self.config.read_last_sync_file())
-            if self.verbose:
-                print(f"Directory {str(index + 1)}:")
-                print(fstruct.print_file_structure())
             if changes > 0:
                 self.set_sync_required()
+            if self.verbose:
+                print(f"Directory {str(index + 1)}:")
+                print(fstruct.print_file_structure(), end="")
 
     def get_next(self) -> SyncState:
         if self.get_error_raised():
@@ -125,16 +126,29 @@ class Check(DataState):
 
 
 class Wait(DataState):
+    def __init__(self, *args, **kwargs) -> None:
+        self.sleep_time: float = 10.0
+        super().__init__(*args, **kwargs)
+
     def run_commands(self) -> None:
-        pass
+        if self.prompt_user_to_exit():
+            return None
+
+        time.sleep(self.sleep_time)
+
+    def set_sleep_time(self, sleep_time: float) -> None:
+        self.sleep_time = sleep_time
+
+    def prompt_user_to_exit(self) -> bool:
+        if self.ui.exit_prompt():
+            self.set_exit_request()
+        return self.get_exit_request()
 
     def get_next(self) -> SyncState:
         if self.get_error_raised():
             return Error(self.state_data)
-        if self.get_exit_request():
+        elif self.get_exit_request():
             return Final(self.state_data)
-        elif self.get_sync_required():
-            return Sync(self.state_data)
         return Check(self.state_data)
 
 

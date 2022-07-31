@@ -35,8 +35,8 @@ class SyncStateTestCase(unittest.TestCase):
         self.test_string_output = []
         return temp
 
-    def add_to_test_string(self, string: str) -> None:
-        self.test_string_output.append(string)
+    def add_to_test_string(self, string: str, end: str = "") -> None:
+        self.test_string_output.append(string + end)
 
     def test_states_init(self) -> None:
         for state in self.states:
@@ -108,26 +108,20 @@ class SyncStateTestCase(unittest.TestCase):
             self.assertCountEqual(fstruct.files_to_list(), [])
         self.assertCountEqual(self.get_and_clear_test_string(), ["Directories to sync:", input[0], input[1]])
 
-    @tfuncs.handle_dir_tempfile
-    @tfuncs.handle_test_dirs
     def test_initial_get_next_error_raised(self) -> None:
-        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        state_data: StateData = StateData(ConfigManager(), MockUI())
         initial: Initial = Initial(state_data)
         initial.set_error_raised()
         self.assertTrue(isinstance(initial.get_next(), Error))
 
-    @tfuncs.handle_dir_tempfile
-    @tfuncs.handle_test_dirs
     def test_initial_get_next_exit_request(self) -> None:
-        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        state_data: StateData = StateData(ConfigManager(), MockUI())
         initial: Initial = Initial(state_data)
         initial.set_exit_request()
         self.assertTrue(isinstance(initial.get_next(), Final))
 
-    @tfuncs.handle_dir_tempfile
-    @tfuncs.handle_test_dirs
     def test_initial_get_next_no_error_raised(self) -> None:
-        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        state_data: StateData = StateData(ConfigManager(), MockUI())
         initial: Initial = Initial(state_data)
         self.assertTrue(isinstance(initial.get_next(), Check))
 
@@ -192,26 +186,57 @@ class SyncStateTestCase(unittest.TestCase):
         ]
         self.assertCountEqual(self.get_and_clear_test_string(), validation_strings)
 
-    @tfuncs.handle_dir_tempfile
-    @tfuncs.handle_test_dirs
     def test_check_get_next_error_raised(self) -> None:
-        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        state_data: StateData = StateData(ConfigManager(), MockUI())
         check: Check = Check(state_data)
         check.set_error_raised()
         self.assertTrue(isinstance(check.get_next(), Error))
 
-    @tfuncs.handle_dir_tempfile
-    @tfuncs.handle_test_dirs
     def test_check_get_next_exit_request(self) -> None:
-        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        state_data: StateData = StateData(ConfigManager(), MockUI())
         check: Check = Check(state_data)
         check.set_exit_request()
         self.assertTrue(isinstance(check.get_next(), Final))
 
-    @tfuncs.handle_dir_tempfile
-    @tfuncs.handle_test_dirs
-    def test_check_get_next_not_updated(self) -> None:
-        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+    def test_check_get_next_updated(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
         check: Check = Check(state_data)
         check.set_sync_required()
         self.assertTrue(isinstance(check.get_next(), Sync))
+
+    def test_check_get_next_not_updated(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
+        check: Check = Check(state_data)
+        self.assertTrue(isinstance(check.get_next(), Wait))
+
+    def test_wait_run_user_requests_exit(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        wait: Wait = Wait(state_data)
+        wait.run()
+        self.assertTrue(wait.get_exit_request())
+
+    def test_wait_run_user_continues(self) -> None:
+        mock_ui: MockUI = MockUI()
+        mock_ui.set_exit_request(False)
+        state_data: StateData = StateData(ConfigManager(), mock_ui, verbose=True)
+        wait: Wait = Wait(state_data)
+        wait.set_sleep_time(10e-6)
+        wait.run()
+        self.assertFalse(wait.get_exit_request())
+
+    def test_wait_get_next_error_raised(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
+        wait: Wait = Wait(state_data)
+        wait.set_error_raised()
+        self.assertTrue(isinstance(wait.get_next(), Error))
+
+    def test_wait_get_next_exit_request(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
+        wait: Wait = Wait(state_data)
+        wait.set_exit_request()
+        self.assertTrue(isinstance(wait.get_next(), Final))
+
+    def test_wait_get_next_default(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
+        wait: Wait = Wait(state_data)
+        self.assertTrue(isinstance(wait.get_next(), Check))
