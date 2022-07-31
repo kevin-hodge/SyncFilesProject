@@ -20,6 +20,11 @@ class StateData:
     verbose: bool = False
 
     def __init__(self, config: ConfigManager, ui: SyncUI, verbose: bool = False) -> None:
+        self.fstructs = []
+        self.error_raised = False
+        self.error = None
+        self.exit_request = False
+        self.exit_required = False
         self.config = config
         self.ui = ui
         self.verbose = verbose
@@ -100,15 +105,14 @@ class Initial(DataState):
 
 class Check(DataState):
     def run_commands(self) -> None:
-        pass
-        # for index, fstruct in enumerate(self.get_fstructs()):
-        #     fstruct.update_file_structure()
-        #     if self.verbose:
-        #         print(f"Directory {str(index + 1)}:")
-        #         print(fstruct.print_file_structure(), end="")
-        #     changes: int = fstruct.check_file_structure(self.config.read_last_sync_file())
-        #     if changes > 0:
-        #         self.set_sync_required()
+        for index, fstruct in enumerate(self.get_fstructs()):
+            fstruct.update_file_structure()
+            changes: int = fstruct.check_file_structure(self.config.read_last_sync_file())
+            if self.verbose:
+                print(f"Directory {str(index + 1)}:")
+                print(fstruct.print_file_structure())
+            if changes > 0:
+                self.set_sync_required()
 
     def get_next(self) -> SyncState:
         if self.get_error_raised():

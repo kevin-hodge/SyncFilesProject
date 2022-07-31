@@ -100,6 +100,19 @@ class FileStructureTestCase(unittest.TestCase):
         self.assertCountEqual(fstruct.get_updated_list(), [new_file])
 
     @tfuncs.handle_test_dirs
+    def test_file_added(self) -> None:
+        test_directory: str = str(self.tf.test_path1)
+        fstruct: FileStructure = FileStructure(test_directory)
+        last_sync_files: Dict[str, Any] = fstruct.files_to_json()
+        test_file: str = str(Path(test_directory) / "test_file1.txt")
+        tfuncs.create_file(test_file)
+        fstruct.update_file_structure()
+
+        changes_found: int = fstruct.check_file_structure(last_sync_files)
+        self.assertEqual(changes_found, 1)
+        self.assertCountEqual(fstruct.get_updated_list(), [test_file])
+
+    @tfuncs.handle_test_dirs
     def test_folder_renamed(self) -> None:
         test_directory: str = str(self.tf.test_path1)
         test_folder: str = str(self.tf.test_path1 / "test_folder1")
@@ -112,6 +125,19 @@ class FileStructureTestCase(unittest.TestCase):
         changes_found: int = fstruct.check_file_structure(last_sync_files)
         self.assertEqual(changes_found, 1)
         self.assertCountEqual(fstruct.get_updated_list(), [new_folder])
+
+    @tfuncs.handle_test_dirs
+    def test_folder_added(self) -> None:
+        test_directory: str = str(self.tf.test_path1)
+        fstruct: FileStructure = FileStructure(test_directory)
+        last_sync_files: Dict[str, Any] = fstruct.files_to_json()
+        test_folder: str = str(self.tf.test_path1 / "test_folder1")
+        tfuncs.create_directory(test_folder)
+        fstruct.update_file_structure()
+
+        changes_found: int = fstruct.check_file_structure(last_sync_files)
+        self.assertEqual(changes_found, 1)
+        self.assertCountEqual(fstruct.get_updated_list(), [test_folder])
 
     @tfuncs.handle_test_dirs
     def test_parent_folder_renamed(self) -> None:
@@ -136,6 +162,21 @@ class FileStructureTestCase(unittest.TestCase):
         self.assertEqual(changes_found, 3)
         self.assertCountEqual(sorted(fstruct.get_updated_list()),
                               sorted([new_folder1, new_folder2, new_file]))
+
+    @tfuncs.handle_test_dirs
+    def test_no_last_sync_file(self) -> None:
+        test_directory: str = str(self.tf.test_path1)
+        test_folder_name1: str = "test_folder1"
+        test_folder1: str = str(self.tf.test_path1 / test_folder_name1)
+        tfuncs.create_directory(test_folder1)
+        test_file: str = str(Path(test_folder1) / "test_file1.txt")
+        tfuncs.create_file(test_file)
+        fstruct: FileStructure = FileStructure(test_directory)
+        fstruct.update_file_structure()
+
+        changes_found: int = fstruct.check_file_structure({})
+        self.assertEqual(changes_found, 2)
+        self.assertCountEqual(fstruct.get_updated_list(), [test_file, test_folder1])
 
     @tfuncs.handle_test_dirs
     def test_random_updated(self) -> None:

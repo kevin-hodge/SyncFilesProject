@@ -92,7 +92,6 @@ class StateInfo:
 
         Returns:
             Return values from get_return_values().
-
         """
         self.err = err
         self.err_id = err_id
@@ -107,7 +106,6 @@ class StateInfo:
         Returns:
             self.curr_state (str): Name of the actual next state.
             self: Carries program information from state to state.
-
         """
         self.prev_state = self.curr_state
         if next_state is not None:
@@ -159,7 +157,6 @@ def initial_state_function(state_info: StateInfo) -> Tuple[State, StateInfo]:
     Returns:
         state_info.curr_state (str): Name of the actual next state.
         state_info: Carries program information from state to state.
-
     """
     if state_info.verbose:
         print("Initializing...")
