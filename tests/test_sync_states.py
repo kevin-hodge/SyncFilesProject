@@ -270,14 +270,30 @@ class SyncStateTestCase(unittest.TestCase):
 
         state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
         sync: Sync = Sync(state_data)
+        sync.add_fstruct(fstruct1)
+        sync.add_fstruct(fstruct2)
         with unittest.mock.patch('builtins.print', self.add_to_test_string):
             sync.run()
 
+        for fstruct in fstruct_list:
+            fstruct.update_file_structure()
         files_in1: List[str] = fstruct_list[0].files_to_list()
         files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].get_directory_path())
         files_in2: List[str] = fstruct_list[1].files_to_list()
         files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].get_directory_path())
-        # self.assertCountEqual(files_in1, files_in2)
-        # self.assertCountEqual(files_in1, [test_filename])
-        # self.assertCountEqual(files_in2, [test_filename])
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertCountEqual(files_in1, [test_filename])
+        self.assertCountEqual(files_in2, [test_filename])
         self.assertEqual(["Syncing..."], self.get_and_clear_test_string())
+        self.assertFalse(sync.get_sync_required())
+
+    def test_sync_get_next_error_raised(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
+        wait: Sync = Sync(state_data)
+        wait.set_error_raised()
+        self.assertTrue(isinstance(wait.get_next(), Error))
+
+    def test_sync_get_next_default(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI())
+        wait: Sync = Sync(state_data)
+        self.assertTrue(isinstance(wait.get_next(), Wait))

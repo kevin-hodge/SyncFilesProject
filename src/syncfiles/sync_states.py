@@ -9,6 +9,7 @@ from syncfiles.file_structure import FileStructure
 from syncfiles.sync_ui import SyncUI
 from syncfiles.config_manager import ConfigManager
 from syncfiles.sync_exception import SyncException
+from syncfiles.sync_manager import SyncManager
 from syncfiles.sync_state_machine import SyncState, End
 
 
@@ -165,6 +166,10 @@ class Sync(DataState):
     def run_commands(self) -> None:
         if self.verbose:
             print("Syncing...")
+
+        synchonizer: SyncManager = SyncManager(self.get_fstructs())
+        synchonizer.sync()
+        self.config.write_last_sync_file(synchonizer.get_last_sync())
 
         self.set_sync_required(False)
 

@@ -3,7 +3,7 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict
+from typing import List, Dict, Any
 from pathlib import Path
 import shutil
 from datetime import datetime, timezone
@@ -18,7 +18,7 @@ class SyncManager:
 
     """
     def __init__(self, fstructs: List[FileStructure]) -> None:
-        assert len(fstructs) == 2
+        self.fstructs: List[FileStructure] = fstructs
         self.fstruct_dirs: List[str] = []
         self.fstructs_files_list: List[List[str]] = []
         self.fstructs_updated_list: List[List[str]] = []
@@ -141,3 +141,6 @@ class SyncManager:
             except FileExistsError:
                 path_name = Path(f"{path_name} {attempt}")
         raise FileExistsError(f"{str(entry_path)} has been copied 100 times.")
+
+    def get_last_sync(self) -> Dict[str, Any]:
+        return self.fstructs[0].files_to_json()
