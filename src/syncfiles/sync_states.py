@@ -76,6 +76,9 @@ class DataState(SyncState):
 
 class Initial(DataState):
     def run_commands(self) -> None:
+        if self.verbose:
+            print("Initializing...")
+
         sync_directories: List[str] = self.get_sync_directories()
         self.initialize_file_structures(sync_directories)
 
@@ -106,6 +109,9 @@ class Initial(DataState):
 
 class Check(DataState):
     def run_commands(self) -> None:
+        if self.verbose:
+            print("Checking...")
+
         for index, fstruct in enumerate(self.get_fstructs()):
             fstruct.update_file_structure()
             changes: int = fstruct.check_file_structure(self.config.read_last_sync_file())
@@ -131,6 +137,9 @@ class Wait(DataState):
         super().__init__(*args, **kwargs)
 
     def run_commands(self) -> None:
+        if self.verbose:
+            print("Waiting...")
+
         if self.prompt_user_to_exit():
             return None
 
@@ -154,7 +163,10 @@ class Wait(DataState):
 
 class Sync(DataState):
     def run_commands(self) -> None:
-        pass
+        if self.verbose:
+            print("Syncing...")
+
+        self.set_sync_required(False)
 
     def get_next(self) -> SyncState:
         if self.get_error_raised():

@@ -75,7 +75,8 @@ class SyncStateTestCase(unittest.TestCase):
         self.assertCountEqual(initial.get_sync_directories(), input)
         for fstruct in initial.get_fstructs():
             self.assertCountEqual(fstruct.files_to_list(), [])
-        self.assertCountEqual(self.get_and_clear_test_string(), ["Directories to sync:", input[0], input[1]])
+        self.assertCountEqual(self.get_and_clear_test_string(),
+                              ["Initializing...", "Directories to sync:", input[0], input[1]])
 
     @tfuncs.handle_dir_tempfile
     @tfuncs.handle_test_dirs
@@ -92,7 +93,8 @@ class SyncStateTestCase(unittest.TestCase):
         self.assertCountEqual(initial.get_sync_directories(), input[1:])
         for fstruct in initial.get_fstructs():
             self.assertCountEqual(fstruct.files_to_list(), [])
-        self.assertCountEqual(self.get_and_clear_test_string(), ["Directories to sync:", input[1], input[2]])
+        self.assertCountEqual(self.get_and_clear_test_string(),
+                              ["Initializing...", "Directories to sync:", input[1], input[2]])
 
     @tfuncs.handle_dir_tempfile
     @tfuncs.handle_test_dirs
@@ -106,7 +108,8 @@ class SyncStateTestCase(unittest.TestCase):
         self.assertCountEqual(initial.get_sync_directories(), input)
         for fstruct in initial.get_fstructs():
             self.assertCountEqual(fstruct.files_to_list(), [])
-        self.assertCountEqual(self.get_and_clear_test_string(), ["Directories to sync:", input[0], input[1]])
+        self.assertCountEqual(self.get_and_clear_test_string(),
+                              ["Initializing...", "Directories to sync:", input[0], input[1]])
 
     def test_initial_get_next_error_raised(self) -> None:
         state_data: StateData = StateData(ConfigManager(), MockUI())
@@ -149,6 +152,7 @@ class SyncStateTestCase(unittest.TestCase):
             check.run()
         self.assertTrue(check.get_sync_required())
         validation_strings: List[str] = [
+            "Checking...",
             "Directory 1:",
             test_dir1 + "\n   " + str(fstruct1.files),
             "Directory 2:",
@@ -179,6 +183,7 @@ class SyncStateTestCase(unittest.TestCase):
             check.run()
         self.assertFalse(check.get_sync_required())
         validation_strings: List[str] = [
+            "Checking...",
             "Directory 1:",
             test_dir1 + "\n   " + str(fstruct1.files),
             "Directory 2:",
@@ -212,8 +217,10 @@ class SyncStateTestCase(unittest.TestCase):
     def test_wait_run_user_requests_exit(self) -> None:
         state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
         wait: Wait = Wait(state_data)
-        wait.run()
+        with unittest.mock.patch('builtins.print', self.add_to_test_string):
+            wait.run()
         self.assertTrue(wait.get_exit_request())
+        self.assertEqual(["Waiting..."], self.get_and_clear_test_string())
 
     def test_wait_run_user_continues(self) -> None:
         mock_ui: MockUI = MockUI()
@@ -221,8 +228,10 @@ class SyncStateTestCase(unittest.TestCase):
         state_data: StateData = StateData(ConfigManager(), mock_ui, verbose=True)
         wait: Wait = Wait(state_data)
         wait.set_sleep_time(10e-6)
-        wait.run()
+        with unittest.mock.patch('builtins.print', self.add_to_test_string):
+            wait.run()
         self.assertFalse(wait.get_exit_request())
+        self.assertEqual(["Waiting..."], self.get_and_clear_test_string())
 
     def test_wait_get_next_error_raised(self) -> None:
         state_data: StateData = StateData(ConfigManager(), MockUI())
@@ -240,3 +249,35 @@ class SyncStateTestCase(unittest.TestCase):
         state_data: StateData = StateData(ConfigManager(), MockUI())
         wait: Wait = Wait(state_data)
         self.assertTrue(isinstance(wait.get_next(), Check))
+
+    @tfuncs.handle_dir_tempfile
+    @tfuncs.handle_test_dirs
+    @tfuncs.handle_last_tempfile
+    def test_sync_run_file_in1_notin2(self) -> None:
+        test_dir1: str = str(self.tf.test_path1)
+        fstruct1: FileStructure = FileStructure(test_dir1)
+        test_dir2: str = str(self.tf.test_path2)
+        fstruct2: FileStructure = FileStructure(test_dir2)
+        fstruct_list: List[FileStructure] = [fstruct1, fstruct2]
+        last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
+
+        test_filename: str = "test_file.txt"
+        file_in1_notin2: str = str(self.tf.test_path1 / test_filename)
+        tfuncs.create_file(file_in1_notin2)
+        for fstruct in fstruct_list:
+            fstruct.update_file_structure()
+            fstruct.check_file_structure(last_sync_dict)
+
+        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        sync: Sync = Sync(state_data)
+        with unittest.mock.patch('builtins.print', self.add_to_test_string):
+            sync.run()
+
+        files_in1: List[str] = fstruct_list[0].files_to_list()
+        files_in1 = tfuncs.remove_prefixes(files_in1, fstruct_list[0].get_directory_path())
+        files_in2: List[str] = fstruct_list[1].files_to_list()
+        files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].get_directory_path())
+        # self.assertCountEqual(files_in1, files_in2)
+        # self.assertCountEqual(files_in1, [test_filename])
+        # self.assertCountEqual(files_in2, [test_filename])
+        self.assertEqual(["Syncing..."], self.get_and_clear_test_string())

@@ -47,7 +47,7 @@ from syncfiles.sync_state_machine import SyncStateMachine
 from syncfiles.sync_states import Initial, StateData
 
 
-if __name__ == '__main__':
+def main() -> None:
     config: ConfigManager = ConfigManager()
     gui: WxGUI = WxGUI()
     state_data: StateData = StateData(config, gui, verbose=True)
@@ -55,3 +55,7 @@ if __name__ == '__main__':
     state_machine: SyncStateMachine = SyncStateMachine()
     state_machine.set_initial_state(initial)
     state_machine.run()
+
+
+if __name__ == '__main__':
+    main()
