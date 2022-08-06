@@ -141,76 +141,78 @@ class SyncManagerTestCase(unittest.TestCase):
             message = updated_file.read()
             self.assertEqual(message, 'This file is updated.')
 
-    # @tfuncs.handle_test_dirs
-    # def test_file_in1_in2_notupdated1_updated2(self) -> None:
-    #     common_file_name: str = "test_file.txt"
-    #     file_in1: str = str(self.tf.test_path1 / common_file_name)
-    #     tfuncs.create_file(file_in1)
-    #     file_in2: str = str(self.tf.test_path2 / common_file_name)
-    #     tfuncs.create_file(file_in2)
+    @tfuncs.handle_test_dirs
+    def test_file_in1_in2_notupdated1_updated2(self) -> None:
+        common_file_name: str = "test_file.txt"
+        file_in1: str = str(self.tf.test_path1 / common_file_name)
+        tfuncs.create_file(file_in1)
+        file_in2: str = str(self.tf.test_path2 / common_file_name)
+        tfuncs.create_file(file_in2)
 
-    #     fstruct_list: List[FileStructure] = self.initialize_test_directories()
-    #     last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
 
-    #     with open(file_in2, 'w') as file_to_update:
-    #         file_to_update.write('This file is updated.')
+        time.sleep(1)
+        with open(file_in2, 'w') as file_to_update:
+            file_to_update.write('This file is updated.')
 
-    #     self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-    #     synchonizer: SyncManager = SyncManager(fstruct_list)
-    #     synchonizer.sync()
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
-    #     self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-    #     files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
-    #     self.assertCountEqual(files_in1, files_in2)
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
 
-    #     with open(file_in2) as same_as_before_file:
-    #         message: str = same_as_before_file.read()
-    #         self.assertEqual(message, 'This file is updated.')
-    #     with open(file_in1) as updated_file:
-    #         message = updated_file.read()
-    #         self.assertEqual(message, 'This file is updated.')
+        with open(file_in2) as same_as_before_file:
+            message: str = same_as_before_file.read()
+            self.assertEqual(message, 'This file is updated.')
+        with open(file_in1) as updated_file:
+            message = updated_file.read()
+            self.assertEqual(message, 'This file is updated.')
 
-    # @tfuncs.handle_test_dirs
-    # def test_file_in1_in2_updated1_updated2(self) -> None:
-    #     common_file_name: str = "test_file.txt"
-    #     file_in1: str = str(self.tf.test_path1 / common_file_name)
-    #     tfuncs.create_file(file_in1)
-    #     file_in2: str = str(self.tf.test_path2 / common_file_name)
-    #     tfuncs.create_file(file_in2)
+    @tfuncs.handle_test_dirs
+    def test_file_in1_in2_updated1_updated2(self) -> None:
+        common_file_name: str = "test_file.txt"
+        file_in1: str = str(self.tf.test_path1 / common_file_name)
+        tfuncs.create_file(file_in1)
+        file_in2: str = str(self.tf.test_path2 / common_file_name)
+        tfuncs.create_file(file_in2)
 
-    #     fstruct_list: List[FileStructure] = self.initialize_test_directories()
-    #     last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
 
-    #     with open(file_in1, 'w') as file_to_update:
-    #         file_to_update.write('This file is updated.')
-    #     with open(file_in2, 'w') as file_to_update:
-    #         file_to_update.write('This file is also updated.')
+        time.sleep(1)
+        with open(file_in1, 'w') as file_to_update:
+            file_to_update.write('This file is updated.')
+        with open(file_in2, 'w') as file_to_update:
+            file_to_update.write('This file is also updated.')
 
-    #     self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-    #     synchonizer: SyncManager = SyncManager(fstruct_list)
-    #     synchonizer.sync()
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
-    #     # Check each directory contains correct file names with timestamps
-    #     self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-    #     files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
-    #     self.assertCountEqual(files_in1, files_in2)
-    #     self.assertEqual(len(files_in1), 2)
-    #     self.assertEqual(len(files_in2), 2)
-    #     # print(f"files_in1: {files_in1}")
-    #     # print(f"files_in2: {files_in2}")
+        # Check each directory contains correct file names with timestamps
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertEqual(len(files_in1), 2)
+        self.assertEqual(len(files_in2), 2)
+        # print(f"files_in1: {files_in1}")
+        # print(f"files_in2: {files_in2}")
 
-    #     # Check contents of files in one directory match contents of same files in other directory
-    #     file_contents: Dict[str, str] = {}
-    #     for file in self.tf.test_path1.iterdir():
-    #         with file.open() as read_file:
-    #             first_file: str = tfuncs.remove_prefix(str(file), str(self.tf.test_path1))
-    #             file_contents[first_file] = read_file.read()
-    #     for file in self.tf.test_path2.iterdir():
-    #         with file.open() as read_file:
-    #             second_file: str = tfuncs.remove_prefix(str(file), str(self.tf.test_path2))
-    #             assert file_contents[second_file] == read_file.read()
+        # Check contents of files in one directory match contents of same files in other directory
+        file_contents: Dict[str, str] = {}
+        for file in self.tf.test_path1.iterdir():
+            with file.open() as read_file:
+                first_file: str = tfuncs.remove_prefix(str(file), str(self.tf.test_path1))
+                file_contents[first_file] = read_file.read()
+        for file in self.tf.test_path2.iterdir():
+            with file.open() as read_file:
+                second_file: str = tfuncs.remove_prefix(str(file), str(self.tf.test_path2))
+                assert file_contents[second_file] == read_file.read()
 
     @tfuncs.handle_test_dirs
     def test_file_in1_in2_notupdated1_notupdated2(self) -> None:
