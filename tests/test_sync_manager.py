@@ -12,7 +12,7 @@ import tests.tfuncs as tfuncs
 
 
 class SyncManagerTestCase(unittest.TestCase):
-    delay_sec = 0.05
+    delay_sec = 0.01
 
     def __init__(self, *args, **kwargs) -> None:
         self.tf: tfuncs.TFunctions = tfuncs.TFunctions()
