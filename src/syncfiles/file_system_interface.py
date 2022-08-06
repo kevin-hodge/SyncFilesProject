@@ -55,7 +55,7 @@ class FSInterface(DBInterface):
 
     def iterdir(self) -> Generator[DBInterface, None, None]:
         for entry in self.__path.iterdir():
-            yield FSInterface(entry)
+            yield FSInterface(str(entry))
 
     def is_file(self) -> bool:
         return self.__path.is_file()
@@ -72,5 +72,5 @@ class FSInterface(DBInterface):
     def __repr__(self) -> str:
         return str(self.__path)
 
-    def __truediv__(self, other: Any) -> DBInterface:
-        return self.__path / other
+    def __truediv__(self, other: Any) -> Any:
+        return FSInterface(str(self.__path / other))

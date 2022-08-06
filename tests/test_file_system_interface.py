@@ -17,11 +17,11 @@ class FSInterfaceTestCase(unittest.TestCase):
 
     @tfuncs.handle_test_dirs
     def test_file_exists(self) -> None:
-        path: FSInterface = FSInterface(self.tf.test_path1)
+        path: FSInterface = FSInterface(str(self.tf.test_path1))
         self.assertTrue(path.exists())
 
     def test_file_does_not_exist(self) -> None:
-        path: FSInterface = FSInterface(self.tf.test_path1)
+        path: FSInterface = FSInterface(str(self.tf.test_path1))
         self.assertFalse(path.exists())
 
     @tfuncs.handle_test_dirs
@@ -33,7 +33,7 @@ class FSInterfaceTestCase(unittest.TestCase):
             test_filepath: str = str(self.tf.test_path1 / test_filename)
             tfuncs.create_file(test_filepath)
 
-        path: FSInterface = FSInterface(self.tf.test_path1)
+        path: FSInterface = FSInterface(str(self.tf.test_path1))
         out_file_list: List[str] = []
         for entry in path.iterdir():
             self.assertTrue(entry.exists())
