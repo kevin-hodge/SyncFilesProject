@@ -12,6 +12,8 @@ import tests.tfuncs as tfuncs
 
 
 class SyncManagerTestCase(unittest.TestCase):
+    delay_sec = 0.05
+
     def __init__(self, *args, **kwargs) -> None:
         self.tf: tfuncs.TFunctions = tfuncs.TFunctions()
         super().__init__(*args, **kwargs)
@@ -121,7 +123,7 @@ class SyncManagerTestCase(unittest.TestCase):
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
 
-        time.sleep(1)
+        time.sleep(self.delay_sec)
         with open(file_in1, 'w') as file_to_update:
             file_to_update.write('This file is updated.')
 
@@ -152,7 +154,7 @@ class SyncManagerTestCase(unittest.TestCase):
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
 
-        time.sleep(1)
+        time.sleep(self.delay_sec)
         with open(file_in2, 'w') as file_to_update:
             file_to_update.write('This file is updated.')
 
@@ -183,7 +185,7 @@ class SyncManagerTestCase(unittest.TestCase):
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
 
-        time.sleep(1)
+        time.sleep(self.delay_sec)
         with open(file_in1, 'w') as file_to_update:
             file_to_update.write('This file is updated.')
         with open(file_in2, 'w') as file_to_update:
