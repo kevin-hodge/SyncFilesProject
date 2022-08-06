@@ -7,15 +7,17 @@ import unittest
 from tests.test_config_manager import ConfigManagerTestCase
 from tests.test_file_structure import FileStructureTestCase
 from tests.test_sync_manager import SyncManagerTestCase
-from tests.test_sync_states import SyncStateTestCase
 from tests.test_sync_state_machine import SyncStateMachineTestCase
+from tests.test_sync_states import SyncStateTestCase
+from tests.test_wx_gui import WxGUITestCase
 
 
 ConfigManagerTestCase()
 FileStructureTestCase()
 SyncManagerTestCase()
-SyncStateTestCase()
 SyncStateMachineTestCase()
+SyncStateTestCase()
+WxGUITestCase()
 
 
 if __name__ == "__main__":

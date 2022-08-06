@@ -33,6 +33,8 @@ class StateData:
 
 
 class DataState(SyncState):
+    name: str = "Unkown State"
+
     def __init__(self, state_data: StateData) -> None:
         self.state_data: StateData = state_data
         self.config: ConfigManager = self.state_data.config
@@ -67,15 +69,21 @@ class DataState(SyncState):
     def run(self) -> None:
         try:
             self.run_commands()
+        except SyncException as err:
+            self.set_error_raised()
+            self.error = err
+            self.error.set_prev_state(self.name)
         except Exception as err:
             self.set_error_raised()
-            self.error = SyncException(err)
+            self.error = SyncException(str(err))
 
     def run_commands(self) -> None:
         """Commands run by default run function"""
 
 
 class Initial(DataState):
+    name: str = "Initial"
+
     def run_commands(self) -> None:
         if self.verbose:
             print("Initializing...")
@@ -109,6 +117,8 @@ class Initial(DataState):
 
 
 class Check(DataState):
+    name: str = "Check"
+
     def run_commands(self) -> None:
         if self.verbose:
             print("Checking...")
@@ -133,6 +143,8 @@ class Check(DataState):
 
 
 class Wait(DataState):
+    name: str = "Wait"
+
     def __init__(self, *args, **kwargs) -> None:
         self.sleep_time: float = 10.0
         super().__init__(*args, **kwargs)
@@ -163,6 +175,8 @@ class Wait(DataState):
 
 
 class Sync(DataState):
+    name: str = "Sync"
+
     def run_commands(self) -> None:
         if self.verbose:
             print("Syncing...")
@@ -180,14 +194,27 @@ class Sync(DataState):
 
 
 class Error(DataState):
+    name: str = "Error"
+    next_state: Optional[SyncState] = None
+
     def run(self) -> None:
-        pass
+        assert self.error is not None
+        if self.verbose:
+            print("Error...")
+            print(self.error.get_error_message())
+
+        if self.error.get_error_id() == "sync_dirs_do_not_exist":
+            self.next_state = Initial(self.state_data)
 
     def get_next(self) -> SyncState:
+        if self.next_state is not None:
+            return self.next_state
         return Final(self.state_data)
 
 
 class Final(DataState):
+    name: str = "Final"
+
     def run(self) -> None:
         pass
 

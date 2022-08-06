@@ -5,6 +5,7 @@ Author: Kevin Hodge
 
 from typing import Any, List, Optional, Dict
 from pathlib import Path
+from syncfiles.sync_exception import SyncException
 from syncfiles.entry import entry, file_entry, dir_entry
 
 
@@ -50,7 +51,8 @@ class FileStructure:
         Returns:
             file_structure (dir_entry): Same structure as FileStructure.files.
         """
-        assert Path(directory).exists()
+        if not Path(directory).exists():
+            raise SyncException("Sync Directory Does Not Exist", error_id="sync_dirs_do_not_exist")
 
         file_structure: dir_entry = dir_entry()
         for entry_path in Path(directory).iterdir():

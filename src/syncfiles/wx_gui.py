@@ -9,12 +9,7 @@ import wx
 
 
 class WxGUI(SyncUI):
-    """Class that handles all GUI interactions.
-
-    Attributes:
-        None
-
-    """
+    """Class that handles all GUI interactions."""
     def exit_prompt(self) -> bool:
         """Open a window to ask the user a question and get a response, then close the window."""
         app: YesNoPromptApp = YesNoPromptApp(message="Check Again?", button_text=["Continue", "Exit"])
@@ -27,7 +22,6 @@ class WxGUI(SyncUI):
         Args:
             invalid_dir (list): list initialized to [] on each function call.
             min_dir (int): number of directories required.
-
         """
         message: str = f"""Only {num_valid_dir} valid, unique directories. Must have {str(min_dir)}.
         Please enter directory to sync below."""
@@ -44,7 +38,6 @@ class YesNoPromptApp(wx.App):
         message (str): Question posed to user.
         button_text (list[str]): Button responses available to user.
         response (str): Records response. Defaults to "Exit".
-
     """
     def __init__(self, message: str, button_text: List[str]) -> None:
         self.message: str = message
@@ -69,7 +62,6 @@ class YesNoPromptFrame(wx.Frame):
 
     Attributes:
         message_panel (YesNoPromptPanel): Panel on which the message and buttons are displayed.
-
     """
     def __init__(self, parent: Any, title: str, message: str, button_text: List[str]) -> None:
         """Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__()."""
@@ -84,7 +76,6 @@ class YesNoPromptPanel(wx.Panel):
     Attributes:
         label (wx.StaticText): Message displayed to user.
         buttons (list[wx.Button]): Buttons for user to click.
-
     """
     def __init__(self, parent: Any, message: str, button_text: List[str]) -> None:
         """Creates layout of panel for YesNoPromptApp when initialized.
@@ -93,7 +84,6 @@ class YesNoPromptPanel(wx.Panel):
             parent (Any): Identifies what the panel is contained within.
             message (str): Message displayed to user.
             button_text (list[str]): Contains messages displayed on each button.
-
         """
         super().__init__(parent)
 
@@ -119,24 +109,30 @@ class YesNoPromptPanel(wx.Panel):
         self.SetSizer(gridsizer)
 
 
-class EntryPromptPanel(wx.Panel):
-    """Inherits from wx.Panel, displays dialog for user to enter reponse.
+# noinspection PyAttributeOutsideInit
+class EntryPromptApp(wx.App):
+    """Inherits from wx.App, prompts user for text response.
 
     Attributes:
-        dialog (wx.TextEntryDialog):
-        entry (str):
-
+        message (str): Message displayed to user.
+        response (str): Response from user.
     """
-    def __init__(self, parent: Any, message: str) -> None:
-        super().__init__(parent)
-        self.dialog: wx.TextEntryDialog = wx.TextEntryDialog(self, message, "Exit Prompt", "", style=wx.OK)
-        self.dialog.Center()
-        self.dialog.ShowModal()
-        self.entry: str = str(self.dialog.GetValue())
-        self.dialog.Destroy()
+    def __init__(self, message: str) -> None:
+        """Inherits from wx.App, prompts user for entry.
+
+        Args:
+            message (str): Message displayed to user.
+        """
+        self.message: str = message
+        self.response: str = ""
+        super().__init__()
+
+    def OnInit(self) -> bool:
+        self.frame: EntryPromptFrame = EntryPromptFrame(parent=None, title="Sync Files Project", message=self.message)
+        return True
 
     def get_response(self) -> str:
-        return self.entry
+        return self.frame.get_response()
 
 
 class EntryPromptFrame(wx.Frame):
@@ -144,7 +140,6 @@ class EntryPromptFrame(wx.Frame):
 
     Attributes:
         message_panel (EntryPromptPanel): Panel containing dialog for user entry.
-
     """
     def __init__(self, parent: Any, title: str, message: str) -> None:
         """Overwrites __init__() of wx.Frame, so need to call wx.Frame.__init__() within new __init__().
@@ -163,29 +158,20 @@ class EntryPromptFrame(wx.Frame):
         return self.message_panel.get_response()
 
 
-# noinspection PyAttributeOutsideInit
-class EntryPromptApp(wx.App):
-    """Inherits from wx.App, prompts user for text response.
+class EntryPromptPanel(wx.Panel):
+    """Inherits from wx.Panel, displays dialog for user to enter reponse.
 
     Attributes:
-        message (str): Message displayed to user.
-        response (str): Response from user.
-
+        dialog (wx.TextEntryDialog): Text entry object.
+        entry (str): Keeps track of user response.
     """
-    def __init__(self, message: str) -> None:
-        """Inherits from wx.App, prompts user for entry.
-
-        Args:
-            message (str): Message displayed to user.
-
-        """
-        self.message: str = message
-        self.response: str = ""
-        super().__init__()
-
-    def OnInit(self) -> bool:
-        self.frame: EntryPromptFrame = EntryPromptFrame(parent=None, title="Sync Files Project", message=self.message)
-        return True
+    def __init__(self, parent: Any, message: str) -> None:
+        super().__init__(parent)
+        self.dialog: wx.TextEntryDialog = wx.TextEntryDialog(self, message, "Exit Prompt", "", style=wx.OK)
+        self.dialog.Center()
+        self.dialog.ShowModal()
+        self.entry: str = str(self.dialog.GetValue())
+        self.dialog.Destroy()
 
     def get_response(self) -> str:
-        return self.frame.get_response()
+        return self.entry

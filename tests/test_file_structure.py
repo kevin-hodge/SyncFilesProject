@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 import tests.tfuncs as tfuncs
 from syncfiles.entry import dir_entry, file_entry
+from syncfiles.sync_exception import SyncException
 from syncfiles.file_structure import FileStructure
 
 
@@ -56,7 +57,7 @@ class FileStructureTestCase(unittest.TestCase):
     def test_init_nonexistant_dir(self) -> None:
         test_directory: str = str(self.tf.test_path1)
         self.tf.remove_test_dirs()
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(SyncException):
             FileStructure(test_directory)  # type: ignore[arg-type]
 
     @tfuncs.handle_test_dirs

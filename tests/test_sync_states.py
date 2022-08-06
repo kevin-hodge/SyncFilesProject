@@ -10,6 +10,7 @@ from pathlib import Path
 from syncfiles.config_manager import ConfigManager
 from syncfiles.sync_state_machine import SyncState
 from syncfiles.file_structure import FileStructure
+from syncfiles.sync_exception import SyncException
 from syncfiles.sync_states import DataState, Initial, Wait, Check, Sync, Error, Final, StateData
 from tests.mock_ui import MockUI
 from tests import tfuncs
@@ -58,7 +59,9 @@ class SyncStateTestCase(unittest.TestCase):
         test_state: TestState = TestState(state_data)
         test_state.run()
         self.assertTrue(test_state.get_error_raised())
-        self.assertEqual(str(test_state.error), "Test")
+        validation_string: str = "Error in Unknown State, Error ID: Unknown Error\n" + "Error Message: Test"
+        assert test_state.error is not None
+        self.assertEqual(test_state.error.get_error_message(), validation_string)
 
     @tfuncs.handle_dir_tempfile
     @tfuncs.handle_test_dirs
@@ -297,3 +300,14 @@ class SyncStateTestCase(unittest.TestCase):
         state_data: StateData = StateData(ConfigManager(), MockUI())
         wait: Sync = Sync(state_data)
         self.assertTrue(isinstance(wait.get_next(), Wait))
+
+    def test_error_run(self) -> None:
+        sync_error: SyncException = SyncException("Test", "Test State", "Test ID")
+        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        error: Error = Error(state_data)
+        error.error = sync_error
+        with unittest.mock.patch('builtins.print', self.add_to_test_string):
+            error.run()
+
+        validation_strings: List[str] = ["Error...", sync_error.get_error_message()]
+        self.assertCountEqual(validation_strings, self.get_and_clear_test_string())
