@@ -8,7 +8,7 @@ import unittest.mock
 from typing import List, Dict, Any
 from pathlib import Path
 from syncfiles.config_manager import ConfigManager
-from syncfiles.sync_state_machine import SyncState
+from syncfiles.sync_state_machine import SyncState, End
 from syncfiles.file_structure import FileStructure
 from syncfiles.sync_exception import SyncException
 from syncfiles.sync_states import DataState, Initial, Wait, Check, Sync, Error, Final, StateData
@@ -60,8 +60,9 @@ class SyncStateTestCase(unittest.TestCase):
         test_state.run()
         self.assertTrue(test_state.get_error_raised())
         validation_string: str = "Error in Unknown State, Error ID: Unknown Error\n" + "Error Message: Test"
-        assert test_state.error is not None
-        self.assertEqual(test_state.error.get_error_message(), validation_string)
+        error_state: Error = Error(state_data)
+        assert error_state.error is not None
+        self.assertEqual(error_state.error.get_error_message(), validation_string)
 
     @tfuncs.handle_dir_tempfile
     @tfuncs.handle_test_dirs
@@ -309,5 +310,41 @@ class SyncStateTestCase(unittest.TestCase):
         with unittest.mock.patch('builtins.print', self.add_to_test_string):
             error.run()
 
-        validation_strings: List[str] = ["Error...", sync_error.get_error_message()]
+        validation_strings: List[str] = [
+            "Error...",
+            "Error in Test State, Error ID: Test ID" + "\n" + "Error Message: Test"
+        ]
         self.assertCountEqual(validation_strings, self.get_and_clear_test_string())
+
+    @tfuncs.handle_dir_tempfile
+    @tfuncs.handle_test_dirs
+    def test_error_sync_dirs_do_not_exist(self) -> None:
+        input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
+        tfuncs.write_json(input, str(self.tf.sync_dir_file))
+        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        initial: Initial = Initial(state_data)
+        initial.run()
+
+        self.tf.remove_test_dirs()
+
+        assert isinstance(initial.get_next(), Check)
+        check: Check = Check(state_data)
+        check.run()
+
+        assert isinstance(check.get_next(), Error)
+        error: Error = Error(state_data)
+        error.run()
+        self.assertTrue(isinstance(error.get_next(), Initial))
+
+    def test_final_run(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        final: Final = Final(state_data)
+        with unittest.mock.patch('builtins.print', self.add_to_test_string):
+            final.run()
+
+        self.assertCountEqual(["Exiting..."], self.get_and_clear_test_string())
+
+    def test_final_get_next(self) -> None:
+        state_data: StateData = StateData(ConfigManager(), MockUI(), verbose=True)
+        final: Final = Final(state_data)
+        self.assertTrue(isinstance(final.get_next(), End))

@@ -71,11 +71,11 @@ class DataState(SyncState):
             self.run_commands()
         except SyncException as err:
             self.set_error_raised()
-            self.error = err
-            self.error.set_prev_state(self.name)
+            self.state_data.error = err
+            self.state_data.error.set_prev_state(self.name)
         except Exception as err:
             self.set_error_raised()
-            self.error = SyncException(str(err))
+            self.state_data.error = SyncException(str(err))
 
     def run_commands(self) -> None:
         """Commands run by default run function"""
@@ -216,7 +216,8 @@ class Final(DataState):
     name: str = "Final"
 
     def run(self) -> None:
-        pass
+        if self.verbose:
+            print("Exiting...")
 
     def get_next(self) -> SyncState:
         return End()
