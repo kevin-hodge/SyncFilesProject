@@ -6,6 +6,7 @@ Author: Kevin Hodge
 import unittest
 from tests.test_config_manager import ConfigManagerTestCase
 from tests.test_file_structure import FileStructureTestCase
+from tests.test_file_system_interface import FSInterfaceTestCase
 from tests.test_sync_exception import SyncExceptionTestCase
 from tests.test_sync_manager import SyncManagerTestCase
 from tests.test_sync_state_machine import SyncStateMachineTestCase
@@ -15,6 +16,7 @@ from tests.test_wx_gui import WxGUITestCase
 
 ConfigManagerTestCase()
 FileStructureTestCase()
+FSInterfaceTestCase()
 SyncExceptionTestCase()
 SyncManagerTestCase()
 SyncStateMachineTestCase()
