@@ -54,23 +54,23 @@ class SyncManagerTestCase(unittest.TestCase):
         files_in2 = tfuncs.remove_prefixes(files_in2, fstruct_list[1].get_directory_path())
         return files_in1, files_in2
 
-    # @tfuncs.handle_test_dirs
-    # def test_file_in1_notin2_notupdated1(self) -> None:
-    #     file_in1_notin2: str = str(self.tf.test_path1 / "test_file.txt")
-    #     tfuncs.create_file(file_in1_notin2)
+    @tfuncs.handle_test_dirs
+    def test_file_in1_notin2_notupdated1(self) -> None:
+        file_in1_notin2: str = str(self.tf.test_path1 / "test_file.txt")
+        tfuncs.create_file(file_in1_notin2)
 
-    #     fstruct_list: List[FileStructure] = self.initialize_test_directories()
-    #     last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
-    #     self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-    #     synchonizer: SyncManager = SyncManager(fstruct_list)
-    #     synchonizer.sync()
+        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer.sync()
 
-    #     self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
-    #     files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
-    #     self.assertCountEqual(files_in1, files_in2)
-    #     self.assertCountEqual(files_in1, [])
-    #     self.assertCountEqual(files_in2, [])
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertCountEqual(files_in1, [])
+        self.assertCountEqual(files_in2, [])
 
     # @tfuncs.handle_test_dirs
     # def test_file_notin1_in2_updated2(self) -> None:
