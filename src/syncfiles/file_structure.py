@@ -60,7 +60,7 @@ class FileStructure:
         file_structure: dir_entry = dir_entry()
         # for entry_path in Path(directory).iterdir():
         for entry_path in self.db(directory).iterdir():
-            #if Path(entry_path).is_file():
+            # if Path(entry_path).is_file():
             if entry_path.is_file():
                 # last_mod_time: float = Path(entry_path).stat().st_mtime
                 last_mod_time: float = entry_path.get_mod_time()
