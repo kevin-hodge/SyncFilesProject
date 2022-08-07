@@ -4,7 +4,6 @@ Author: Kevin Hodge
 """
 
 from typing import List, Dict, Any, Type
-# from pathlib import Path
 import json
 from syncfiles.file_system_interface import DBInterface
 
@@ -41,7 +40,7 @@ class ConfigManager:
         """
         buffer: List[str] = []
         if self.sync_dir_file.exists():
-            with open(str(self.sync_dir_file)) as file_to_read:
+            with self.sync_dir_file.open() as file_to_read:
                 buffer = json.load(file_to_read)
 
         if not isinstance(buffer, list):
@@ -82,7 +81,7 @@ class ConfigManager:
         assert isinstance(buffer, list)
 
         if len(buffer) >= self.min_dir:
-            with open(str(self.sync_dir_file), "w") as file_to_write:
+            with self.sync_dir_file.open("w") as file_to_write:
                 json.dump(buffer, file_to_write)
             return True
         return False
@@ -90,7 +89,7 @@ class ConfigManager:
     def read_last_sync_file(self) -> Dict[str, Any]:
         last_sync_files: Dict[str, Any] = dict()
         if self.last_sync_file.exists():
-            with open(str(self.last_sync_file)) as json_file:
+            with self.last_sync_file.open() as json_file:
                 last_sync_files = json.load(json_file)
                 if self.verbose:
                     print("Read last_sync_file.json")
@@ -100,5 +99,5 @@ class ConfigManager:
         return last_sync_files
 
     def write_last_sync_file(self, file_dict: Dict[str, Any]) -> None:
-        with open(str(self.last_sync_file), "w") as json_file:
+        with self.last_sync_file.open("w") as json_file:
             json.dump(file_dict, json_file)

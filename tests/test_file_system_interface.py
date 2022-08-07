@@ -95,3 +95,27 @@ class FSInterfaceTestCase(unittest.TestCase):
     def test_cwd(self) -> None:
         self.assertTrue(isinstance(FSInterface.cwd(), FSInterface))
         self.assertEqual(str(Path.cwd()), str(FSInterface.cwd()))
+
+    @tfuncs.handle_test_dirs
+    def test_context_manager_write(self) -> None:
+        test_file: str = str(self.tf.test_path1 / "test_file.txt")
+        tfuncs.create_file(test_file)
+
+        path: FSInterface = FSInterface(test_file)
+        with path.open("w") as file:
+            file.write("This file is updated.")
+
+        with open(test_file) as file:
+            self.assertEqual(file.read(), "This file is updated.")
+
+    @tfuncs.handle_test_dirs
+    def test_context_manager_read(self) -> None:
+        test_file: str = str(self.tf.test_path1 / "test_file.txt")
+        tfuncs.create_file(test_file)
+
+        with open(test_file, "w") as file:
+            file.write("This file is updated.")
+
+        path: FSInterface = FSInterface(test_file)
+        with path.open() as file:
+            self.assertEqual(file.read(), "This file is updated.")

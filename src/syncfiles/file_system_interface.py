@@ -50,6 +50,10 @@ class DBInterface(ABC):
     def cwd(cls) -> Any:
         """Gets current working directory."""
 
+    @abstractmethod
+    def open(self, mode: str = "r") -> Any:
+        """Context manager for Database object."""
+
 
 class FSInterface(DBInterface):
     def __init__(self, directory: str) -> None:
@@ -83,3 +87,6 @@ class FSInterface(DBInterface):
     @classmethod
     def cwd(cls) -> DBInterface:
         return cls(str(Path.cwd()))
+
+    def open(self, mode: str = "r") -> Any:
+        return self.__path.open(mode)
