@@ -91,3 +91,7 @@ class FSInterfaceTestCase(unittest.TestCase):
         test_path: str = str(self.tf.test_path1)
         path: FSInterface = FSInterface(test_path) / "test_file.txt"
         self.assertEqual(str(self.tf.test_path1 / "test_file.txt"), str(path))
+
+    def test_cwd(self) -> None:
+        self.assertTrue(isinstance(FSInterface.cwd(), FSInterface))
+        self.assertEqual(str(Path.cwd()), str(FSInterface.cwd()))

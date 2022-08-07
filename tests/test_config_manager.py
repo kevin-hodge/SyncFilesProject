@@ -21,7 +21,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_no_config_file(self) -> None:
         """Tests if no config file exists."""
         # Run function and check result
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         buffer: List[str] = manager.read_sync_directories()
         self.assertCountEqual(buffer, [])
 
@@ -30,7 +30,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         self.tf.remove_test_dirs()
 
         # Checks if invalid dir is added to result
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         result: List[str] = manager.check_sync_directory(str(self.tf.test_path1), [])
         self.assertCountEqual(result, [])
 
@@ -40,7 +40,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         # Set up config and directories (so directory is not removed because it does not exist)
         # Run Test
         input: List[str] = [str(self.tf.test_path1)]
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         result: List[str] = manager.check_sync_directory(str(self.tf.test_path1), input)
 
         # Check Result
@@ -52,7 +52,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         # Set up config and directories (so directory is not removed because it does not exist)
         # Run Test
         input: List[str] = [str(self.tf.test_path1)]
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         result: List[str] = manager.check_sync_directory(str(self.tf.test_path2), input)
 
         # Check Result
@@ -63,7 +63,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         # Write invalid contents
         input: str = "JSON contents are not a list"
         tfuncs.write_json(input, str(self.tf.sync_dir_file))
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         result: List[str] = manager.read_sync_directories()
 
         # Check result
@@ -74,7 +74,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         self.tf.remove_test_dirs()
         invalid_dirs: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
         tfuncs.write_json(invalid_dirs, str(self.tf.sync_dir_file))
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         result: List[str] = manager.read_sync_directories()
 
         # Check result
@@ -86,7 +86,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         # Enter and read repeated directories
         input: List[str] = [str(self.tf.test_path2), str(self.tf.test_path2)]
         tfuncs.write_json(input, str(self.tf.sync_dir_file))
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         result: List[str] = manager.read_sync_directories()
 
         # Check result
@@ -99,7 +99,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
         tfuncs.write_json(input, str(self.tf.sync_dir_file))
         user_entry: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         buffer: List[str] = manager.read_sync_directories()
 
         # Check after clean-up so assertion error doesn't prevent clean-up
@@ -109,7 +109,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_write_valid_dirs(self) -> None:
         # Write to config and check config contents
         input: List[str] = [str(self.tf.test_path1), str(self.tf.test_path2)]
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         assert manager.write_sync_directories(input)
         result: List[str] = tfuncs.get_json_contents(str(self.tf.sync_dir_file))
         self.assertCountEqual(input, result)
@@ -118,7 +118,7 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_write_too_few_dirs(self) -> None:
         # Write to config and check config contents
         input: List[str] = [str(self.tf.test_path2)]
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         assert not manager.write_sync_directories(input)
         assert not self.tf.sync_dir_file.exists()
 
@@ -126,14 +126,14 @@ class ConfigManagerTestCase(unittest.TestCase):
     def test_write_not_list(self) -> None:
         # Write to config and check config contents
         input: Tuple[str, str] = (str(self.tf.test_path1), str(self.tf.test_path2))
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         with self.assertRaises(AssertionError):
             manager.write_sync_directories(input)  # type: ignore[arg-type]
 
     @tfuncs.handle_last_tempfile
     def test_no_last_sync(self) -> None:
         # Initialize
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
 
         # Run test
         last_sync_files: Dict[str, Any] = manager.read_last_sync_file()
@@ -147,7 +147,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         fstruct: FileStructure = FileStructure(str(self.tf.test_path2), FSInterface)
         tfuncs.write_json(fstruct.files_to_json(), str(self.tf.last_sync_file))
         last_sync_files: Dict[str, Any]
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
 
         # Run test
         last_sync_files = manager.read_last_sync_file()
@@ -159,7 +159,7 @@ class ConfigManagerTestCase(unittest.TestCase):
         test_directory: str = str(self.tf.test_path2)
         tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory, FSInterface)
-        manager: ConfigManager = ConfigManager()
+        manager: ConfigManager = ConfigManager(FSInterface)
         manager.write_last_sync_file(fstruct.files_to_json())
 
         # Run test

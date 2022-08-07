@@ -3,12 +3,13 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Any
-from pathlib import Path
+from typing import List, Dict, Any, Type
+# from pathlib import Path
 import json
+from syncfiles.file_system_interface import DBInterface
 
 
-class ConfigManager():
+class ConfigManager:
     """Reads and writes configuration files for the program.
 
     Args:
@@ -16,16 +17,18 @@ class ConfigManager():
         sync_dir_file (Path): Path to sync_directories_file.json. File contains the directories that will be sync'd.
         min_dir (int): Indicates the minimum number of directories required to sync.
         verbose (bool)
-
     """
-    config_path: Path = Path.cwd()
-    sync_dir_file: Path = config_path / "sync_directories_file.json"
-    last_sync_file: Path = config_path / "last_sync_file.json"
+    # config_path: Path = Path.cwd()
+    # sync_dir_file: Path = config_path / "sync_directories_file.json"
+    # last_sync_file: Path = config_path / "last_sync_file.json"
     min_dir: int = 2
-    verbose: bool = False
 
-    def __init__(self, verbose: bool = False) -> None:
-        self.verbose = verbose
+    def __init__(self, db: Type[DBInterface], verbose: bool = False) -> None:
+        self.db: Type[DBInterface] = db
+        config_path: DBInterface = self.db.cwd()
+        self.sync_dir_file: DBInterface = config_path / "sync_directories_file.json"
+        self.last_sync_file: DBInterface = config_path / "last_sync_file.json"
+        self.verbose: bool = verbose
 
     def get_min_dir(self) -> int:
         return self.min_dir
@@ -38,16 +41,11 @@ class ConfigManager():
 
         Returns:
             directories (list[str]): Existing, unique directories found in "sync_directories_file.json".
-
-        Requirements:
-            - Req #2: The program shall find sync_directories_file.json (json file containing the sync directories).
-            - Req #3: The program shall open and read sync_directories_file.json.
-            - Req #15: The program shall store and get sync directories from a config file.
-
         """
         buffer: List[str] = []
         if self.sync_dir_file.exists():
-            with self.sync_dir_file.open() as file_to_read:
+            with open(str(self.sync_dir_file)) as file_to_read:
+            # with self.sync_dir_file.open() as file_to_read:
                 buffer = json.load(file_to_read)
 
         if not isinstance(buffer, list):
@@ -56,7 +54,8 @@ class ConfigManager():
         directories: List[str] = []
         for entry in buffer[::-1]:
             buffer.pop()
-            if Path(entry).exists() and entry not in buffer:
+            if self.db(entry).exists() and entry not in buffer:
+            # if Path(entry).exists() and entry not in buffer:
                 directories.append(entry)
 
         return directories
@@ -70,9 +69,9 @@ class ConfigManager():
 
         Returns:
             existing_dirs (list[str]): existing directories with new directory added (or not).
-
         """
-        if new_dir not in existing_dirs and Path(new_dir).exists():
+        if new_dir not in existing_dirs and self.db(new_dir).exists():
+        # if new_dir not in existing_dirs and Path(new_dir).exists():
             existing_dirs.append(new_dir)
 
         return existing_dirs
@@ -84,15 +83,13 @@ class ConfigManager():
             buffer (List[Path]): list of paths
 
         Returns:
-            True if file was written, false if it was not.
-
-        Requirements:
-            - Req #17: The program shall update config file with directory provided by user (if it exists).
+            bool: True if file was written, false if it was not.
         """
         assert isinstance(buffer, list)
 
         if len(buffer) >= self.min_dir:
-            with self.sync_dir_file.open("w") as file_to_write:
+            # with self.sync_dir_file.open("w") as file_to_write:
+            with open(str(self.sync_dir_file), "w") as file_to_write:
                 json.dump(buffer, file_to_write)
             return True
         return False
@@ -100,7 +97,8 @@ class ConfigManager():
     def read_last_sync_file(self) -> Dict[str, Any]:
         last_sync_files: Dict[str, Any] = dict()
         if self.last_sync_file.exists():
-            with self.last_sync_file.open() as json_file:
+            with open(str(self.last_sync_file)) as json_file:
+            # with self.last_sync_file.open() as json_file:
                 last_sync_files = json.load(json_file)
                 if self.verbose:
                     print("Read last_sync_file.json")
@@ -110,5 +108,6 @@ class ConfigManager():
         return last_sync_files
 
     def write_last_sync_file(self, file_dict: Dict[str, Any]) -> None:
-        with self.last_sync_file.open("w") as json_file:
+        with open(str(self.last_sync_file), "w") as json_file:
+        # with self.last_sync_file.open("w") as json_file:
             json.dump(file_dict, json_file)

@@ -3,7 +3,7 @@
 Author: Kevin Hodge
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractclassmethod
 from typing import Generator, Any
 from pathlib import Path
 
@@ -45,6 +45,10 @@ class DBInterface(ABC):
     def __truediv__(self, other) -> Any:
         """Returns path with other added to end."""
 
+    @abstractclassmethod
+    def cwd(self) -> Any:
+        """Gets current working directory."""
+
 
 class FSInterface(DBInterface):
     def __init__(self, directory: str) -> None:
@@ -72,5 +76,9 @@ class FSInterface(DBInterface):
     def __repr__(self) -> str:
         return str(self.__path)
 
-    def __truediv__(self, other: Any) -> Any:
+    def __truediv__(self, other: Any) -> DBInterface:
         return FSInterface(str(self.__path / other))
+
+    @classmethod
+    def cwd(self) -> DBInterface:
+        return FSInterface(str(Path.cwd()))
