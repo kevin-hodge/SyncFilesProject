@@ -45,8 +45,9 @@ class DBInterface(ABC):
     def __truediv__(self, other) -> Any:
         """Returns path with other added to end."""
 
+    @classmethod
     @abstractclassmethod
-    def cwd(self) -> Any:
+    def cwd(cls) -> Any:
         """Gets current working directory."""
 
 
@@ -80,5 +81,5 @@ class FSInterface(DBInterface):
         return FSInterface(str(self.__path / other))
 
     @classmethod
-    def cwd(self) -> DBInterface:
-        return FSInterface(str(Path.cwd()))
+    def cwd(cls) -> DBInterface:
+        return cls(str(Path.cwd()))

@@ -41,18 +41,21 @@ Requirements (LR: 18):
 Author: Kevin Hodge
 """
 
+from typing import Type
 from syncfiles.config_manager import ConfigManager
 from syncfiles.wx_gui import WxGUI
 from syncfiles.sync_state_machine import SyncStateMachine
 from syncfiles.sync_states import Initial, StateData
-from syncfiles.file_system_interface import FSInterface
+from syncfiles.file_system_interface import DBInterface, FSInterface
 
 
 def main() -> None:
-    config: ConfigManager = ConfigManager()
+    db: Type[DBInterface] = FSInterface
+    config: ConfigManager = ConfigManager(db)
     gui: WxGUI = WxGUI()
-    state_data: StateData = StateData(config, gui, FSInterface, verbose=True)
+    state_data: StateData = StateData(config, gui, db, verbose=True)
     initial: Initial = Initial(state_data)
+    initial.set_exit_request()
     state_machine: SyncStateMachine = SyncStateMachine()
     state_machine.set_initial_state(initial)
     state_machine.run()

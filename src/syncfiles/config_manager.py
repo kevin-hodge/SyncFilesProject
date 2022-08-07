@@ -18,9 +18,6 @@ class ConfigManager:
         min_dir (int): Indicates the minimum number of directories required to sync.
         verbose (bool)
     """
-    # config_path: Path = Path.cwd()
-    # sync_dir_file: Path = config_path / "sync_directories_file.json"
-    # last_sync_file: Path = config_path / "last_sync_file.json"
     min_dir: int = 2
 
     def __init__(self, db: Type[DBInterface], verbose: bool = False) -> None:
@@ -45,7 +42,6 @@ class ConfigManager:
         buffer: List[str] = []
         if self.sync_dir_file.exists():
             with open(str(self.sync_dir_file)) as file_to_read:
-            # with self.sync_dir_file.open() as file_to_read:
                 buffer = json.load(file_to_read)
 
         if not isinstance(buffer, list):
@@ -55,7 +51,6 @@ class ConfigManager:
         for entry in buffer[::-1]:
             buffer.pop()
             if self.db(entry).exists() and entry not in buffer:
-            # if Path(entry).exists() and entry not in buffer:
                 directories.append(entry)
 
         return directories
@@ -71,7 +66,6 @@ class ConfigManager:
             existing_dirs (list[str]): existing directories with new directory added (or not).
         """
         if new_dir not in existing_dirs and self.db(new_dir).exists():
-        # if new_dir not in existing_dirs and Path(new_dir).exists():
             existing_dirs.append(new_dir)
 
         return existing_dirs
@@ -88,7 +82,6 @@ class ConfigManager:
         assert isinstance(buffer, list)
 
         if len(buffer) >= self.min_dir:
-            # with self.sync_dir_file.open("w") as file_to_write:
             with open(str(self.sync_dir_file), "w") as file_to_write:
                 json.dump(buffer, file_to_write)
             return True
@@ -98,7 +91,6 @@ class ConfigManager:
         last_sync_files: Dict[str, Any] = dict()
         if self.last_sync_file.exists():
             with open(str(self.last_sync_file)) as json_file:
-            # with self.last_sync_file.open() as json_file:
                 last_sync_files = json.load(json_file)
                 if self.verbose:
                     print("Read last_sync_file.json")
@@ -109,5 +101,4 @@ class ConfigManager:
 
     def write_last_sync_file(self, file_dict: Dict[str, Any]) -> None:
         with open(str(self.last_sync_file), "w") as json_file:
-        # with self.last_sync_file.open("w") as json_file:
             json.dump(file_dict, json_file)

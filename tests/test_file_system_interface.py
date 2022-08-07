@@ -7,7 +7,7 @@ import unittest
 from typing import List
 import tests.tfuncs as tfuncs
 from pathlib import Path
-from syncfiles.file_system_interface import FSInterface
+from syncfiles.file_system_interface import DBInterface, FSInterface
 
 
 class FSInterfaceTestCase(unittest.TestCase):
@@ -89,7 +89,7 @@ class FSInterfaceTestCase(unittest.TestCase):
 
     def test_truediv(self) -> None:
         test_path: str = str(self.tf.test_path1)
-        path: FSInterface = FSInterface(test_path) / "test_file.txt"
+        path: DBInterface = FSInterface(test_path) / "test_file.txt"
         self.assertEqual(str(self.tf.test_path1 / "test_file.txt"), str(path))
 
     def test_cwd(self) -> None:
