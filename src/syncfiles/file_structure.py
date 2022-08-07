@@ -3,8 +3,9 @@
 Author: Kevin Hodge
 """
 
-from typing import Any, List, Optional, Dict
-from pathlib import Path
+from typing import Any, List, Optional, Dict, Type
+# from pathlib import Path
+from syncfiles.file_system_interface import DBInterface
 from syncfiles.sync_exception import SyncException
 from syncfiles.entry import entry, file_entry, dir_entry
 
@@ -20,8 +21,9 @@ class FileStructure:
             files and folders in those folders, pattern continues until a directory with no folders is found.
         verbose (bool): Indicates if messages will be printed for debugging.
     """
-    def __init__(self, directory_path: str, verbose: bool = False) -> None:
+    def __init__(self, directory_path: str, db_interface: Type[DBInterface], verbose: bool = False) -> None:
         self.__directory_path: str = directory_path
+        self.db: Type[DBInterface] = db_interface
         self.dir_path_list = self.split_path(self.get_directory_path())
         self.files: dir_entry = self.update_file_structure()
         self.verbose: bool = verbose
@@ -51,23 +53,31 @@ class FileStructure:
         Returns:
             file_structure (dir_entry): Same structure as FileStructure.files.
         """
-        if not Path(directory).exists():
+        # if not Path(directory).exists():
+        if not self.db(directory).exists():
             raise SyncException("Sync Directory Does Not Exist", error_id="sync_dirs_do_not_exist")
 
         file_structure: dir_entry = dir_entry()
-        for entry_path in Path(directory).iterdir():
-            if Path(entry_path).is_file():
-                last_mod_time: float = Path(entry_path).stat().st_mtime
-                file_structure.add_entry(str(entry_path.name), file_entry(last_mod_time))
-            elif Path(entry_path).is_dir():
-                file_structure.add_entry(str(entry_path.name), self.get_directory(str(entry_path)))
+        # for entry_path in Path(directory).iterdir():
+        for entry_path in self.db(directory).iterdir():
+            #if Path(entry_path).is_file():
+            if entry_path.is_file():
+                # last_mod_time: float = Path(entry_path).stat().st_mtime
+                last_mod_time: float = entry_path.get_mod_time()
+                # file_structure.add_entry(str(entry_path.name), file_entry(last_mod_time))
+                file_structure.add_entry(str(entry_path.get_name()), file_entry(last_mod_time))
+            # elif Path(entry_path).is_dir():
+            elif entry_path.is_dir():
+                # file_structure.add_entry(str(entry_path.name), self.get_directory(str(entry_path)))
+                file_structure.add_entry(str(entry_path.get_name()), self.get_directory(str(entry_path)))
         return file_structure
 
     def get_directory_path(self) -> str:
         return self.__directory_path
 
     def print_file_structure(self, offset: int = 1) -> str:
-        return Path(self.__directory_path).name + "\n" + self.files.__repr__(offset)
+        return self.db(self.__directory_path).get_name() + "\n" + self.files.__repr__(offset)
+        # return Path(self.__directory_path).name + "\n" + self.files.__repr__(offset)
 
     def check_file_structure(self, last_sync_dict: Dict[str, Any], path: Optional[str] = None,
                              file_dir: Optional[dir_entry] = None) -> int:
@@ -88,7 +98,8 @@ class FileStructure:
 
         for key in file_dir.get_keys():
             fstruct_entry: entry = file_dir.get_entry(key)
-            new_path: str = str(Path(path) / key)
+            new_path: str = str(self.db(path) / key)
+            # new_path: str = str(Path(path) / key)
             path_list: List[str] = self.get_relative_path(new_path)
             last_sync_entry: Optional[entry] = last_sync_files.get_entry_path(path_list)
 
@@ -136,7 +147,8 @@ class FileStructure:
         file_list: List[str] = []
         for file_or_dir_name in directory.get_keys():
             file_or_dir_entry: entry = directory.get_entry(file_or_dir_name)
-            file_or_dir_path: Path = Path(path) / file_or_dir_name
+            file_or_dir_path: Type[DBInterface] = self.db(path) / file_or_dir_name
+            # file_or_dir_path: Path = Path(path) / file_or_dir_name
             file_or_dir_path_string: str = str(file_or_dir_path)
             if only_updated:
                 if file_or_dir_entry.get_updated() > 0:

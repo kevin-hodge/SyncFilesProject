@@ -45,12 +45,13 @@ from syncfiles.config_manager import ConfigManager
 from syncfiles.wx_gui import WxGUI
 from syncfiles.sync_state_machine import SyncStateMachine
 from syncfiles.sync_states import Initial, StateData
+from syncfiles.file_system_interface import FSInterface
 
 
 def main() -> None:
     config: ConfigManager = ConfigManager()
     gui: WxGUI = WxGUI()
-    state_data: StateData = StateData(config, gui, verbose=True)
+    state_data: StateData = StateData(config, gui, FSInterface, verbose=True)
     initial: Initial = Initial(state_data)
     state_machine: SyncStateMachine = SyncStateMachine()
     state_machine.set_initial_state(initial)

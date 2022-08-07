@@ -6,6 +6,7 @@ Author: Kevin Hodge
 from typing import List, Dict, Any, Tuple
 import unittest
 import time
+from syncfiles.file_system_interface import FSInterface
 from syncfiles.file_structure import FileStructure
 from syncfiles.sync_manager import SyncManager
 import tests.tfuncs as tfuncs
@@ -39,9 +40,9 @@ class SyncManagerTestCase(unittest.TestCase):
 
     def initialize_test_directories(self) -> List[FileStructure]:
         test_dir1: str = str(self.tf.test_path1)
-        fstruct1: FileStructure = FileStructure(test_dir1)
+        fstruct1: FileStructure = FileStructure(test_dir1, FSInterface)
         test_dir2: str = str(self.tf.test_path2)
-        fstruct2: FileStructure = FileStructure(test_dir2)
+        fstruct2: FileStructure = FileStructure(test_dir2, FSInterface)
         return [fstruct1, fstruct2]
 
     def check_fstructs_for_updates(self, fstruct_list: List[FileStructure],

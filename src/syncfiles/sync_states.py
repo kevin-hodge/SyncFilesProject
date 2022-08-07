@@ -3,8 +3,9 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Optional
+from typing import List, Optional, Type
 import time
+from syncfiles.file_system_interface import DBInterface
 from syncfiles.file_structure import FileStructure
 from syncfiles.sync_ui import SyncUI
 from syncfiles.config_manager import ConfigManager
@@ -21,14 +22,15 @@ class StateData:
     sync_required: bool = False
     verbose: bool = False
 
-    def __init__(self, config: ConfigManager, ui: SyncUI, verbose: bool = False) -> None:
+    def __init__(self, config: ConfigManager, ui: SyncUI, db: Type[DBInterface], verbose: bool = False) -> None:
         self.fstructs = []
         self.error_raised = False
         self.error = None
         self.exit_request = False
         self.exit_required = False
-        self.config = config
-        self.ui = ui
+        self.config: ConfigManager = config
+        self.ui: SyncUI = ui
+        self.db: Type[DBInterface] = db
         self.verbose = verbose
 
 
@@ -41,6 +43,7 @@ class DataState(SyncState):
         self.ui: SyncUI = self.state_data.ui
         self.verbose: bool = self.state_data.verbose
         self.error: Optional[SyncException] = self.state_data.error
+        self.db: Type[DBInterface] = self.state_data.db
 
     def get_fstructs(self) -> List[FileStructure]:
         return self.state_data.fstructs
@@ -104,7 +107,7 @@ class Initial(DataState):
         if self.verbose:
             print("Directories to sync:")
         for dir in sync_directories:
-            self.add_fstruct(FileStructure(dir, verbose=self.verbose))
+            self.add_fstruct(FileStructure(dir, self.db, verbose=self.verbose))
             if self.verbose:
                 print(self.get_fstructs()[-1].get_directory_path())
 
