@@ -54,6 +54,18 @@ class DBInterface(ABC):
     def open(self, mode: str = "r") -> Any:
         """Context manager for Database object."""
 
+    @abstractmethod
+    def unlink(self) -> None:
+        """Deletes file."""
+
+    @abstractmethod
+    def get_parent(self) -> Any:
+        """Gets path without last entry (name)."""
+
+    @abstractmethod
+    def rename(self, new_path) -> Any:
+        """Renames and returns Database object."""
+
 
 class FSInterface(DBInterface):
     def __init__(self, directory: str) -> None:
@@ -90,3 +102,12 @@ class FSInterface(DBInterface):
 
     def open(self, mode: str = "r") -> Any:
         return self.__path.open(mode)
+
+    def unlink(self) -> None:
+        self.__path.unlink()
+
+    def get_parent(self) -> DBInterface:
+        return FSInterface(str(self.__path.parent))
+
+    def rename(self, new_path: Any) -> DBInterface:
+        return FSInterface(str(self.__path.rename(new_path.__path)))

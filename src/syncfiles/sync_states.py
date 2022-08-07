@@ -184,7 +184,7 @@ class Sync(DataState):
         if self.verbose:
             print("Syncing...")
 
-        synchonizer: SyncManager = SyncManager(self.get_fstructs())
+        synchonizer: SyncManager = SyncManager(self.get_fstructs(), self.db)
         synchonizer.sync()
         self.config.write_last_sync_file(synchonizer.get_last_sync())
 

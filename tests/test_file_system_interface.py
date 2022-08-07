@@ -119,3 +119,36 @@ class FSInterfaceTestCase(unittest.TestCase):
         path: FSInterface = FSInterface(test_file)
         with path.open() as file:
             self.assertEqual(file.read(), "This file is updated.")
+
+    @tfuncs.handle_test_dirs
+    def test_unlink(self) -> None:
+        test_file: str = str(self.tf.test_path1 / "test_file.txt")
+        tfuncs.create_file(test_file)
+
+        path: FSInterface = FSInterface(test_file)
+        path.unlink()
+
+        self.assertFalse(Path(test_file).exists())
+
+    @tfuncs.handle_test_dirs
+    def test_parent(self) -> None:
+        test_folder: str = str(self.tf.test_path1)
+        test_file: str = str(Path(test_folder) / "test_file.txt")
+
+        path: FSInterface = FSInterface(test_file)
+        self.assertEqual(str(path.get_parent()), test_folder)
+        self.assertTrue(isinstance(path.get_parent(), FSInterface))
+
+    @tfuncs.handle_test_dirs
+    def test_rename(self) -> None:
+        test_file: str = str(self.tf.test_path1 / "test_file.txt")
+        tfuncs.create_file(test_file)
+
+        path: FSInterface = FSInterface(test_file)
+        new_file_name: str = str(self.tf.test_path1 / "new_test_file.txt")
+        new_path: FSInterface = FSInterface(new_file_name)
+        renamed_path: DBInterface = path.rename(new_path)
+        self.assertTrue(isinstance(renamed_path, FSInterface))
+        self.assertEqual(str(renamed_path), str(new_path))
+        self.assertFalse(path.exists())
+        self.assertTrue(new_path.exists())

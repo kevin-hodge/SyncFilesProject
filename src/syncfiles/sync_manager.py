@@ -3,22 +3,19 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Any
-from pathlib import Path
+from typing import List, Dict, Any, Type
+# from pathlib import Path
 import shutil
 from datetime import datetime, timezone
+from syncfiles.file_system_interface import DBInterface
 from syncfiles.file_structure import FileStructure
 
 
 class SyncManager:
-    """Synchronizes files and folders between two FileStructures.
-
-    Tasks:
-        - Handle updated folders.
-
-    """
-    def __init__(self, fstructs: List[FileStructure]) -> None:
+    """Synchronizes files and folders between two FileStructures."""
+    def __init__(self, fstructs: List[FileStructure], db_interface: Type[DBInterface]) -> None:
         self.fstructs: List[FileStructure] = fstructs
+        self.db: Type[DBInterface] = db_interface
         self.fstruct_dirs: List[str] = []
         self.fstructs_files_list: List[List[str]] = []
         self.fstructs_updated_list: List[List[str]] = []
@@ -67,8 +64,8 @@ class SyncManager:
 
     def get_entry_attributes(self, fstruct_entry: str, parent_dir: str) -> List[int]:
         attributes: List[int] = [0] * 5
-        entry_path: Path = Path(parent_dir) / fstruct_entry
-        if Path(entry_path).is_file():
+        entry_path: DBInterface = self.db(parent_dir) / fstruct_entry
+        if entry_path.is_file():
             attributes[0] = 1
         if fstruct_entry in self.fstructs_files_list[0]:
             attributes[1] = 1
@@ -110,36 +107,36 @@ class SyncManager:
         return True
 
     def copy_file_from_to(self, fstruct_entry: str, from_dir: str, to_dir: str) -> None:
-        source: str = str(Path(from_dir) / fstruct_entry)
-        dest: str = str(Path(to_dir) / fstruct_entry)
+        source: str = str(self.db(from_dir) / fstruct_entry)
+        dest: str = str(self.db(to_dir) / fstruct_entry)
         shutil.copyfile(source, dest)
 
     def delete_file_from(self, fstruct_entry: str, from_dir: str) -> None:
-        entry_path: Path = Path(from_dir) / fstruct_entry
+        entry_path: DBInterface = self.db(from_dir) / fstruct_entry
         entry_path.unlink()
 
     def rename_with_timestamp(self, fstruct_entry: str, parent_dir: str) -> str:
-        entry_path: Path = Path(parent_dir) / fstruct_entry
-        new_path: Path = self.get_name_with_timestamp(entry_path)
+        entry_path: DBInterface = self.db(parent_dir) / fstruct_entry
+        new_path: DBInterface = self.get_name_with_timestamp(entry_path)
         new_path = self.attempt_rename(new_path, entry_path)
-        return (str(new_path.name))
+        return (str(new_path.get_name()))
 
-    def get_name_with_timestamp(self, entry_path: Path) -> Path:
-        entry_timestamp: datetime = datetime.fromtimestamp(entry_path.stat().st_mtime, tz=timezone.utc)
+    def get_name_with_timestamp(self, entry_path: DBInterface) -> Any:
+        entry_timestamp: datetime = datetime.fromtimestamp(entry_path.get_mod_time(), tz=timezone.utc)
         timestamp_format: str = "%Y-%m-%d-%H-%M-%S-%f"
         timestamp: str = entry_timestamp.strftime(timestamp_format)
         new_name: str = f"{str(entry_path)} ({timestamp})"
-        return entry_path.parent / new_name
+        return entry_path.get_parent() / new_name
 
-    def attempt_rename(self, new_path: Path, entry_path: Path) -> Path:
+    def attempt_rename(self, new_path: DBInterface, entry_path: DBInterface) -> Any:
         for attempt in range(100):
             if attempt == 0:
-                path_name: Path = new_path
+                path_name: DBInterface = new_path
             try:
                 entry_path.rename(path_name)
                 return path_name
             except FileExistsError:
-                path_name = Path(f"{path_name} {attempt}")
+                path_name = self.db(f"{path_name} {attempt}")
         raise FileExistsError(f"{str(entry_path)} has been copied 100 times.")
 
     def get_last_sync(self) -> Dict[str, Any]:

@@ -29,7 +29,7 @@ class SyncManagerTestCase(unittest.TestCase):
         tfuncs.create_file(file_in1_notin2)
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -67,7 +67,7 @@ class SyncManagerTestCase(unittest.TestCase):
         last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -86,7 +86,7 @@ class SyncManagerTestCase(unittest.TestCase):
         tfuncs.create_file(file_notin1_in2)
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -104,7 +104,7 @@ class SyncManagerTestCase(unittest.TestCase):
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -130,7 +130,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -161,7 +161,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
@@ -194,7 +194,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         # Check each directory contains correct file names with timestamps
@@ -230,7 +230,7 @@ class SyncManagerTestCase(unittest.TestCase):
 
         self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
 
-        synchonizer: SyncManager = SyncManager(fstruct_list)
+        synchonizer: SyncManager = SyncManager(fstruct_list, FSInterface)
         synchonizer.sync()
 
         # Check each directory contains correct file names with timestamps
