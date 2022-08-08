@@ -63,7 +63,7 @@ class DBInterface(ABC):
         """Gets path without last entry (name)."""
 
     @abstractmethod
-    def rename(self, new_path) -> Any:
+    def rename(self, new_path: Any) -> Any:
         """Renames and returns Database object."""
 
 
