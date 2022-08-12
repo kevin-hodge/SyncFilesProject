@@ -107,7 +107,6 @@ class SyncManager:
     def copy_file_from_to(self, fstruct_entry: str, from_dir: str, to_dir: str) -> None:
         source: str = str(self.db(from_dir) / fstruct_entry)
         dest: str = str(self.db(to_dir) / fstruct_entry)
-        # shutil.copyfile(source, dest)
         self.db.copyfile(source, dest)
 
     def delete_file_from(self, fstruct_entry: str, from_dir: str) -> None:
