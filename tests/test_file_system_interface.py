@@ -152,3 +152,12 @@ class FSInterfaceTestCase(unittest.TestCase):
         self.assertEqual(str(renamed_path), str(new_path))
         self.assertFalse(path.exists())
         self.assertTrue(new_path.exists())
+
+    @tfuncs.handle_test_dirs
+    def test_copyfile(self) -> None:
+        test_file: str = str(self.tf.test_path1 / "test_file.txt")
+        tfuncs.create_file(test_file)
+
+        new_file: str = str(self.tf.test_path2 / "test_file.txt")
+        FSInterface.copyfile(test_file, new_file)
+        self.assertTrue(Path(new_file).exists())

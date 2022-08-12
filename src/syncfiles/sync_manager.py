@@ -4,8 +4,6 @@ Author: Kevin Hodge
 """
 
 from typing import List, Dict, Any, Type
-# from pathlib import Path
-import shutil
 from datetime import datetime, timezone
 from syncfiles.file_system_interface import DBInterface
 from syncfiles.file_structure import FileStructure
@@ -109,7 +107,8 @@ class SyncManager:
     def copy_file_from_to(self, fstruct_entry: str, from_dir: str, to_dir: str) -> None:
         source: str = str(self.db(from_dir) / fstruct_entry)
         dest: str = str(self.db(to_dir) / fstruct_entry)
-        shutil.copyfile(source, dest)
+        # shutil.copyfile(source, dest)
+        self.db.copyfile(source, dest)
 
     def delete_file_from(self, fstruct_entry: str, from_dir: str) -> None:
         entry_path: DBInterface = self.db(from_dir) / fstruct_entry

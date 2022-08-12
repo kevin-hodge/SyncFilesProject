@@ -6,6 +6,7 @@ Author: Kevin Hodge
 from abc import ABC, abstractmethod, abstractclassmethod
 from typing import Generator, Any
 from pathlib import Path
+import shutil
 
 
 class DBInterface(ABC):
@@ -66,6 +67,11 @@ class DBInterface(ABC):
     def rename(self, new_path) -> Any:
         """Renames and returns Database object."""
 
+    @classmethod
+    @abstractclassmethod
+    def copyfile(cls, old_path: str, new_path: str) -> None:
+        """Copies file at old_path to new_path."""
+
 
 class FSInterface(DBInterface):
     def __init__(self, directory: str) -> None:
@@ -111,3 +117,7 @@ class FSInterface(DBInterface):
 
     def rename(self, new_path: Any) -> DBInterface:
         return FSInterface(str(self.__path.rename(new_path.__path)))
+
+    @classmethod
+    def copyfile(cls, old_path: str, new_path: str) -> None:
+        shutil.copyfile(old_path, new_path)
