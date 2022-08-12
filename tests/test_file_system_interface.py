@@ -147,9 +147,7 @@ class FSInterfaceTestCase(unittest.TestCase):
         path: FSInterface = FSInterface(test_file)
         new_file_name: str = str(self.tf.test_path1 / "new_test_file.txt")
         new_path: FSInterface = FSInterface(new_file_name)
-        renamed_path: DBInterface = path.rename(new_path)
-        self.assertTrue(isinstance(renamed_path, FSInterface))
-        self.assertEqual(str(renamed_path), str(new_path))
+        path.rename(new_path)
         self.assertFalse(path.exists())
         self.assertTrue(new_path.exists())
 
