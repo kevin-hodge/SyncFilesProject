@@ -4,10 +4,9 @@ Author: Kevin Hodge
 """
 
 import unittest
-# from syncfiles.wx_gui import WxGUI
+from syncfiles.wx_gui import WxGUI
 
 
 class WxGUITestCase(unittest.TestCase):
-    pass
-    # def test_init(self) -> None:
-    #     WxGUI()
+    def test_init(self) -> None:
+        WxGUI()
