@@ -148,7 +148,6 @@ class EntryPromptFrame(wx.Frame):
             parent (Any): Identifies what the panel is contained within.
             title (str): Title of the frame.
             message (str): Message displayed to the user.
-
         """
         super().__init__(parent, title=title, size=(250, 100))
         self.message_panel: EntryPromptPanel = EntryPromptPanel(parent=self, message=message)
