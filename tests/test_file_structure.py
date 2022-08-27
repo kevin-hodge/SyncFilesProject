@@ -190,8 +190,8 @@ class FileStructureTestCase(unittest.TestCase):
         fstruct.update_file_structure()
 
         changes_found: int = fstruct.check_file_structure(last_sync_files)
-        self.assertEqual(changes_found, len(change_list))
         self.assertCountEqual(sorted(fstruct.get_updated_list()), sorted(change_list))
+        self.assertEqual(changes_found, len(change_list))
 
     @tfuncs.handle_last_tempfile
     @tfuncs.handle_test_dirs
