@@ -76,7 +76,7 @@ class FileStructureTestCase(unittest.TestCase):
         tfuncs.create_file(test_file)
         fstruct: FileStructure = FileStructure(test_directory, FSInterface)
         last_sync_files: Dict[str, Any] = fstruct.files_to_json()
-        time.sleep(10e-6)
+        time.sleep(10e-6)  # wait before making mods so mod time is later than creation time
         tfuncs.update_last_mod_time(test_file)
         fstruct.update_file_structure()
 
@@ -186,6 +186,7 @@ class FileStructureTestCase(unittest.TestCase):
         tfuncs.create_rand_fstruct(test_directory)
         fstruct: FileStructure = FileStructure(test_directory, FSInterface)
         last_sync_files: Dict[str, Any] = fstruct.files_to_json()
+        time.sleep(10e-6)  # wait before making mods so mod time is later than creation time
         change_list: List[str] = tfuncs.make_rand_mods(test_directory)
         fstruct.update_file_structure()
 
