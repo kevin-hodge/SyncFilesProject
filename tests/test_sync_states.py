@@ -294,9 +294,9 @@ class SyncStateTestCase(unittest.TestCase):
 
     def test_sync_get_next_error_raised(self) -> None:
         state_data: StateData = StateData(ConfigManager(FSInterface), MockUI(), FSInterface)
-        wait: Sync = Sync(state_data)
-        wait.set_error_raised()
-        self.assertTrue(isinstance(wait.get_next(), Error))
+        sync: Sync = Sync(state_data)
+        sync.set_error_raised()
+        self.assertTrue(isinstance(sync.get_next(), Error))
 
     def test_sync_get_next_default(self) -> None:
         state_data: StateData = StateData(ConfigManager(FSInterface), MockUI(), FSInterface)

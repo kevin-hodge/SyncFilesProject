@@ -56,6 +56,9 @@ class TFunctions:
                 json.dump(get_json_contents(str(self.last_tempfile)), json_file)
             self.last_tempfile.unlink()
             self.last_sync_lock.release()
+        else:
+            if self.last_sync_file.exists():
+                self.last_sync_file.unlink()
 
     def create_test_dirs(self) -> None:
         """Create test directories."""

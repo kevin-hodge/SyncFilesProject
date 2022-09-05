@@ -55,7 +55,7 @@ def main() -> None:
     gui: WxGUI = WxGUI()
     state_data: StateData = StateData(config, gui, db, verbose=True)
     initial: Initial = Initial(state_data)
-    initial.set_exit_request()
+    # initial.set_exit_request()
     state_machine: SyncStateMachine = SyncStateMachine()
     state_machine.set_initial_state(initial)
     state_machine.run()

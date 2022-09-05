@@ -3,10 +3,12 @@
 Author: Kevin Hodge
 """
 
-from typing import List, Dict, Any, Type
+from typing import List, Dict, Any, Type, Optional
 from datetime import datetime, timezone
 from syncfiles.file_system_interface import DBInterface
 from syncfiles.file_structure import FileStructure
+from syncfiles.entry import entry, file_entry, dir_entry
+from syncfiles.sync_exception import SyncException
 
 
 class SyncManager:
@@ -29,8 +31,8 @@ class SyncManager:
 
     def remove_prefixes(self, files_list: List[str], prefix: str) -> List[str]:
         files_list_copy: List[str] = files_list[:]
-        for index, entry in enumerate(files_list_copy):
-            files_list_copy[index] = self.remove_prefix(entry, prefix)
+        for index, list_entry in enumerate(files_list_copy):
+            files_list_copy[index] = self.remove_prefix(list_entry, prefix)
         return files_list_copy
 
     def remove_prefix(self, fstruct_entry: str, prefix: str) -> str:
@@ -134,8 +136,29 @@ class SyncManager:
                 entry_path.rename(path_name)
                 return path_name
             except FileExistsError:
-                path_name = self.db(f"{path_name} {attempt}")
+                path_name = self.db(f"{path_name} {attempt+1}")
         raise FileExistsError(f"{str(entry_path)} has been copied 100 times.")
 
-    def get_last_sync(self) -> Dict[str, Any]:
-        return self.fstructs[0].files_to_json()
+    def get_last_sync(self, file_dir1: Optional[dir_entry] = None, file_dir2: Optional[dir_entry] = None
+                      ) -> Dict[str, Any]:
+        last_sync_dict: Dict[str, Any] = {}
+        if file_dir1 is None:
+            file_dir1 = self.fstructs[0].update_file_structure()
+        if file_dir2 is None:
+            file_dir2 = self.fstructs[1].update_file_structure()
+
+        for key in file_dir1.get_keys():
+            try:
+                file_dir1_entry: entry = file_dir1.get_entry(key)
+                file_dir2_entry: entry = file_dir2.get_entry(key)
+            except KeyError as err:
+                raise SyncException(str(err), error_id="sync_manager_key_error")
+
+            if isinstance(file_dir1_entry, file_entry) and isinstance(file_dir2_entry, file_entry):
+                if file_dir1_entry.get_mod_time() > file_dir2_entry.get_mod_time():
+                    last_sync_dict[key] = file_dir1_entry.get_mod_time()
+                else:
+                    last_sync_dict[key] = file_dir2_entry.get_mod_time()
+            elif isinstance(file_dir1_entry, dir_entry) and isinstance(file_dir2_entry, dir_entry):
+                last_sync_dict[key] = {'dir': self.get_last_sync(file_dir1_entry, file_dir2_entry)}
+        return last_sync_dict
