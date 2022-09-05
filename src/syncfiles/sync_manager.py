@@ -99,6 +99,14 @@ class SyncManager:
             self.copy_file_from_to(new_name_dir1, dir1, dir2)
             new_name_dir2: str = self.rename_with_timestamp(fstruct_entry, dir2)
             self.copy_file_from_to(new_name_dir2, dir2, dir1)
+        elif self.check_attributes(attributes, [0, 1, 0, 1, -1]):
+            self.make_dir_in(fstruct_entry, dir2)
+        elif self.check_attributes(attributes, [0, 0, 1, -1, 1]):
+            self.make_dir_in(fstruct_entry, dir1)
+        elif self.check_attributes(attributes, [0, 1, 0, 0, -1]):
+            self.delete_folder_from(fstruct_entry, dir1)
+        elif self.check_attributes(attributes, [0, 0, 1, -1, 0]):
+            self.delete_folder_from(fstruct_entry, dir2)
 
     def check_attributes(self, attributes: List[int], compare_list: List[int]) -> bool:
         for index, attr in enumerate(attributes):
@@ -111,9 +119,19 @@ class SyncManager:
         dest: str = str(self.db(to_dir) / fstruct_entry)
         self.db.copyfile(source, dest)
 
+    def make_dir_in(self, fstruct_entry: str, target_dir: str) -> None:
+        dest: str = str(self.db(target_dir) / fstruct_entry)
+        self.db(dest).mkdir(exist_ok=True)
+
     def delete_file_from(self, fstruct_entry: str, from_dir: str) -> None:
         entry_path: DBInterface = self.db(from_dir) / fstruct_entry
-        entry_path.unlink()
+        if entry_path.exists():
+            entry_path.unlink()
+
+    def delete_folder_from(self, fstruct_entry: str, from_dir: str) -> None:
+        entry_path: DBInterface = self.db(from_dir) / fstruct_entry
+        if entry_path.exists():
+            entry_path.rmtree()
 
     def rename_with_timestamp(self, fstruct_entry: str, parent_dir: str) -> str:
         entry_path: DBInterface = self.db(parent_dir) / fstruct_entry

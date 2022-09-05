@@ -72,6 +72,14 @@ class DBInterface(ABC):
     def copyfile(cls, old_path: str, new_path: str) -> None:
         """Copies file at old_path to new_path."""
 
+    @abstractmethod
+    def mkdir(self, exist_ok: bool) -> None:
+        """Makes a directory at self.__path."""
+
+    @abstractmethod
+    def rmtree(self) -> None:
+        """Removes direcotry at self.__path."""
+
 
 class FSInterface(DBInterface):
     def __init__(self, directory: str) -> None:
@@ -121,3 +129,9 @@ class FSInterface(DBInterface):
     @classmethod
     def copyfile(cls, old_path: str, new_path: str) -> None:
         shutil.copyfile(old_path, new_path)
+
+    def mkdir(self, exist_ok: bool = True) -> None:
+        self.__path.mkdir(exist_ok=exist_ok)
+
+    def rmtree(self) -> None:
+        shutil.rmtree(str(self.__path))

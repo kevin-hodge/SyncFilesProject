@@ -159,3 +159,19 @@ class FSInterfaceTestCase(unittest.TestCase):
         new_file: str = str(self.tf.test_path2 / "test_file.txt")
         FSInterface.copyfile(test_file, new_file)
         self.assertTrue(Path(new_file).exists())
+
+    @tfuncs.handle_test_dirs
+    def test_mkdir(self) -> None:
+        test_dir: str = str(self.tf.test_path1 / "test_folder")
+        FSInterface(test_dir).mkdir(exist_ok=True)
+
+        self.assertTrue(Path(test_dir).exists())
+
+    @tfuncs.handle_test_dirs
+    def test_rmtree(self) -> None:
+        test_dir: str = str(self.tf.test_path1 / "test_folder")
+        tfuncs.create_directory(test_dir)
+        self.assertTrue(Path(test_dir).exists())
+
+        FSInterface(test_dir).rmtree()
+        self.assertFalse(Path(test_dir).exists())

@@ -6,6 +6,7 @@ Author: Kevin Hodge
 from typing import List, Dict, Any, Tuple
 import unittest
 import time
+from pathlib import Path
 from syncfiles.file_system_interface import FSInterface
 from syncfiles.file_structure import FileStructure
 from syncfiles.sync_manager import SyncManager
@@ -275,6 +276,123 @@ class SyncManagerTestCase(unittest.TestCase):
                              synchronizer.get_last_sync()[files_in1[0]])
         self.assertLessEqual(fstruct_list[1].files_to_json()[files_in2[0]],
                              synchronizer.get_last_sync()[files_in2[0]])
+
+    @tfuncs.handle_test_dirs
+    def test_folder_in1_notin2_updated1(self) -> None:
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
+
+        test_folder: str = "test_folder"
+        folder_in1_notin2: str = str(self.tf.test_path1 / test_folder)
+        tfuncs.create_directory(folder_in1_notin2)
+        test_filename: str = "test_file.txt"
+        file_in1_notin2: str = str(Path(folder_in1_notin2) / test_filename)
+        tfuncs.create_file(file_in1_notin2)
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        synchronizer: SyncManager = SyncManager(fstruct_list, FSInterface)
+        synchronizer.sync()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        test_paths: List[str] = tfuncs.remove_prefixes([folder_in1_notin2, file_in1_notin2],
+                                                       fstruct_list[0].get_directory_path())
+        self.assertCountEqual(files_in1, test_paths)
+        self.assertCountEqual(files_in2, test_paths)
+
+    @tfuncs.handle_test_dirs
+    def test_folder_in1_notin2_notupdated1(self) -> None:
+        test_folder: str = "test_folder"
+        folder_in1_notin2: str = str(self.tf.test_path1 / test_folder)
+        tfuncs.create_directory(folder_in1_notin2)
+        test_filename: str = "test_file.txt"
+        file_in1_notin2: str = str(Path(folder_in1_notin2) / test_filename)
+        tfuncs.create_file(file_in1_notin2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        synchronizer: SyncManager = SyncManager(fstruct_list, FSInterface)
+        synchronizer.sync()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertCountEqual(files_in1, [])
+        self.assertCountEqual(files_in2, [])
+
+    @tfuncs.handle_test_dirs
+    def test_folder_notin1_in2_updated2(self) -> None:
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[0].files_to_json()
+
+        test_folder: str = "test_folder"
+        folder_notin1_in2: str = str(self.tf.test_path2 / test_folder)
+        tfuncs.create_directory(folder_notin1_in2)
+        test_filename: str = "test_file.txt"
+        file_notin1_in2: str = str(Path(folder_notin1_in2) / test_filename)
+        tfuncs.create_file(file_notin1_in2)
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        synchronizer: SyncManager = SyncManager(fstruct_list, FSInterface)
+        synchronizer.sync()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        test_paths: List[str] = tfuncs.remove_prefixes([folder_notin1_in2, file_notin1_in2],
+                                                       fstruct_list[1].get_directory_path())
+        self.assertCountEqual(files_in1, test_paths)
+        self.assertCountEqual(files_in2, test_paths)
+
+    @tfuncs.handle_test_dirs
+    def test_folder_notin1_in2_notupdated2(self) -> None:
+        test_folder: str = "test_folder"
+        folder_notin1_in2: str = str(self.tf.test_path2 / test_folder)
+        tfuncs.create_directory(folder_notin1_in2)
+        test_filename: str = "test_file.txt"
+        file_notin1_in2: str = str(Path(folder_notin1_in2) / test_filename)
+        tfuncs.create_file(file_notin1_in2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        synchronizer: SyncManager = SyncManager(fstruct_list, FSInterface)
+        synchronizer.sync()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertCountEqual(files_in1, [])
+        self.assertCountEqual(files_in2, [])
+
+    @tfuncs.handle_test_dirs
+    def test_folder_in1_in2_notupdated1_notupdated2(self) -> None:
+        common_folder_name: str = "test_folder"
+        folder_in1: str = str(self.tf.test_path1 / common_folder_name)
+        tfuncs.create_file(folder_in1)
+        folder_in2: str = str(self.tf.test_path2 / common_folder_name)
+        tfuncs.create_file(folder_in2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        synchronizer: SyncManager = SyncManager(fstruct_list, FSInterface)
+        synchronizer.sync()
+
+        # Check each directory contains correct file names with timestamps
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertCountEqual(files_in1, [common_folder_name])
+        self.assertCountEqual(files_in2, [common_folder_name])
 
 
 if __name__ == "__main__":
