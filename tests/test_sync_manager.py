@@ -375,9 +375,9 @@ class SyncManagerTestCase(unittest.TestCase):
     def test_folder_in1_in2_notupdated1_notupdated2(self) -> None:
         common_folder_name: str = "test_folder"
         folder_in1: str = str(self.tf.test_path1 / common_folder_name)
-        tfuncs.create_file(folder_in1)
+        tfuncs.create_directory(folder_in1)
         folder_in2: str = str(self.tf.test_path2 / common_folder_name)
-        tfuncs.create_file(folder_in2)
+        tfuncs.create_directory(folder_in2)
 
         fstruct_list: List[FileStructure] = self.initialize_test_directories()
         last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
@@ -393,6 +393,39 @@ class SyncManagerTestCase(unittest.TestCase):
         self.assertCountEqual(files_in1, files_in2)
         self.assertCountEqual(files_in1, [common_folder_name])
         self.assertCountEqual(files_in2, [common_folder_name])
+
+    @tfuncs.handle_test_dirs
+    def test_folder_in1_in2_name_change1(self) -> None:
+        common_folder_name: str = "test_folder"
+        common_file_name: str = "test_file.txt"
+        folder_in1: str = str(self.tf.test_path1 / common_folder_name)
+        tfuncs.create_directory(folder_in1)
+        file_in1: str = str(Path(folder_in1) / common_file_name)
+        tfuncs.create_file(file_in1)
+        folder_in2: str = str(self.tf.test_path2 / common_folder_name)
+        tfuncs.create_directory(folder_in2)
+        file_in2: str = str(Path(folder_in2) / common_file_name)
+        tfuncs.create_file(file_in2)
+
+        fstruct_list: List[FileStructure] = self.initialize_test_directories()
+        last_sync_dict: Dict[str, Any] = fstruct_list[1].files_to_json()
+
+        time.sleep(self.delay_sec)
+        new_folder: str = str(Path(folder_in1).parent / "new_folder")
+        Path(folder_in1).rename(new_folder)
+        new_file: str = str(Path(new_folder) / common_file_name)
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+
+        synchronizer: SyncManager = SyncManager(fstruct_list, FSInterface)
+        synchronizer.sync()
+
+        self.check_fstructs_for_updates(fstruct_list, last_sync_dict)
+        files_in1, files_in2 = self.get_file_lists_without_prefixes(fstruct_list)
+        new_folder_np, new_file_np = tfuncs.remove_prefixes([new_folder, new_file], str(self.tf.test_path1))
+        self.assertCountEqual(files_in1, files_in2)
+        self.assertCountEqual(files_in1, [new_folder_np, new_file_np])
+        self.assertCountEqual(files_in2, [new_folder_np, new_file_np])
 
 
 if __name__ == "__main__":

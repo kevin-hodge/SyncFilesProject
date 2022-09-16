@@ -175,3 +175,16 @@ class FSInterfaceTestCase(unittest.TestCase):
 
         FSInterface(test_dir).rmtree()
         self.assertFalse(Path(test_dir).exists())
+
+    @tfuncs.handle_test_dirs
+    def test_mkdir_parents(self) -> None:
+        test_folder: str = str(self.tf.test_path1 / "test_folder")
+        tfuncs.create_directory(test_folder)
+        test_file: str = str(Path(test_folder) / "test_file.txt")
+        tfuncs.create_file(test_file)
+
+        new_folder: str = str(self.tf.test_path1 / "new_folder")
+        new_file: str = str(Path(new_folder) / "test_file.txt")
+        FSInterface(new_file).mkdir(parents=True, exist_ok=True)
+        self.assertTrue(Path(new_folder).exists())
+        self.assertTrue(Path(new_file).exists())
