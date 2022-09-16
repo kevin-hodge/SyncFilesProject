@@ -137,7 +137,7 @@ class SyncManager:
 
     def make_dir_in(self, fstruct_entry: str, target_dir: str) -> None:
         dest: str = str(self.db(target_dir) / fstruct_entry)
-        self.db(dest).mkdir(exist_ok=True)
+        self.db(dest).mkdir(parents=True, exist_ok=True)
 
     def delete_file_from(self, fstruct_entry: str, from_dir: str) -> None:
         entry_path: DBInterface = self.db(self.join_paths(from_dir, fstruct_entry))
